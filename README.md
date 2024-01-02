@@ -10,5 +10,14 @@ atoms: ase.Atoms = rdkit2ase(mol)
 mol = ase2rdkit(atoms)
 ```
 
+```py
+from rdkit2ase import smiles2atoms
+
+atoms: ase.Atoms = smiles2atoms("O")
+
+print(atoms)
+>>> Atoms(symbols='OH2', pbc=False)
+```
+
 ### Limitations
 - `rdkit2ase.ase2rdkit` won't be able to detect higher order bonds.

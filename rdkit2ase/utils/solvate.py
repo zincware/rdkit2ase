@@ -4,7 +4,6 @@ from ..rdkit2ase import rdkit2ase
 from .smiles import smiles2atoms
 import tempfile
 import subprocess
-import os
 import typing as t
 
 import pathlib
@@ -13,6 +12,7 @@ OBJ_OR_STR = t.Union[str, Chem.rdchem.Mol, ase.Atoms]
 
 OBJ_OR_STR_OR_LIST = t.Union[OBJ_OR_STR, t.List[t.Tuple[OBJ_OR_STR, float]]]
 
+
 def _get_atoms(mol: OBJ_OR_STR) -> ase.Atoms:
     if isinstance(mol, str):
         mol = smiles2atoms(mol)
@@ -20,7 +20,10 @@ def _get_atoms(mol: OBJ_OR_STR) -> ase.Atoms:
         mol = rdkit2ase(mol)
     return mol
 
-def _get_box_from_density(mol: t.List[t.Tuple[ase.Atoms, float]], density: float) -> list[float]:
+
+def _get_box_from_density(
+    mol: t.List[t.Tuple[ase.Atoms, float]], density: float
+) -> list[float]:
     """Get the box size from the molar volume.
 
     Attributes
@@ -34,7 +37,9 @@ def _get_box_from_density(mol: t.List[t.Tuple[ase.Atoms, float]], density: float
     data = [atoms for atoms, _ in mol]
     counts = [count for _, count in mol]
 
-    molar_mass = sum(sum(atoms.get_masses()) * count for atoms, count in zip(data, counts))
+    molar_mass = sum(
+        sum(atoms.get_masses()) * count for atoms, count in zip(data, counts)
+    )
     molar_volume = molar_mass / density / 1000  # m^3 / mol
 
     # convert to particles / A^3
@@ -59,7 +64,7 @@ def pack(mol: OBJ_OR_STR_OR_LIST, box_size=None, density=None, pbc=True, toleran
         pass
     else:
         raise ValueError("Either density or box_size must be specified.")
-    
+
     if pbc:
         target_box = [x + tolerance for x in box_size]
     else:
@@ -79,7 +84,6 @@ def pack(mol: OBJ_OR_STR_OR_LIST, box_size=None, density=None, pbc=True, toleran
         end structure
         """
 
-    
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir = pathlib.Path(tmpdir)
         for idx, (atoms, _) in enumerate(mol):
@@ -89,13 +93,9 @@ def pack(mol: OBJ_OR_STR_OR_LIST, box_size=None, density=None, pbc=True, toleran
         subprocess.run(["packmol < pack.inp"], cwd=tmpdir, shell=True)
 
         atoms = ase.io.read(tmpdir / "mixture.xyz")
-    
-    
+
     atoms.cell = target_box
     if pbc:
         atoms.pbc = True
 
     return atoms
-
-        
-    

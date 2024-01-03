@@ -3,6 +3,7 @@ import rdkit.Geometry
 import ase
 from rdkit2ase.xyz2mol import xyz2mol
 
+
 def rdkit2ase(mol) -> ase.Atoms:
     """Convert an RDKit molecule to an ASE atoms object."""
     mol = rdkit.Chem.AddHs(mol)

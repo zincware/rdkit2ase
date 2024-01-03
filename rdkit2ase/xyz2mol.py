@@ -10,13 +10,12 @@ Implementation by Jan H. Jensen, based on the paper
     DOI: 10.1002/bkcs.10334
 
 Taken from MIT licensed code at https://github.com/jensengroup/xyz2mol
-    
+
 """
 
 import copy
 import itertools
 
-from rdkit.Chem import rdmolops
 from rdkit.Chem import rdchem
 
 try:
@@ -30,7 +29,7 @@ import numpy as np
 import networkx as nx
 
 from rdkit import Chem
-from rdkit.Chem import AllChem, rdmolops
+from rdkit.Chem import AllChem
 import sys
 
 global __ATOM_LIST__

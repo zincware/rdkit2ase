@@ -1,4 +1,6 @@
 [![zincware](https://img.shields.io/badge/Powered%20by-zincware-darkcyan)](https://github.com/zincware)
+[![codecov](https://codecov.io/gh/zincware/rdkit2ase/graph/badge.svg?token=Q0VIN03185)](https://codecov.io/gh/zincware/rdkit2ase)
+[![PyPI version](https://badge.fury.io/py/rdkit2ase.svg)](https://badge.fury.io/py/rdkit2ase)
 
 # rdkit2ase - Interface between the rdkit and ASE package.
 

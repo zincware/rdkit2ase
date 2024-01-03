@@ -84,15 +84,13 @@ def test_pack_box():
     assert atoms.get_chemical_formula() == "C2H6O"
     assert atoms.get_volume() == pytest.approx(125)
 
-    atoms = pack([("CCO", 2)], box_size=[5, 5, 5], pbc=True, tolerance=0)
-    assert atoms.get_chemical_formula() == "C4H12O2"
+    atoms = pack([("CCO", 1)], box_size=[5, 5, 5], pbc=True, tolerance=0)
+    assert atoms.get_chemical_formula() == "C2H6O"
     assert atoms.get_volume() == pytest.approx(125)
 
-    # atoms = pack(
-    #     [("CCO", 2), ("O", 1), ("Cl", 3)], box_size=[5, 5, 5], pbc=True, tolerance=1
-    # )
-    # assert atoms.get_chemical_formula() == "C4H17Cl3O3"
-    # assert atoms.get_volume() == pytest.approx(125)
+    atoms = pack([("CCO", 1)], box_size=[5, 5, 5], pbc=True, tolerance=0.5)
+    assert atoms.get_chemical_formula() == "C2H6O"
+    assert atoms.get_volume() == pytest.approx(125)
 
 
 def test_pack_atoms():

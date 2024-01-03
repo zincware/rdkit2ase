@@ -66,7 +66,7 @@ def pack(mol: OBJ_OR_STR_OR_LIST, box_size=None, density=None, pbc=True, toleran
         raise ValueError("Either density or box_size must be specified.")
 
     if pbc:
-        target_box = [x + tolerance for x in box_size]
+        target_box = [x - tolerance for x in box_size]
     else:
         target_box = box_size
 
@@ -94,7 +94,7 @@ def pack(mol: OBJ_OR_STR_OR_LIST, box_size=None, density=None, pbc=True, toleran
 
         atoms = ase.io.read(tmpdir / "mixture.xyz")
 
-    atoms.cell = target_box
+    atoms.cell = box_size
     if pbc:
         atoms.pbc = True
 

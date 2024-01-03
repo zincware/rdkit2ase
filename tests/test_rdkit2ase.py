@@ -2,6 +2,7 @@ import rdkit
 import ase
 import pytest
 from ase.build import molecule
+import time
 
 from rdkit2ase import rdkit2ase, ase2rdkit, smiles2atoms, pack
 
@@ -84,9 +85,13 @@ def test_pack_box():
     assert atoms.get_chemical_formula() == "C2H6O"
     assert atoms.get_volume() == pytest.approx(125)
 
+    time.sleep(0.5)
+
     atoms = pack([("CCO", 1)], box_size=[5, 5, 5], pbc=True, tolerance=0)
     assert atoms.get_chemical_formula() == "C2H6O"
     assert atoms.get_volume() == pytest.approx(125)
+
+    time.sleep(0.5)
 
     atoms = pack([("CCO", 1)], box_size=[5, 5, 5], pbc=True, tolerance=0.5)
     assert atoms.get_chemical_formula() == "C2H6O"

@@ -35,6 +35,10 @@ jobs:
       - name: Install package
         run: |
           poetry install --no-interaction
+      - name: Install packmol
+        run: |
+          apt update
+          apt -y install packmol
       - name: Pytest
         run: |
           poetry run python --version

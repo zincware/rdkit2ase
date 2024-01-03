@@ -1,8 +1,9 @@
 import rdkit
 import ase
 import pytest
+from ase.build import molecule
 
-from rdkit2ase import rdkit2ase, ase2rdkit, smiles2atoms
+from rdkit2ase import rdkit2ase, ase2rdkit, smiles2atoms, pack
 
 @pytest.fixture
 def methane():
@@ -57,3 +58,30 @@ def test_smiles_to_atoms(smiles, formula):
     atoms = smiles2atoms(smiles)
     assert isinstance(atoms, ase.Atoms)
     assert atoms.get_chemical_formula() == formula
+
+def test_pack_density():
+    atoms = pack("CCO", density=1.0)
+    assert atoms.get_chemical_formula() == "C2H6O"
+
+    atoms = pack([("CCO", 2)], density=1.0)
+    assert atoms.get_chemical_formula() == "C4H12O2"
+
+    atoms = pack([("CCO", 2), ("O", 1), ("Cl", 3)], density=1.0)
+    assert atoms.get_chemical_formula() == "C4H17Cl3O3"
+
+def test_pack_box():
+    atoms = pack("CCO", box_size=[10, 10, 10], pbc=False)
+    assert atoms.get_chemical_formula() == "C2H6O"
+    assert atoms.get_volume() == pytest.approx(1000)
+
+    atoms = pack([("CCO", 2)], box_size=[10, 10, 10], pbc=True, tolerance=0)
+    assert atoms.get_chemical_formula() == "C4H12O2"
+    assert atoms.get_volume() == pytest.approx(1000)
+
+    atoms = pack([("CCO", 2), ("O", 1), ("Cl", 3)], box_size=[10, 10, 10], pbc=True, tolerance=1)
+    assert atoms.get_chemical_formula() == "C4H17Cl3O3"
+    assert atoms.get_volume() == pytest.approx(1331)
+
+def test_pack_atoms():
+    atoms = pack([(molecule("CH4"), 2)], density=1.0)
+    assert atoms.get_chemical_formula() == "C2H8"

@@ -70,17 +70,17 @@ def test_pack_density():
     assert atoms.get_chemical_formula() == "C4H17Cl3O3"
 
 def test_pack_box():
-    atoms = pack("CCO", box_size=[10, 10, 10], pbc=False)
+    atoms = pack("CCO", box_size=[5, 5, 5], pbc=False)
     assert atoms.get_chemical_formula() == "C2H6O"
-    assert atoms.get_volume() == pytest.approx(1000)
+    assert atoms.get_volume() == pytest.approx(125)
 
-    atoms = pack([("CCO", 2)], box_size=[10, 10, 10], pbc=True, tolerance=0)
+    atoms = pack([("CCO", 2)], box_size=[5, 5, 5], pbc=True, tolerance=0)
     assert atoms.get_chemical_formula() == "C4H12O2"
-    assert atoms.get_volume() == pytest.approx(1000)
+    assert atoms.get_volume() == pytest.approx(125)
 
-    atoms = pack([("CCO", 2), ("O", 1), ("Cl", 3)], box_size=[10, 10, 10], pbc=True, tolerance=1)
+    atoms = pack([("CCO", 2), ("O", 1), ("Cl", 3)], box_size=[5, 5, 5], pbc=True, tolerance=1)
     assert atoms.get_chemical_formula() == "C4H17Cl3O3"
-    assert atoms.get_volume() == pytest.approx(1331)
+    assert atoms.get_volume() == pytest.approx(216)
 
 def test_pack_atoms():
     atoms = pack([(molecule("CH4"), 2)], density=1.0)

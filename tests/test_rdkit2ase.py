@@ -80,13 +80,13 @@ def test_pack_density():
 
 
 def test_pack_box():
-    # atoms = pack("CCO", box_size=[5, 5, 5], pbc=False)
-    # assert atoms.get_chemical_formula() == "C2H6O"
-    # assert atoms.get_volume() == pytest.approx(125)
-
-    atoms = pack([("CCO", 1)], box_size=[5, 5, 5], pbc=True, tolerance=0)
+    atoms = pack("CCO", box_size=[5, 5, 5], pbc=False)
     assert atoms.get_chemical_formula() == "C2H6O"
     assert atoms.get_volume() == pytest.approx(125)
+
+    # atoms = pack([("CCO", 1)], box_size=[5, 5, 5], pbc=True, tolerance=0)
+    # assert atoms.get_chemical_formula() == "C2H6O"
+    # assert atoms.get_volume() == pytest.approx(125)
 
     # atoms = pack([("CCO", 1)], box_size=[5, 5, 5], pbc=True, tolerance=0.5)
     # assert atoms.get_chemical_formula() == "C2H6O"

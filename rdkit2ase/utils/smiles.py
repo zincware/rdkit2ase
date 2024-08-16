@@ -21,8 +21,8 @@ def smiles2atoms(smiles: str) -> ase.Atoms:
 
 def smiles2conformers(
     smiles: str,
-    numConfs: int,
-    randomSeed: int = 42,
+    numConfs: int,  # noqa N803
+    randomSeed: int = 42,  # noqa N803
     maxAttempts: int = 1000,  # noqa N803
 ) -> list[ase.Atoms]:
     """Create multiple conformers for a SMILES string.

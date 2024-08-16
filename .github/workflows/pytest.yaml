@@ -37,8 +37,11 @@ jobs:
           poetry install --no-interaction
       - name: Install packmol
         run: |
-          sudo apt update
-          sudo apt -y install packmol
+          wget https://github.com/m3g/packmol/archive/refs/tags/v20.15.1.tar.gz
+          tar -xvf v20.15.1.tar.gz
+          cd packmol-20.15.1
+          make
+          sudo make install
       - name: Pytest
         run: |
           poetry run python --version

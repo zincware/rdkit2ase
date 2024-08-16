@@ -104,7 +104,7 @@ structure struct_{category}_{idx}.xyz
 end structure
                      """
 
-    with tempfile.TemporaryDirectory(delete=True) as tmpdir:
+    with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir = pathlib.Path(tmpdir)
         for category, indices in enumerate(selected_idx):
             for idx in set(indices):

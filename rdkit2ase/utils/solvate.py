@@ -40,6 +40,39 @@ def pack(
     tolerance: float = 2,
     logging: bool = False,
 ) -> ase.Atoms:
+    """
+    Pack the given molecules into a box with the specified density.
+
+    Parameters
+    ----------
+    data : list[list[ase.Atoms]]
+        A list of lists of ASE Atoms objects representing the molecules to be packed.
+    counts : list[int]
+        A list of integers representing the number of each type of molecule.
+    density : float
+        The target density of the packed system in kg/m^3.
+    seed : int, optional
+        The random seed for reproducibility, by default 42.
+    tolerance : float, optional
+        The tolerance for the packing algorithm, by default 2.
+    logging : bool, optional
+        If True, enables logging of the packing process, by default False.
+
+    Returns
+    -------
+    ase.Atoms
+        An ASE Atoms object representing the packed system.
+
+    Example
+    -------
+    >>> from rdkit2ase import pack, smiles2conformers
+    >>> water = smiles2conformers("O", 1)
+    >>> ethanol = smiles2conformers("CCO", 1)
+    >>> density = 1000  # kg/m^3
+    >>> packed_system = pack([water, ethanol], [10, 5], density)
+    >>> print(packed_system)
+    Atoms(symbols='C10H44O12', pbc=True, cell=[8.4, 8.4, 8.4])
+    """
     rng = np.random.default_rng(seed)
     selected_idx: list[np.ndarray] = []
 
@@ -92,6 +125,3 @@ end structure
     atoms.cell = cell
     atoms.pbc = True
     return atoms
-
-    # number 1
-    # inside box 0 0 0 {" ".join([f"{x:.6f}" for x in cell])}

@@ -19,6 +19,8 @@ jobs:
           - "3.12"
         os:
           - ubuntu-latest
+        packmol-version:
+          - "20.15.1"
 
     steps:
       - uses: actions/checkout@v3
@@ -37,14 +39,14 @@ jobs:
           poetry install --no-interaction
       - name: Install packmol
         run: |
-          wget https://github.com/m3g/packmol/archive/refs/tags/v20.15.1.tar.gz
-          tar -xvf v20.15.1.tar.gz
-          cd packmol-20.15.1
+          wget https://github.com/m3g/packmol/archive/refs/tags/v${{ matrix.packmol-version}}.tar.gz
+          tar -xvf v${{ matrix.packmol-version}}.tar.gz
+          cd packmol-${{ matrix.packmol-version}}
           make
       - name: Pytest
         run: |
           # add packmol to path
-          export PATH=$PATH:$(pwd)/packmol-20.15.1
+          export PATH=$PATH:$(pwd)/packmol-${{ matrix.packmol-version}}
           poetry run python --version
           poetry run coverage run -m pytest -vv
           poetry run coverage xml

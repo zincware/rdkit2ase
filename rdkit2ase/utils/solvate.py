@@ -1,101 +1,127 @@
-import ase.io
-from rdkit import Chem
-from ..rdkit2ase import rdkit2ase
-from .smiles import smiles2atoms
-import tempfile
+import pathlib
 import subprocess
+import tempfile
 import typing as t
 
-import pathlib
+import ase.io
+import numpy as np
+from rdkit import Chem
 
 OBJ_OR_STR = t.Union[str, Chem.rdchem.Mol, ase.Atoms]
 
 OBJ_OR_STR_OR_LIST = t.Union[OBJ_OR_STR, t.List[t.Tuple[OBJ_OR_STR, float]]]
 
 
-def _get_atoms(mol: OBJ_OR_STR) -> ase.Atoms:
-    if isinstance(mol, str):
-        mol = smiles2atoms(mol)
-    elif isinstance(mol, Chem.rdchem.Mol):
-        mol = rdkit2ase(mol)
-    return mol
-
-
-def _get_box_from_density(
-    mol: t.List[t.Tuple[ase.Atoms, float]], density: float
-) -> list[float]:
+def _get_cell_vectors(images: list[ase.Atoms], density: float) -> list[float]:
     """Get the box size from the molar volume.
 
     Attributes
     ----------
-    mol : dict
-        Dictionary of molecules and their counts.
+    images : list[ase.Atoms]
+        All the atoms that should be packed.
     density: float
         Density of the system in kg/m^3.
     """
-
-    data = [atoms for atoms, _ in mol]
-    counts = [count for _, count in mol]
-
-    molar_mass = sum(
-        sum(atoms.get_masses()) * count for atoms, count in zip(data, counts)
-    )
+    molar_mass = sum(sum(atoms.get_masses()) for atoms in images)
     molar_volume = molar_mass / density / 1000  # m^3 / mol
 
     # convert to particles / A^3
     volume = molar_volume * ase.units.m**3 / ase.units.mol
 
-    box = [pow(volume, 1 / 3) for _ in range(3)]
+    box = [volume ** (1 / 3) for _ in range(3)]
     return box
 
 
-def pack(mol: OBJ_OR_STR_OR_LIST, box_size=None, density=None, pbc=True, tolerance=0.5):
-    if not isinstance(mol, list):
-        mol = [(_get_atoms(mol), 1)]
-    else:
-        mol = [(_get_atoms(m), c) for m, c in mol]
+def pack(
+    data: list[list[ase.Atoms]],
+    counts: list[int],
+    density: float,
+    seed: int = 42,
+    tolerance: float = 2,
+    logging: bool = False,
+) -> ase.Atoms:
+    """
+    Pack the given molecules into a box with the specified density.
 
-    if density is not None and box_size is None:
-        box_size = _get_box_from_density(mol, density)
-    elif density is not None and box_size is not None:
-        # compute fractions from mol keys and fill the box keeping the ratio
-        raise NotImplementedError()
-    elif density is None and box_size is not None:
-        pass
-    else:
-        raise ValueError("Either density or box_size must be specified.")
+    Parameters
+    ----------
+    data : list[list[ase.Atoms]]
+        A list of lists of ASE Atoms objects representing the molecules to be packed.
+    counts : list[int]
+        A list of integers representing the number of each type of molecule.
+    density : float
+        The target density of the packed system in kg/m^3.
+    seed : int, optional
+        The random seed for reproducibility, by default 42.
+    tolerance : float, optional
+        The tolerance for the packing algorithm, by default 2.
+    logging : bool, optional
+        If True, enables logging of the packing process, by default False.
 
-    if pbc:
-        target_box = [x - tolerance for x in box_size]
-    else:
-        target_box = box_size
+    Returns
+    -------
+    ase.Atoms
+        An ASE Atoms object representing the packed system.
+
+    Example
+    -------
+    >>> from rdkit2ase import pack, smiles2conformers
+    >>> water = smiles2conformers("O", 1)
+    >>> ethanol = smiles2conformers("CCO", 1)
+    >>> density = 1000  # kg/m^3
+    >>> packed_system = pack([water, ethanol], [10, 5], density)
+    >>> print(packed_system)
+    Atoms(symbols='C10H44O12', pbc=True, cell=[8.4, 8.4, 8.4])
+    """
+    rng = np.random.default_rng(seed)
+    selected_idx: list[np.ndarray] = []
+
+    for images, count in zip(data, counts):
+        selected_idx.append(
+            rng.choice(range(len(images)), count, replace=len(images) < count)
+        )
+
+    images = [
+        [data[category][idx] for idx in indices]
+        for category, indices in enumerate(selected_idx)
+    ]
+    images = sum(images, [])
+
+    cell = _get_cell_vectors(images=images, density=density)
 
     file = f"""
-    tolerance {tolerance}
-    filetype xyz
-    output mixture.xyz
+tolerance {tolerance}
+filetype xyz
+output mixture.xyz
+pbc 0 0 0 {" ".join([f"{x:.6f}" for x in cell])}
     """
-    for idx, (_, count) in enumerate(mol):
-        file += f"""
-        structure {idx}.xyz
-            filetype xyz
-            number {count}
-            inside box 0 0 0 {" ".join([f"{x:.4f}" for x in target_box])}
-        end structure
-        """
+    for category, indices in enumerate(selected_idx):
+        for idx in indices:
+            file += f"""
+structure struct_{category}_{idx}.xyz
+    filetype xyz
+
+end structure
+                     """
 
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir = pathlib.Path(tmpdir)
-        for idx, (atoms, _) in enumerate(mol):
-            ase.io.write(tmpdir / f"{idx}.xyz", atoms)
-        with open(tmpdir / "pack.inp", "w") as f:
-            f.write(file)
-        subprocess.run(["packmol < pack.inp"], cwd=tmpdir, shell=True)
+        for category, indices in enumerate(selected_idx):
+            for idx in set(indices):
+                atoms = data[category][idx]
+                ase.io.write(
+                    tmpdir / f"struct_{category}_{idx}.xyz", atoms, format="xyz"
+                )
+        (tmpdir / "pack.inp").write_text(file)
+        subprocess.run(
+            "packmol < pack.inp",
+            cwd=tmpdir,
+            shell=True,
+            check=True,
+            capture_output=not logging,
+        )
+        atoms: ase.Atoms = ase.io.read(tmpdir / "mixture.xyz")
 
-        atoms = ase.io.read(tmpdir / "mixture.xyz")
-
-    atoms.cell = box_size
-    if pbc:
-        atoms.pbc = True
-
+    atoms.cell = cell
+    atoms.pbc = True
     return atoms

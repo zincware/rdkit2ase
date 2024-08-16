@@ -41,9 +41,10 @@ jobs:
           tar -xvf v20.15.1.tar.gz
           cd packmol-20.15.1
           make
-          sudo make install
       - name: Pytest
         run: |
+          # add packmol to path
+          export PATH=$PATH:$(pwd)/packmol-20.15.1
           poetry run python --version
           poetry run coverage run -m pytest -vv
           poetry run coverage xml

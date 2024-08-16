@@ -1,7 +1,9 @@
+import io
+
+import ase.io
 import rdkit.Chem.AllChem
+import rdkit.Chem.rdDetermineBonds
 import rdkit.Geometry
-import ase
-from rdkit2ase.xyz2mol import xyz2mol
 
 
 def rdkit2ase(mol) -> ase.Atoms:
@@ -16,10 +18,16 @@ def rdkit2ase(mol) -> ase.Atoms:
     )
 
 
-def ase2rdkit(atoms: ase.Atoms) -> list[rdkit.Chem.Mol]:
+def ase2rdkit(atoms: ase.Atoms) -> rdkit.Chem.Mol:
     """Convert an ASE Atoms object to an RDKit molecule."""
-    mol = xyz2mol(
-        atoms=atoms.get_atomic_numbers().tolist(),
-        coordinates=atoms.get_positions().tolist(),
+    with io.StringIO() as f:
+        ase.io.write(f, atoms, format="xyz")
+        f.seek(0)
+        xyz = f.read()
+        raw_mol = rdkit.Chem.MolFromXYZBlock(xyz)
+
+    mol = rdkit.Chem.Mol(raw_mol)
+    rdkit.Chem.rdDetermineBonds.DetermineBonds(
+        mol, charge=int(sum(atoms.get_initial_charges()))
     )
-    return mol[0]
+    return mol

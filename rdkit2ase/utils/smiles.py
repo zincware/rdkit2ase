@@ -1,6 +1,7 @@
-from ..rdkit2ase import rdkit2ase
-from rdkit import Chem
 import ase
+from rdkit import Chem
+
+from ..rdkit2ase import rdkit2ase
 
 
 def smiles2atoms(smiles: str) -> ase.Atoms:

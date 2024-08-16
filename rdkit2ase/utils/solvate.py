@@ -1,12 +1,13 @@
-import ase.io
-from rdkit import Chem
-from ..rdkit2ase import rdkit2ase
-from .smiles import smiles2atoms
-import tempfile
+import pathlib
 import subprocess
+import tempfile
 import typing as t
 
-import pathlib
+import ase.io
+from rdkit import Chem
+
+from ..rdkit2ase import rdkit2ase
+from .smiles import smiles2atoms
 
 OBJ_OR_STR = t.Union[str, Chem.rdchem.Mol, ase.Atoms]
 

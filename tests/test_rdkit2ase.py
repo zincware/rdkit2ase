@@ -1,9 +1,9 @@
-import rdkit
 import ase
 import pytest
+import rdkit
 from ase.build import molecule
 
-from rdkit2ase import rdkit2ase, ase2rdkit, smiles2atoms, pack
+from rdkit2ase import ase2rdkit, pack, rdkit2ase, smiles2atoms
 
 
 @pytest.fixture
@@ -97,3 +97,6 @@ def test_pack_atoms():
     atoms = pack([(molecule("CH4"), 2)], density=800)
     assert atoms.get_chemical_formula() == "C2H8"
     assert atoms.get_volume() == pytest.approx(66.6, abs=0.001)
+
+
+# TODO assert min distance in pbc!

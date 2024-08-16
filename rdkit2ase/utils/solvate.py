@@ -69,7 +69,7 @@ def pack(
     >>> water = smiles2conformers("O", 1)
     >>> ethanol = smiles2conformers("CCO", 1)
     >>> density = 1000  # kg/m^3
-    >>> packed_system = pack([water, ethanol], [10, 5], density)
+    >>> packed_system = pack([water, ethanol], [7, 5], density)
     >>> print(packed_system)
     Atoms(symbols='C10H44O12', pbc=True, cell=[8.4, 8.4, 8.4])
     """

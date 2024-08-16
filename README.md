@@ -22,6 +22,20 @@ print(atoms)
 >>> Atoms(symbols='OH2', pbc=False)
 ```
 
+## Packmol Interface
+If you have [packmol](https://github.com/m3g/packmol) (at least `v20.15.0`) you can use the rdkit2ase interface.
+
+```py
+from rdkit2ase import pack, smiles2conformers
+
+water = smiles2conformers("O", 2)
+ethanol = smiles2conformers("CCO", 5)
+density = 1000  # kg/m^3
+box = pack([water, ethanol], [7, 5], density)
+print(box)
+>>> Atoms(symbols='C10H44O12', pbc=True, cell=[8.4, 8.4, 8.4])
+```
+
 ### Limitations
 
 - `rdkit2ase.ase2rdkit` won't be able to detect higher order bonds.

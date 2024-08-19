@@ -23,7 +23,9 @@ print(atoms)
 ```
 
 ## Packmol Interface
-If you have [packmol](https://github.com/m3g/packmol) (at least `v20.15.0`) you can use the rdkit2ase interface.
+
+If you have [packmol](https://github.com/m3g/packmol) (at least `v20.15.0`) you
+can use the rdkit2ase interface.
 
 ```py
 from rdkit2ase import pack, smiles2conformers

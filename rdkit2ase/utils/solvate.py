@@ -67,7 +67,7 @@ def pack(
         Ensure tolerance across periodic boundaries, by default True.
     _format : str, optional
         The file format used for communication with packmol, by default "pdb".
-        WARNING: Do not use "xyz". This migh cause issues and
+        WARNING: Do not use "xyz". This might cause issues and
         is only implemented for debugging purposes.
 
     Returns

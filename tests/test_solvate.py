@@ -11,7 +11,7 @@ def test_pack_pbc():
     min_mol_dist = mol_dist[mol_dist > 0].min()
 
     # pack a box
-    atoms = pack([water], [10], 997, 42, logging=True, tolerance=1.5)
+    atoms = pack([water], [10], 997, 42, tolerance=1.5)
 
     atoms_dist = atoms.get_all_distances(mic=True)
     assert len(atoms) == np.sum(atoms_dist < min_mol_dist * 0.99)

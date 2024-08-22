@@ -5,7 +5,7 @@ from rdkit.Chem import rdDistGeom
 from ..rdkit2ase import rdkit2ase
 
 
-def smiles2atoms(smiles: str) -> ase.Atoms:
+def smiles2atoms(smiles: str, seed: int = 42) -> ase.Atoms:
     """
     Convert a SMILES string to an ASE Atoms object.
 
@@ -16,7 +16,7 @@ def smiles2atoms(smiles: str) -> ase.Atoms:
         atoms (ase.Atoms): The Atoms object.
     """
     mol = Chem.MolFromSmiles(smiles)
-    return rdkit2ase(mol)
+    return rdkit2ase(mol, seed=seed)
 
 
 def smiles2conformers(

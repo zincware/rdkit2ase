@@ -5,9 +5,8 @@ import typing as t
 
 import ase.io
 import numpy as np
-from rdkit import Chem
-
 from ase.io.proteindatabank import write_proteindatabank
+from rdkit import Chem
 
 OBJ_OR_STR = t.Union[str, Chem.rdchem.Mol, ase.Atoms]
 

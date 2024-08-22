@@ -1,6 +1,8 @@
 import ase
 import pytest
 import rdkit
+import numpy.testing as npt
+import numpy as np
 
 from rdkit2ase import ase2rdkit, rdkit2ase, smiles2atoms
 
@@ -65,3 +67,18 @@ def test_smiles_to_atoms(smiles, formula):
     atoms = smiles2atoms(smiles)
     assert isinstance(atoms, ase.Atoms)
     assert atoms.get_chemical_formula() == formula
+
+def test_seeded_smiles_to_atoms():
+    atoms = smiles2atoms("CCO", seed=42)
+    npt.assert_almost_equal(atoms.get_positions(), [[-0.92537086,  0.07420817,  0.03283984],
+       [ 0.51231816, -0.4191819 , -0.07431482],
+       [ 1.3778212 ,  0.44937969,  0.60442827],
+       [-1.02252523,  1.07307188, -0.44285695],
+       [-1.60443695, -0.63678765, -0.48322232],
+       [-1.22359694,  0.14724363,  1.10020568],
+       [ 0.80577952, -0.5060158 , -1.14510451],
+       [ 0.58521288, -1.42739618,  0.3853352 ],
+       [ 1.49479822,  1.24547818,  0.0226896 ]]
+    )
+    # now test with different seeds
+    assert not np.allclose(atoms.get_positions(), smiles2atoms("CCO", seed=43).get_positions())

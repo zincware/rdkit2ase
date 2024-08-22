@@ -12,6 +12,8 @@ OBJ_OR_STR = t.Union[str, Chem.rdchem.Mol, ase.Atoms]
 
 OBJ_OR_STR_OR_LIST = t.Union[OBJ_OR_STR, t.List[t.Tuple[OBJ_OR_STR, float]]]
 
+FORMAT = t.Literal["pdb", "xyz"]
+
 
 def _get_cell_vectors(images: list[ase.Atoms], density: float) -> list[float]:
     """Get the box size from the molar volume.
@@ -42,7 +44,7 @@ def pack(
     verbose: bool = False,
     packmol: str = "packmol",
     pbc: bool = True,
-    _format: str = "pdb",
+    _format: FORMAT = "pdb",
 ) -> ase.Atoms:
     """
     Pack the given molecules into a box with the specified density.

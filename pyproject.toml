@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "rdkit2ase"
-version = "0.1.3"
+version = "0.1.4"
 description = "interface between rdkit and ASE"
 authors = ["zincwarecode <zincwarecode@gmail.com>"]
 license = "Apache-2.0"

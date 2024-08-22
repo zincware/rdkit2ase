@@ -121,6 +121,9 @@ structure struct_{category}_{idx}.{_format}
 
 end structure
 """
+    if verbose:
+        print(f"{packmol} < ")
+        print(file)
 
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir = pathlib.Path(tmpdir)

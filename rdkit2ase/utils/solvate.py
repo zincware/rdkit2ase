@@ -5,11 +5,14 @@ import typing as t
 
 import ase.io
 import numpy as np
+from ase.io.proteindatabank import write_proteindatabank
 from rdkit import Chem
 
 OBJ_OR_STR = t.Union[str, Chem.rdchem.Mol, ase.Atoms]
 
 OBJ_OR_STR_OR_LIST = t.Union[OBJ_OR_STR, t.List[t.Tuple[OBJ_OR_STR, float]]]
+
+FORMAT = t.Literal["pdb", "xyz"]
 
 
 def _get_cell_vectors(images: list[ase.Atoms], density: float) -> list[float]:
@@ -38,8 +41,10 @@ def pack(
     density: float,
     seed: int = 42,
     tolerance: float = 2,
-    logging: bool = False,
+    verbose: bool = False,
     packmol: str = "packmol",
+    pbc: bool = True,
+    _format: FORMAT = "pdb",
 ) -> ase.Atoms:
     """
     Pack the given molecules into a box with the specified density.
@@ -56,10 +61,16 @@ def pack(
         The random seed for reproducibility, by default 42.
     tolerance : float, optional
         The tolerance for the packing algorithm, by default 2.
-    logging : bool, optional
+    verbose : bool, optional
         If True, enables logging of the packing process, by default False.
     packmol : str, optional
         The path to the packmol executable, by default "packmol".
+    pbc : bool, optional
+        Ensure tolerance across periodic boundaries, by default True.
+    _format : str, optional
+        The file format used for communication with packmol, by default "pdb".
+        WARNING: Do not use "xyz". This might cause issues and
+        is only implemented for debugging purposes.
 
     Returns
     -------
@@ -94,37 +105,47 @@ def pack(
 
     file = f"""
 tolerance {tolerance}
-filetype xyz
-output mixture.xyz
-seed {seed}
+filetype {_format}
+output mixture.{_format}
+seed {seed}"""
+    if pbc:
+        file += f"""
 pbc 0 0 0 {" ".join([f"{x:.6f}" for x in cell])}
-    """
+"""
     for category, indices in enumerate(selected_idx):
         for idx in indices:
             file += f"""
-structure struct_{category}_{idx}.xyz
-    filetype xyz
+structure struct_{category}_{idx}.{_format}
+    filetype {_format}
+    number 1
+    inside box 0. 0. 0. {cell[0]} {cell[1]} {cell[2]}
 
 end structure
-                     """
+"""
+    if verbose:
+        print(f"{packmol} < ")
+        print(file)
 
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir = pathlib.Path(tmpdir)
         for category, indices in enumerate(selected_idx):
             for idx in set(indices):
                 atoms = data[category][idx]
-                ase.io.write(
-                    tmpdir / f"struct_{category}_{idx}.xyz", atoms, format="xyz"
-                )
+                if _format == "pdb":
+                    write_proteindatabank(
+                        tmpdir / f"struct_{category}_{idx}.pdb", atoms
+                    )
+                elif _format == "xyz":
+                    ase.io.write(tmpdir / f"struct_{category}_{idx}.xyz", atoms)
         (tmpdir / "pack.inp").write_text(file)
         subprocess.run(
             f"{packmol} < pack.inp",
             cwd=tmpdir,
             shell=True,
             check=True,
-            capture_output=not logging,
+            capture_output=not verbose,
         )
-        atoms: ase.Atoms = ase.io.read(tmpdir / "mixture.xyz")
+        atoms: ase.Atoms = ase.io.read(tmpdir / f"mixture.{_format}")
 
     atoms.cell = cell
     atoms.pbc = True

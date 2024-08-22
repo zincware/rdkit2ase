@@ -39,6 +39,7 @@ def pack(
     seed: int = 42,
     tolerance: float = 2,
     logging: bool = False,
+    packmol: str = "packmol",
 ) -> ase.Atoms:
     """
     Pack the given molecules into a box with the specified density.
@@ -57,6 +58,8 @@ def pack(
         The tolerance for the packing algorithm, by default 2.
     logging : bool, optional
         If True, enables logging of the packing process, by default False.
+    packmol : str, optional
+        The path to the packmol executable, by default "packmol".
 
     Returns
     -------
@@ -115,7 +118,7 @@ end structure
                 )
         (tmpdir / "pack.inp").write_text(file)
         subprocess.run(
-            "packmol < pack.inp",
+            f"{packmol} < pack.inp",
             cwd=tmpdir,
             shell=True,
             check=True,

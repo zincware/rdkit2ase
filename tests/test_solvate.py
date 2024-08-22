@@ -16,6 +16,17 @@ def test_pack_pbc():
     atoms_dist = atoms.get_all_distances(mic=True)
     assert len(atoms) == np.sum(atoms_dist < min_mol_dist * 0.99)
 
+def test_pack_seeded():
+    water = smiles2conformers("O", 1)
+
+    atoms1 = pack([water], [1], 1000, seed=42)
+    atoms2 = pack([water], [1], 1000, seed=42)
+
+    assert np.all(atoms1.get_positions() == atoms2.get_positions())
+
+    atoms3 = pack([water], [1], 1000, seed=43)
+    assert not np.all(atoms1.get_positions() == atoms3.get_positions())
+
 
 def test_pack_density():
     ethanol = smiles2conformers("CCO", 1)

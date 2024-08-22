@@ -93,6 +93,7 @@ def pack(
 tolerance {tolerance}
 filetype xyz
 output mixture.xyz
+seed {seed}
 pbc 0 0 0 {" ".join([f"{x:.6f}" for x in cell])}
     """
     for category, indices in enumerate(selected_idx):

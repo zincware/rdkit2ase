@@ -14,7 +14,10 @@ FORMAT = t.Literal["pdb", "xyz"]
 
 
 def _calculate_box_dimensions(images: list[ase.Atoms], density: float) -> list[float]:
-    """Calculates the dimensions of the simulation box based on the molar volume and target density."""
+    """Calculates the dimensions of the simulation box
+
+    based on the molar volume and target density.
+    """
     total_mass = sum(sum(atoms.get_masses()) for atoms in images)
     molar_volume = total_mass / density / 1000  # m^3 / mol
     volume_per_mol = molar_volume * ase.units.m**3 / ase.units.mol

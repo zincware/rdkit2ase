@@ -1,31 +1,31 @@
-[tool.poetry]
+[project]
 name = "rdkit2ase"
-version = "0.1.4"
-description = "interface between rdkit and ASE"
-authors = ["zincwarecode <zincwarecode@gmail.com>"]
-license = "Apache-2.0"
+version = "0.1.5"
+description = "Interface between rdkit and ASE"
 readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.10"
+authors = [
+    { name = "Fabian Zills", email = "fzills@icp.uni-stuttgart.de" },
+]
+dependencies = [
+    "ase>=3.25.0",
+    "rdkit>=2024",
+]
 
-[tool.poetry.urls]
-repository = "https://github.com/zincware/rdkit2ase"
-
-[tool.poetry.dependencies]
-python = "^3.10"
-rdkit = "^2024"
-ase = "^3.22"
-networkx = "^3"
-
-[tool.poetry.group.dev.dependencies]
-pre-commit = "^3.3.3"
-pytest = "^7.4.0"
-coverage = "^7.4.0"
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+[dependency-groups]
+dev = [
+    "pytest-cov>=6.1.1",
+    "pytest>=8.3.5",
+    "ruff>=0.11.8",
+]
 
 [tool.ruff.lint]
 select = ["E", "F", "N", "C", "I"]
 extend-ignore = [
     "D213", "D203", "N802", "N801"
 ]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

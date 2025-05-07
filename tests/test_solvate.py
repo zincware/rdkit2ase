@@ -56,3 +56,16 @@ def test_pack_atoms(packmol):
     atoms = pack([methane], [2], density=800, packmol=packmol)
     assert atoms.get_chemical_formula() == "C2H8"
     assert atoms.get_volume() == pytest.approx(66.6, abs=0.001)
+
+
+@pytest.mark.parametrize("packmol", ["packmol", "packmol.jl"])
+def test_pack_connectivity(packmol):
+    water = smiles2conformers("O", 1)
+    formaldehyde = smiles2conformers("C=O", 1)
+    hydrochloric_acid = smiles2conformers("Cl", 1)
+
+    atoms = pack(
+        [formaldehyde, water, hydrochloric_acid], [1, 1, 1], density=1000, packmol=packmol
+    )
+    assert atoms.get_chemical_formula() == "CH5ClO2"
+    assert atoms.info["connectivity"] == [(0, 1, 2.0), (0, 2, 1.0), (0, 3, 1.0)] + [(4, 5, 1.0), (4, 6, 1.0)] + [(7, 8, 1.0)]

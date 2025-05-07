@@ -138,13 +138,25 @@ end structure
                 elif _format == "xyz":
                     ase.io.write(tmpdir / f"struct_{category}_{idx}.xyz", atoms)
         (tmpdir / "pack.inp").write_text(file)
-        subprocess.run(
-            f"{packmol} < pack.inp",
-            cwd=tmpdir,
-            shell=True,
-            check=True,
-            capture_output=not verbose,
-        )
+        if packmol == "packmol.jl":
+            with open(tmpdir / "pack.jl", "w") as f:
+                f.write("using Packmol \n")
+                f.write('run_packmol("pack.inp") \n')
+            subprocess.run(
+                f"julia {tmpdir / 'pack.jl'}",
+                cwd=tmpdir,
+                shell=True,
+                check=True,
+                capture_output=not verbose,
+            )
+        else:
+            subprocess.run(
+                f"{packmol} < pack.inp",
+                cwd=tmpdir,
+                shell=True,
+                check=True,
+                capture_output=not verbose,
+            )
         atoms: ase.Atoms = ase.io.read(tmpdir / f"mixture.{_format}")
 
     atoms.cell = cell

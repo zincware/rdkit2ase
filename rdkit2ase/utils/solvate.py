@@ -11,9 +11,6 @@ from rdkit import Chem
 OBJ_OR_STR = t.Union[str, Chem.rdchem.Mol, ase.Atoms]
 OBJ_OR_STR_OR_LIST = t.Union[OBJ_OR_STR, t.List[t.Tuple[OBJ_OR_STR, float]]]
 FORMAT = t.Literal["pdb", "xyz"]
-ARRAY_KEYS = t.Literal[
-    "occupancy", "bfactor", "residuenames", "atomtypes", "residuenumbers"
-]
 
 
 def _calculate_box_dimensions(images: list[ase.Atoms], density: float) -> list[float]:
@@ -125,7 +122,7 @@ def _extract_atom_arrays(
     ase.Atoms
         The packed ASE Atoms object with the copied arrays and bonds.
     """
-    array_keys: list[ARRAY_KEYS] = [
+    array_keys = [
         "occupancy",
         "bfactor",
         "residuenames",

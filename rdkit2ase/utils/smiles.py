@@ -2,8 +2,6 @@ import ase
 from rdkit import Chem
 from rdkit.Chem import rdDistGeom
 
-from ..rdkit2ase import rdkit2ase
-
 
 def smiles2atoms(smiles: str, seed: int = 42) -> ase.Atoms:
     """
@@ -15,8 +13,7 @@ def smiles2atoms(smiles: str, seed: int = 42) -> ase.Atoms:
     Returns:
         atoms (ase.Atoms): The Atoms object.
     """
-    mol = Chem.MolFromSmiles(smiles)
-    return rdkit2ase(mol, seed=seed)
+    return smiles2conformers(smiles, 1, seed)[0]
 
 
 def smiles2conformers(
@@ -47,11 +44,25 @@ def smiles2conformers(
 
     images: list[ase.Atoms] = []
 
+                # print the bond information
+    bonds = []
+    for bond in mol.GetBonds():
+        bonds.append(
+            (
+                bond.GetBeginAtomIdx(),
+                bond.GetEndAtomIdx(),
+                bond.GetBondTypeAsDouble(),
+            )
+        )
+
     for conf in mol.GetConformers():
+
         atoms = ase.Atoms(
             positions=conf.GetPositions(),
             numbers=[atom.GetAtomicNum() for atom in mol.GetAtoms()],
         )
+        atoms.info["smiles"] = smiles
+        atoms.info["connectivity"] = bonds
         images.append(atoms)
 
     return images

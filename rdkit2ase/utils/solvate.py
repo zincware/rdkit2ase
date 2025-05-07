@@ -156,6 +156,17 @@ def pack(
     Atoms(symbols='C10H44O12', pbc=True, cell=[8.4, 8.4, 8.4])
     """
     selected_images = _select_conformers(data, counts, seed)
+    occupancy_available = any("occupancy" in atoms.arrays for atoms in selected_images)
+    bfactor_available = any("bfactor" in atoms.arrays for atoms in selected_images)
+    residuenames_available = any(
+        "residuenames" in atoms.arrays for atoms in selected_images
+    )
+    atomtypes_available = any(
+        "atomtypes" in atoms.arrays for atoms in selected_images
+    )
+    residuenumbers_available = any(
+        "residuenumbers" in atoms.arrays for atoms in selected_images
+    )
     cell = _calculate_box_dimensions(images=selected_images, density=density)
 
     packmol_input = _generate_packmol_input(
@@ -174,4 +185,14 @@ def pack(
 
     packed_atoms.cell = cell
     packed_atoms.pbc = True
+    if not occupancy_available:
+        packed_atoms.arrays.pop("occupancy", None)
+    if not bfactor_available:
+        packed_atoms.arrays.pop("bfactor", None)
+    # if not residuenames_available:
+    #     packed_atoms.arrays.pop("residuenames", None)
+    # if not atomtypes_available:
+    #     packed_atoms.arrays.pop("atomtypes", None)
+    # if not residuenumbers_available:
+    #     packed_atoms.arrays.pop("residuenumbers", None)
     return packed_atoms

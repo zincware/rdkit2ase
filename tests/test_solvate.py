@@ -1,6 +1,7 @@
 # from rdkit2ase import pack
 import numpy as np
 import pytest
+import numpy.testing as npt
 
 from rdkit2ase import pack, smiles2conformers
 
@@ -75,3 +76,7 @@ def test_pack_connectivity(packmol):
         (4, 5, 1.0),
         (4, 6, 1.0),
     ] + [(7, 8, 1.0)]
+
+    npt.assert_array_equal(
+       atoms.get_atomic_numbers(), [6, 8, 1, 1, 8, 1, 1, 17, 1]
+    )

@@ -4,6 +4,7 @@ import pytest
 
 from rdkit2ase import pack, smiles2conformers
 
+
 @pytest.mark.parametrize("packmol", ["packmol", "packmol.jl"])
 def test_pack_pbc(packmol):
     water = smiles2conformers("O", 1)

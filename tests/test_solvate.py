@@ -17,6 +17,7 @@ def test_pack_pbc(packmol):
     atoms_dist = atoms.get_all_distances(mic=True)
     assert len(atoms) == np.sum(atoms_dist < min_mol_dist * 0.99)
 
+
 @pytest.mark.parametrize("packmol", ["packmol", "packmol.jl"])
 def test_pack_seeded(packmol):
     water = smiles2conformers("O", 1)
@@ -28,6 +29,7 @@ def test_pack_seeded(packmol):
 
     atoms3 = pack([water], [1], 1000, seed=43, packmol=packmol)
     assert not np.all(atoms1.get_positions() == atoms3.get_positions())
+
 
 @pytest.mark.parametrize("packmol", ["packmol", "packmol.jl"])
 def test_pack_density(packmol):
@@ -41,8 +43,11 @@ def test_pack_density(packmol):
     atoms = pack([ethanol], [2], density=1000, packmol=packmol)
     assert atoms.get_chemical_formula() == "C4H12O2"
 
-    atoms = pack([ethanol, water, hydrochloric_acid], [2, 1, 3], density=1000, packmol=packmol)
+    atoms = pack(
+        [ethanol, water, hydrochloric_acid], [2, 1, 3], density=1000, packmol=packmol
+    )
     assert atoms.get_chemical_formula() == "C4H17Cl3O3"
+
 
 @pytest.mark.parametrize("packmol", ["packmol", "packmol.jl"])
 def test_pack_atoms(packmol):

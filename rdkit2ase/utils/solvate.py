@@ -65,6 +65,7 @@ def pack(
         If True, enables logging of the packing process, by default False.
     packmol : str, optional
         The path to the packmol executable, by default "packmol".
+        When installing packmol via jula, use "packmol.jl".
     pbc : bool, optional
         Ensure tolerance across periodic boundaries, by default True.
     _format : str, optional

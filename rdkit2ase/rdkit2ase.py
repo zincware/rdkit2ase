@@ -5,6 +5,7 @@ import rdkit.Chem.AllChem
 import rdkit.Chem.rdDetermineBonds
 from rdkit import Chem
 
+
 # Map float bond orders to RDKit bond types
 def bond_type_from_order(order):
     if order == 1.0:
@@ -47,7 +48,6 @@ def ase2rdkit(atoms: ase.Atoms) -> rdkit.Chem.Mol:
         for a, b, bond_order in atoms.info["connectivity"]:
             bond_type = bond_type_from_order(bond_order)
             mol.AddBond(a, b, bond_type)
-
 
         mol = mol.GetMol()
     else:

@@ -135,7 +135,6 @@ def _extract_atom_arrays(
     ]
     for key in array_keys:
         if any(key in atoms.arrays for atoms in selected_images):
-            #  Handle missing arrays more robustly.
             if key in packed_atoms.arrays:
                 continue
             all_arrays = [atoms.arrays.get(key) for atoms in selected_images]
@@ -144,14 +143,12 @@ def _extract_atom_arrays(
             )
             packed_atoms.arrays[key] = concatenated_array
 
-    # Handle bonds
     if all("connectivity" in atoms.info for atoms in selected_images):
         bonds = []
         offset = 0
         for atoms in selected_images:
-            if "connectivity" in atoms.info:  # Check if connectivity exists
-                for bond in atoms.info["connectivity"]:
-                    bonds.append((bond[0] + offset, bond[1] + offset, bond[2]))
+            for bond in atoms.info["connectivity"]:
+                bonds.append((bond[0] + offset, bond[1] + offset, bond[2]))
             offset += len(atoms)
         packed_atoms.info["connectivity"] = bonds
     return packed_atoms

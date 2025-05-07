@@ -44,7 +44,7 @@ def smiles2conformers(
 
     images: list[ase.Atoms] = []
 
-    # print the bond information
+    # collect the bond information
     bonds = []
     for bond in mol.GetBonds():
         bonds.append(

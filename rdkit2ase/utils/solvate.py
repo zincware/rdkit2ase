@@ -63,7 +63,12 @@ end structure
     return file
 
 
-def _run_packmol(packmol_executable: str, input_file: pathlib.Path, tmpdir: pathlib.Path, verbose: bool):
+def _run_packmol(
+    packmol_executable: str,
+    input_file: pathlib.Path,
+    tmpdir: pathlib.Path,
+    verbose: bool,
+):
     """Executes the PACKMOL program."""
     if packmol_executable == "packmol.jl":
         with open(tmpdir / "pack.jl", "w") as f:

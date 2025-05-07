@@ -70,7 +70,6 @@ end structure
     return packmol_input
 
 
-
 def _run_packmol(
     packmol_executable: str,
     input_file: pathlib.Path,
@@ -105,7 +104,6 @@ def _write_molecule_files(
             write_proteindatabank(filepath, atoms)
         elif _format == "xyz":
             ase.io.write(filepath, atoms)
-
 
 
 def _extract_atom_arrays(
@@ -155,7 +153,6 @@ def _extract_atom_arrays(
             offset += len(atoms)
         packed_atoms.info["connectivity"] = bonds
     return packed_atoms
-
 
 
 def pack(

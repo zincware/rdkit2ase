@@ -42,6 +42,9 @@ jobs:
           make
       - name: Pytest
         run: |
+          # add packmol to path
+          export PATH=$PATH:$(pwd)/packmol-${{ matrix.packmol-version}}
+          
           uv run python --version
           uv run pytest --cov --junitxml=junit.xml -o junit_family=legacy
       - name: Upload coverage to Codecov

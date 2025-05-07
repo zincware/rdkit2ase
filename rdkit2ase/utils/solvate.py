@@ -110,7 +110,7 @@ def _extract_atom_arrays(
     selected_images: list[ase.Atoms], packed_atoms: ase.Atoms
 ) -> ase.Atoms:
     """Extracts and adds relevant atom arrays (if present)
-    
+
     Add bonds from the input structures to the packed structure if available.
 
     Parameters

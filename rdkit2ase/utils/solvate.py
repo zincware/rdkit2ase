@@ -161,9 +161,7 @@ def pack(
     residuenames_available = any(
         "residuenames" in atoms.arrays for atoms in selected_images
     )
-    atomtypes_available = any(
-        "atomtypes" in atoms.arrays for atoms in selected_images
-    )
+    atomtypes_available = any("atomtypes" in atoms.arrays for atoms in selected_images)
     residuenumbers_available = any(
         "residuenumbers" in atoms.arrays for atoms in selected_images
     )

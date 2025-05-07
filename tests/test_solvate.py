@@ -4,14 +4,14 @@ import pytest
 
 from rdkit2ase import pack, smiles2conformers
 
-
-def test_pack_pbc():
+@pytest.mark.parametrize("packmol", ["packmol", "packmol.jl"])
+def test_pack_pbc(packmol):
     water = smiles2conformers("O", 1)
     mol_dist = water[0].get_all_distances()
     min_mol_dist = mol_dist[mol_dist > 0].min()
 
     # pack a box
-    atoms = pack([water], [10], 997, 42, tolerance=1.5)
+    atoms = pack([water], [10], 997, 42, tolerance=1.5, packmol=packmol)
 
     atoms_dist = atoms.get_all_distances(mic=True)
     assert len(atoms) == np.sum(atoms_dist < min_mol_dist * 0.99)

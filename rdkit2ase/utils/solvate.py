@@ -171,6 +171,23 @@ def pack(
         selected_images, cell, tolerance, seed, _format, pbc
     )
 
+    has_bonds = all("connectivity" in atoms.info for atoms in selected_images)
+    bonds = None
+    if has_bonds:
+        bonds = []
+        counter = 0
+        for atoms in selected_images:
+            connectivity = atoms.info["connectivity"]
+            for bond in connectivity:
+                bonds.append(
+                    (
+                        bond[0] + counter,
+                        bond[1] + counter,
+                        bond[2],
+                    )
+                )
+            counter += len(atoms)
+
     with tempfile.TemporaryDirectory() as tmpdir_str:
         tmpdir = pathlib.Path(tmpdir_str)
         _write_molecule_files(selected_images, tmpdir, _format)
@@ -187,10 +204,12 @@ def pack(
         packed_atoms.arrays.pop("occupancy", None)
     if not bfactor_available:
         packed_atoms.arrays.pop("bfactor", None)
-    # if not residuenames_available:
-    #     packed_atoms.arrays.pop("residuenames", None)
-    # if not atomtypes_available:
-    #     packed_atoms.arrays.pop("atomtypes", None)
-    # if not residuenumbers_available:
-    #     packed_atoms.arrays.pop("residuenumbers", None)
+    if not residuenames_available:
+        packed_atoms.arrays.pop("residuenames", None)
+    if not atomtypes_available:
+        packed_atoms.arrays.pop("atomtypes", None)
+    if not residuenumbers_available:
+        packed_atoms.arrays.pop("residuenumbers", None)
+    if has_bonds:
+        packed_atoms.info["connectivity"] = bonds
     return packed_atoms

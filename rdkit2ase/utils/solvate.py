@@ -9,30 +9,97 @@ from ase.io.proteindatabank import write_proteindatabank
 from rdkit import Chem
 
 OBJ_OR_STR = t.Union[str, Chem.rdchem.Mol, ase.Atoms]
-
 OBJ_OR_STR_OR_LIST = t.Union[OBJ_OR_STR, t.List[t.Tuple[OBJ_OR_STR, float]]]
-
 FORMAT = t.Literal["pdb", "xyz"]
 
 
-def _get_cell_vectors(images: list[ase.Atoms], density: float) -> list[float]:
-    """Get the box size from the molar volume.
+def _calculate_box_dimensions(images: list[ase.Atoms], density: float) -> list[float]:
+    """Calculates the dimensions of the simulation box
 
-    Attributes
-    ----------
-    images : list[ase.Atoms]
-        All the atoms that should be packed.
-    density: float
-        Density of the system in kg/m^3.
+    based on the molar volume and target density.
     """
-    molar_mass = sum(sum(atoms.get_masses()) for atoms in images)
-    molar_volume = molar_mass / density / 1000  # m^3 / mol
+    total_mass = sum(sum(atoms.get_masses()) for atoms in images)
+    molar_volume = total_mass / density / 1000  # m^3 / mol
+    volume_per_mol = molar_volume * ase.units.m**3 / ase.units.mol
+    box_edge = volume_per_mol ** (1 / 3)
+    return [box_edge] * 3
 
-    # convert to particles / A^3
-    volume = molar_volume * ase.units.m**3 / ase.units.mol
 
-    box = [volume ** (1 / 3) for _ in range(3)]
-    return box
+def _select_conformers(
+    data: list[list[ase.Atoms]], counts: list[int], seed: int
+) -> list[ase.Atoms]:
+    """Randomly selects the required number of conformers for each molecule type."""
+    rng = np.random.default_rng(seed)
+    selected_images = []
+    for images, count in zip(data, counts):
+        indices = rng.choice(range(len(images)), count, replace=len(images) < count)
+        selected_images.extend([images[idx] for idx in indices])
+    return selected_images
+
+
+def _generate_packmol_input(
+    selected_images: list[ase.Atoms],
+    cell: list[float],
+    tolerance: float,
+    seed: int,
+    _format: FORMAT,
+    pbc: bool,
+) -> str:
+    """Generates the input string for the PACKMOL program."""
+    file = f"""
+tolerance {tolerance}
+filetype {_format}
+output mixture.{_format}
+seed {seed}"""
+    if pbc:
+        file += f"""
+pbc 0 0 0 {" ".join([f"{x:.6f}" for x in cell])}
+"""
+    for i, atoms in enumerate(selected_images):
+        file += f"""
+structure struct_{i}.{_format}
+    filetype {_format}
+    number 1
+    inside box 0. 0. 0. {cell[0]} {cell[1]} {cell[2]}
+end structure
+"""
+    return file
+
+
+def _run_packmol(
+    packmol_executable: str,
+    input_file: pathlib.Path,
+    tmpdir: pathlib.Path,
+    verbose: bool,
+):
+    """Executes the PACKMOL program."""
+    if packmol_executable == "packmol.jl":
+        with open(tmpdir / "pack.jl", "w") as f:
+            f.write("using Packmol \n")
+            f.write(f'run_packmol("{input_file.name}") \n')
+        command = f"julia {tmpdir / 'pack.jl'}"
+    else:
+        command = f"{packmol_executable} < {input_file.name}"
+
+    subprocess.run(
+        command,
+        cwd=tmpdir,
+        shell=True,
+        check=True,
+        capture_output=not verbose,
+    )
+
+
+def _write_molecule_files(
+    selected_images: list[ase.Atoms], tmpdir: pathlib.Path, _format: FORMAT
+):
+    """Writes the individual molecule structures to files in the temporary directory."""
+    for i, atoms in enumerate(selected_images):
+        filepath = tmpdir / f"struct_{i}.{_format}"
+        if _format == "pdb":
+            write_proteindatabank(filepath, atoms)
+        elif _format == "xyz":
+            ase.io.write(filepath, atoms)
 
 
 def pack(
@@ -47,7 +114,7 @@ def pack(
     _format: FORMAT = "pdb",
 ) -> ase.Atoms:
     """
-    Pack the given molecules into a box with the specified density.
+    Packs the given molecules into a box with the specified density using PACKMOL.
 
     Parameters
     ----------
@@ -65,6 +132,7 @@ def pack(
         If True, enables logging of the packing process, by default False.
     packmol : str, optional
         The path to the packmol executable, by default "packmol".
+        When installing packmol via jula, use "packmol.jl".
     pbc : bool, optional
         Ensure tolerance across periodic boundaries, by default True.
     _format : str, optional
@@ -87,66 +155,23 @@ def pack(
     >>> print(packed_system)
     Atoms(symbols='C10H44O12', pbc=True, cell=[8.4, 8.4, 8.4])
     """
-    rng = np.random.default_rng(seed)
-    selected_idx: list[np.ndarray] = []
+    selected_images = _select_conformers(data, counts, seed)
+    cell = _calculate_box_dimensions(images=selected_images, density=density)
 
-    for images, count in zip(data, counts):
-        selected_idx.append(
-            rng.choice(range(len(images)), count, replace=len(images) < count)
-        )
+    packmol_input = _generate_packmol_input(
+        selected_images, cell, tolerance, seed, _format, pbc
+    )
 
-    images = [
-        [data[category][idx] for idx in indices]
-        for category, indices in enumerate(selected_idx)
-    ]
-    images = sum(images, [])
+    with tempfile.TemporaryDirectory() as tmpdir_str:
+        tmpdir = pathlib.Path(tmpdir_str)
+        _write_molecule_files(selected_images, tmpdir, _format)
+        (tmpdir / "pack.inp").write_text(packmol_input)
+        if verbose:
+            print(f"{packmol} < ")
+            print(packmol_input)
+        _run_packmol(packmol, tmpdir / "pack.inp", tmpdir, verbose)
+        packed_atoms: ase.Atoms = ase.io.read(tmpdir / f"mixture.{_format}")
 
-    cell = _get_cell_vectors(images=images, density=density)
-
-    file = f"""
-tolerance {tolerance}
-filetype {_format}
-output mixture.{_format}
-seed {seed}"""
-    if pbc:
-        file += f"""
-pbc 0 0 0 {" ".join([f"{x:.6f}" for x in cell])}
-"""
-    for category, indices in enumerate(selected_idx):
-        for idx in indices:
-            file += f"""
-structure struct_{category}_{idx}.{_format}
-    filetype {_format}
-    number 1
-    inside box 0. 0. 0. {cell[0]} {cell[1]} {cell[2]}
-
-end structure
-"""
-    if verbose:
-        print(f"{packmol} < ")
-        print(file)
-
-    with tempfile.TemporaryDirectory() as tmpdir:
-        tmpdir = pathlib.Path(tmpdir)
-        for category, indices in enumerate(selected_idx):
-            for idx in set(indices):
-                atoms = data[category][idx]
-                if _format == "pdb":
-                    write_proteindatabank(
-                        tmpdir / f"struct_{category}_{idx}.pdb", atoms
-                    )
-                elif _format == "xyz":
-                    ase.io.write(tmpdir / f"struct_{category}_{idx}.xyz", atoms)
-        (tmpdir / "pack.inp").write_text(file)
-        subprocess.run(
-            f"{packmol} < pack.inp",
-            cwd=tmpdir,
-            shell=True,
-            check=True,
-            capture_output=not verbose,
-        )
-        atoms: ase.Atoms = ase.io.read(tmpdir / f"mixture.{_format}")
-
-    atoms.cell = cell
-    atoms.pbc = True
-    return atoms
+    packed_atoms.cell = cell
+    packed_atoms.pbc = True
+    return packed_atoms

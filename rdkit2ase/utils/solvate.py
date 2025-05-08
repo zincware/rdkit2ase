@@ -42,28 +42,29 @@ def _generate_packmol_input(
     cell: list[float],
     tolerance: float,
     seed: int,
-    _format: FORMAT,
+    output_format: FORMAT,
     pbc: bool,
 ) -> str:
     """Generates the input string for the PACKMOL program."""
-    file = f"""
+    packmol_input = f"""
 tolerance {tolerance}
-filetype {_format}
-output mixture.{_format}
-seed {seed}"""
+filetype {output_format}
+output mixture.{output_format}
+seed {seed}
+"""
     if pbc:
-        file += f"""
+        packmol_input += f"""
 pbc 0 0 0 {" ".join([f"{x:.6f}" for x in cell])}
 """
-    for i, atoms in enumerate(selected_images):
-        file += f"""
-structure struct_{i}.{_format}
-    filetype {_format}
+    for i, _ in enumerate(selected_images):
+        packmol_input += f"""
+structure struct_{i}.{output_format}
+    filetype {output_format}
     number 1
     inside box 0. 0. 0. {cell[0]} {cell[1]} {cell[2]}
 end structure
 """
-    return file
+    return packmol_input
 
 
 def _run_packmol(
@@ -71,7 +72,7 @@ def _run_packmol(
     input_file: pathlib.Path,
     tmpdir: pathlib.Path,
     verbose: bool,
-):
+) -> None:
     """Executes the PACKMOL program."""
     if packmol_executable == "packmol.jl":
         with open(tmpdir / "pack.jl", "w") as f:
@@ -92,7 +93,7 @@ def _run_packmol(
 
 def _write_molecule_files(
     selected_images: list[ase.Atoms], tmpdir: pathlib.Path, _format: FORMAT
-):
+) -> None:
     """Writes the individual molecule structures to files in the temporary directory."""
     for i, atoms in enumerate(selected_images):
         filepath = tmpdir / f"struct_{i}.{_format}"
@@ -100,6 +101,53 @@ def _write_molecule_files(
             write_proteindatabank(filepath, atoms)
         elif _format == "xyz":
             ase.io.write(filepath, atoms)
+
+
+def _extract_atom_arrays(
+    selected_images: list[ase.Atoms], packed_atoms: ase.Atoms
+) -> ase.Atoms:
+    """Extracts and adds relevant atom arrays (if present)
+
+    Add bonds from the input structures to the packed structure if available.
+
+    Parameters
+    ----------
+    selected_images : list[ase.Atoms]
+        List of input ASE Atoms objects.
+    packed_atoms : ase.Atoms
+        The ASE Atoms object representing the packed system.
+
+    Returns
+    -------
+    ase.Atoms
+        The packed ASE Atoms object with the copied arrays and bonds.
+    """
+    array_keys = [
+        "occupancy",
+        "bfactor",
+        "residuenames",
+        "atomtypes",
+        "residuenumbers",
+    ]
+    for key in array_keys:
+        if any(key in atoms.arrays for atoms in selected_images):
+            if key in packed_atoms.arrays:
+                continue
+            all_arrays = [atoms.arrays.get(key) for atoms in selected_images]
+            concatenated_array = np.concatenate(
+                [arr for arr in all_arrays if arr is not None]
+            )
+            packed_atoms.arrays[key] = concatenated_array
+
+    if all("connectivity" in atoms.info for atoms in selected_images):
+        bonds = []
+        offset = 0
+        for atoms in selected_images:
+            for bond in atoms.info["connectivity"]:
+                bonds.append((bond[0] + offset, bond[1] + offset, bond[2]))
+            offset += len(atoms)
+        packed_atoms.info["connectivity"] = bonds
+    return packed_atoms
 
 
 def pack(
@@ -111,7 +159,7 @@ def pack(
     verbose: bool = False,
     packmol: str = "packmol",
     pbc: bool = True,
-    _format: FORMAT = "pdb",
+    output_format: FORMAT = "pdb",
 ) -> ase.Atoms:
     """
     Packs the given molecules into a box with the specified density using PACKMOL.
@@ -135,7 +183,7 @@ def pack(
         When installing packmol via jula, use "packmol.jl".
     pbc : bool, optional
         Ensure tolerance across periodic boundaries, by default True.
-    _format : str, optional
+    output_format : str, optional
         The file format used for communication with packmol, by default "pdb".
         WARNING: Do not use "xyz". This might cause issues and
         is only implemented for debugging purposes.
@@ -157,21 +205,22 @@ def pack(
     """
     selected_images = _select_conformers(data, counts, seed)
     cell = _calculate_box_dimensions(images=selected_images, density=density)
-
     packmol_input = _generate_packmol_input(
-        selected_images, cell, tolerance, seed, _format, pbc
+        selected_images, cell, tolerance, seed, output_format, pbc
     )
 
     with tempfile.TemporaryDirectory() as tmpdir_str:
         tmpdir = pathlib.Path(tmpdir_str)
-        _write_molecule_files(selected_images, tmpdir, _format)
+        _write_molecule_files(selected_images, tmpdir, output_format)
         (tmpdir / "pack.inp").write_text(packmol_input)
+
         if verbose:
             print(f"{packmol} < ")
             print(packmol_input)
         _run_packmol(packmol, tmpdir / "pack.inp", tmpdir, verbose)
-        packed_atoms: ase.Atoms = ase.io.read(tmpdir / f"mixture.{_format}")
+        packed_atoms: ase.Atoms = ase.io.read(tmpdir / f"mixture.{output_format}")
 
     packed_atoms.cell = cell
     packed_atoms.pbc = True
+    packed_atoms = _extract_atom_arrays(selected_images, packed_atoms)
     return packed_atoms

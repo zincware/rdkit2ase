@@ -22,13 +22,23 @@ def bond_type_from_order(order):
 
 def rdkit2ase(mol, seed: int = 42) -> ase.Atoms:
     """Convert an RDKit molecule to an ASE atoms object."""
+    smiles = Chem.MolToSmiles(mol)
     mol = rdkit.Chem.AddHs(mol)
     rdkit.Chem.AllChem.EmbedMolecule(mol, randomSeed=seed)
 
-    return ase.Atoms(
+    atoms = ase.Atoms(
         positions=mol.GetConformer().GetPositions(),
         numbers=[atom.GetAtomicNum() for atom in mol.GetAtoms()],
     )
+    # add smiles and bond information to atoms.info
+    atoms.info["smiles"] = smiles
+    atoms.info["connectivity"] = []
+    for bond in mol.GetBonds():
+        a1 = bond.GetBeginAtomIdx()
+        a2 = bond.GetEndAtomIdx()
+        order = bond.GetBondTypeAsDouble()
+        atoms.info["connectivity"].append((a1, a2, order))
+    return atoms
 
 
 def ase2rdkit(atoms: ase.Atoms) -> rdkit.Chem.Mol:

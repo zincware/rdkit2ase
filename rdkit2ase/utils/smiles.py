@@ -46,7 +46,6 @@ def smiles2conformers(
     charges = [atom.GetFormalCharge() for atom in mol.GetAtoms()]
     if not any(charge != 0 for charge in charges):
         charges = None
-        
 
     # collect the bond information
     bonds = []

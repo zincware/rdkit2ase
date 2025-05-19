@@ -3,7 +3,7 @@ import numpy as np
 import numpy.testing as npt
 import pytest
 
-from rdkit2ase import pack, smiles2conformers, ase2rdkit
+from rdkit2ase import ase2rdkit, pack, smiles2conformers
 
 
 @pytest.mark.parametrize("packmol", ["packmol", "packmol.jl"])

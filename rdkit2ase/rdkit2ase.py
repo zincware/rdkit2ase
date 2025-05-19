@@ -24,7 +24,6 @@ def rdkit2ase(mol, seed: int = 42) -> ase.Atoms:
     """Convert an RDKit molecule to an ASE atoms object."""
     mol = rdkit.Chem.AddHs(mol)
     rdkit.Chem.AllChem.EmbedMolecule(mol, randomSeed=seed)
-    rdkit.Chem.AllChem.UFFOptimizeMolecule(mol)
 
     return ase.Atoms(
         positions=mol.GetConformer().GetPositions(),

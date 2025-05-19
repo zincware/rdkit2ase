@@ -25,6 +25,7 @@ def rdkit2ase(mol, seed: int = 42) -> ase.Atoms:
     """Convert an RDKit molecule to an ASE atoms object."""
     smiles = Chem.MolToSmiles(mol)
     mol = rdkit.Chem.AddHs(mol)
+    charges = [atom.GetFormalCharge() for atom in mol.GetAtoms()]
     rdkit.Chem.AllChem.EmbedMolecule(mol, randomSeed=seed)
 
     atoms = ase.Atoms(
@@ -38,6 +39,9 @@ def rdkit2ase(mol, seed: int = 42) -> ase.Atoms:
         a2 = bond.GetEndAtomIdx()
         order = bond.GetBondTypeAsDouble()
         atoms.info["connectivity"].append((a1, a2, order))
+    # check if any of the charges are not zero
+    if any(charge != 0 for charge in charges):
+        atoms.set_initial_charges(charges)
     return atoms
 
 
@@ -46,10 +50,11 @@ def ase2rdkit(atoms: ase.Atoms) -> rdkit.Chem.Mol:
     if "connectivity" in atoms.info:
         mol = Chem.RWMol()
         atom_idx_map = []
+        charges = atoms.get_initial_charges()
 
-        # Add atoms
-        for z in atoms.get_chemical_symbols():
+        for z, charge in zip(atoms.get_chemical_symbols(), charges):
             atom = Chem.Atom(z)
+            atom.SetFormalCharge(int(charge))
             idx = mol.AddAtom(atom)
             atom_idx_map.append(idx)
 

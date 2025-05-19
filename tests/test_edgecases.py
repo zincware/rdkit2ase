@@ -1,3 +1,5 @@
+import numpy.testing as npt
+
 import rdkit2ase
 
 
@@ -9,5 +11,7 @@ def test_na_cn():
     assert len(cnminus) == 10
     for atom in naplus:
         assert len(atom) == 1
+        assert atom.get_initial_charges() == [1]
     for atom in cnminus:
         assert len(atom) == 2
+        npt.assert_array_equal(atom.get_initial_charges(), [-1, 0])

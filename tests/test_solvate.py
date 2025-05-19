@@ -3,7 +3,7 @@ import numpy as np
 import numpy.testing as npt
 import pytest
 
-from rdkit2ase import pack, smiles2conformers
+from rdkit2ase import ase2rdkit, pack, smiles2conformers
 
 
 @pytest.mark.parametrize("packmol", ["packmol", "packmol.jl"])
@@ -78,3 +78,32 @@ def test_pack_connectivity(packmol):
     ] + [(7, 8, 1.0)]
 
     npt.assert_array_equal(atoms.get_atomic_numbers(), [6, 8, 1, 1, 8, 1, 1, 17, 1])
+
+
+@pytest.mark.parametrize("packmol", ["packmol", "packmol.jl"])
+def test_pack_charges(packmol):
+    water = smiles2conformers("O", 1)
+    sodiumcyanide = smiles2conformers("[C-]#N.[Na+]", 1)
+    glycine = smiles2conformers("[NH3+]CC([O-])=O", 1)  # small zwitterion
+
+    atoms = pack(
+        [water, sodiumcyanide, glycine],
+        [1, 1, 1],
+        density=1000,
+        packmol=packmol,
+    )
+    npt.assert_array_equal(
+        atoms.get_atomic_numbers(), [8, 1, 1, 6, 7, 11] + [7, 6, 6, 8, 8, 1, 1, 1, 1, 1]
+    )
+    npt.assert_array_equal(
+        atoms.get_initial_charges(),
+        [0, 0, 0, -1, 0, 1] + [1, 0, 0, -1, 0, 0, 0, 0, 0, 0],
+    )
+
+    # go back to molecule
+
+    mol = ase2rdkit(atoms)
+    assert mol.GetNumAtoms() == len(atoms)
+    # check charges
+    charges = [atom.GetFormalCharge() for atom in mol.GetAtoms()]
+    assert charges == [0, 0, 0, -1, 0, 1] + [1, 0, 0, -1, 0, 0, 0, 0, 0, 0]

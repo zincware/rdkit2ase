@@ -147,6 +147,9 @@ def _extract_atom_arrays(
                 bonds.append((bond[0] + offset, bond[1] + offset, bond[2]))
             offset += len(atoms)
         packed_atoms.info["connectivity"] = bonds
+    charges = np.concatenate([atom.get_initial_charges() for atom in selected_images])
+    if any(charge != 0 for charge in charges):
+        packed_atoms.set_initial_charges(charges)
     return packed_atoms
 
 

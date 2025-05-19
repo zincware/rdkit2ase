@@ -46,10 +46,11 @@ def ase2rdkit(atoms: ase.Atoms) -> rdkit.Chem.Mol:
     if "connectivity" in atoms.info:
         mol = Chem.RWMol()
         atom_idx_map = []
+        charges = atoms.get_initial_charges()
 
-        # Add atoms
-        for z in atoms.get_chemical_symbols():
+        for z, charge in zip(atoms.get_chemical_symbols(), charges):
             atom = Chem.Atom(z)
+            atom.SetFormalCharge(int(charge))
             idx = mol.AddAtom(atom)
             atom_idx_map.append(idx)
 

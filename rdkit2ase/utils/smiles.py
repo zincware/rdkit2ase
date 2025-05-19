@@ -43,6 +43,7 @@ def smiles2conformers(
     )
 
     images: list[ase.Atoms] = []
+    charges = [atom.GetFormalCharge() for atom in mol.GetAtoms()]
 
     # collect the bond information
     bonds = []
@@ -62,6 +63,7 @@ def smiles2conformers(
         )
         atoms.info["smiles"] = smiles
         atoms.info["connectivity"] = bonds
+        atoms.set_initial_charges(charges)
         images.append(atoms)
 
     return images

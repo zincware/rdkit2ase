@@ -3,6 +3,7 @@ import numpy as np
 import numpy.testing as npt
 import pytest
 import rdkit
+from rdkit import Chem
 
 from rdkit2ase import ase2rdkit, rdkit2ase, smiles2atoms
 
@@ -17,6 +18,19 @@ def methane():
         (0.629, -0.629, -0.629),  # Hydrogen
     ]
     return ase.Atoms("CH4", positions=positions)
+
+
+@pytest.fixture
+def nacn():
+    positions = [
+        (0.000, 0.000, 0.000),  # Sodium
+        (0.000, 0.000, 1.000),  # Carbon
+        (0.000, 0.000, 2.000),  # Nitrogen
+    ]
+    symbols = ["Na", "C", "N"]
+    atoms = ase.Atoms(symbols, positions=positions)
+    atoms.set_initial_charges([1, 0, -1])
+    return atoms
 
 
 @pytest.fixture
@@ -46,6 +60,15 @@ def test_ase2rdkit(methane):
     # assert the smiles string
     smiles = rdkit.Chem.MolToSmiles(rdkit_mol)
     assert smiles == "[H]C([H])([H])[H]"
+
+# TODO: this is currently not working!
+# def test_ase2rdkit_nacn(nacn):
+#     rdkit_mol = ase2rdkit(nacn)
+#     assert isinstance(rdkit_mol, rdkit.Chem.Mol)
+#     assert rdkit.Chem.MolToSmiles(rdkit_mol) == "[Na+].[C-]#N"
+#     assert rdkit_mol.GetNumAtoms() == 3
+#     assert rdkit_mol.GetNumBonds() == 1
+#     assert rdkit_mol.GetBondWithIdx(0).GetBondTypeAsDouble() == 3.0
 
 
 def test_ase2rdkit2ase(methane):
@@ -100,3 +123,17 @@ def test_seeded_smiles_to_atoms():
     assert not np.allclose(
         atoms.get_positions(), smiles2atoms("CCO", seed=43).get_positions()
     )
+
+
+def test_rdkit2ase_nacn():
+    # create sodium cyanide molecule
+    mol = Chem.MolFromSmiles("[C-]#N.[Na+]")
+    mol = Chem.AddHs(mol)
+    atoms = rdkit2ase(mol)
+    assert atoms.get_chemical_formula() == "CNNa"
+    assert atoms.info["smiles"] == "[C-]#N.[Na+]"
+    assert atoms.info["connectivity"] == [
+        (0, 1, 3.0),
+    ]
+    assert atoms.get_initial_charges().tolist() == [-1, 0, 1]
+    assert atoms.get_atomic_numbers().tolist() == [6, 7, 11]

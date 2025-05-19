@@ -84,7 +84,7 @@ def test_pack_connectivity(packmol):
 def test_pack_charges(packmol):
     water = smiles2conformers("O", 1)
     sodiumcyanide = smiles2conformers("[C-]#N.[Na+]", 1)
-    glycine = smiles2conformers("[NH3+]CC([O-])=O", 1) # small zwitterion
+    glycine = smiles2conformers("[NH3+]CC([O-])=O", 1)  # small zwitterion
 
     atoms = pack(
         [water, sodiumcyanide, glycine],

@@ -1,5 +1,6 @@
 import rdkit2ase
 
+
 def test_na_cn():
     # create sodium cyanide molecule
     naplus = rdkit2ase.smiles2conformers("[Na+]", numConfs=10)

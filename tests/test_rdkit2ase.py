@@ -30,7 +30,13 @@ def test_rdkit2ase(methanol):
     assert ase_atoms.get_chemical_formula() == "CH4O"
     assert ase_atoms.info["smiles"] == "CO"
     # assert connectivity
-    assert ase_atoms.info["connectivity"] == [(0, 1, 1.0), (0, 2, 1.0), (0, 3, 1.0), (0, 4, 1.0), (1, 5, 1.0)]
+    assert ase_atoms.info["connectivity"] == [
+        (0, 1, 1.0),
+        (0, 2, 1.0),
+        (0, 3, 1.0),
+        (0, 4, 1.0),
+        (1, 5, 1.0),
+    ]
     assert ase_atoms.get_atomic_numbers().tolist() == [6, 8, 1, 1, 1, 1]
 
 

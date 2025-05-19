@@ -2,8 +2,9 @@ import itertools
 
 import numpy as np
 import pytest
+from rdkit import Chem
 
-from rdkit2ase import smiles2conformers
+from rdkit2ase import ase2rdkit, smiles2conformers
 
 
 def test_smiles2conformers():
@@ -22,6 +23,7 @@ def test_smiles_info(smiles):
         assert atoms.info["smiles"] == smiles
 
 
+@pytest.mark.parametrize("use_numpy", (True, False))
 @pytest.mark.parametrize(
     ("smiles", "connectivity"),
     [
@@ -29,7 +31,7 @@ def test_smiles_info(smiles):
         ("C=O", [(0, 1, 2.0), (0, 2, 1.0), (0, 3, 1.0)]),
         ("C#C", [(0, 1, 3.0), (0, 2, 1.0), (1, 3, 1.0)]),
         (
-            "C1=CC=CC=C1",
+            "c1ccccc1",  # equal to C1=CC=CC=C1
             [
                 (0, 1, 1.5),
                 (1, 2, 1.5),
@@ -47,8 +49,23 @@ def test_smiles_info(smiles):
         ),
     ],
 )
-def test_connectivity_info(smiles, connectivity):
+def test_connectivity_info(smiles, connectivity, use_numpy):
     """Test that the connectivity information is stored in the info dictionary."""
     conformers = smiles2conformers(smiles, numConfs=10)
+
+    if use_numpy:
+        for atoms in conformers:
+            atoms.info["connectivity"] = np.array(atoms.info["connectivity"])
+
     for atoms in conformers:
-        assert atoms.info["connectivity"] == connectivity
+        if use_numpy:
+            assert np.array_equal(atoms.info["connectivity"], connectivity)
+        else:
+            assert atoms.info["connectivity"] == connectivity
+
+    # assert smiles backwards
+    mol = ase2rdkit(conformers[0])
+    # remove hydrogens, compute smiles and compare
+    mol = Chem.RemoveHs(mol)
+    smiles2 = Chem.MolToSmiles(mol)
+    assert smiles2 == smiles

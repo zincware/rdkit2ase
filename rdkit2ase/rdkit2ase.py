@@ -4,6 +4,7 @@ import ase.io
 import rdkit.Chem.AllChem
 import rdkit.Chem.rdDetermineBonds
 from rdkit import Chem
+import numpy as np
 
 
 # Map float bond orders to RDKit bond types
@@ -52,10 +53,13 @@ def ase2rdkit(atoms: ase.Atoms) -> rdkit.Chem.Mol:
             idx = mol.AddAtom(atom)
             atom_idx_map.append(idx)
 
-        # Add bonds
-        for a, b, bond_order in atoms.info["connectivity"]:
+        if isinstance(atoms.info["connectivity"], np.ndarray):
+            con = atoms.info["connectivity"].tolist()
+        else:
+            con = atoms.info["connectivity"]
+        for a, b, bond_order in con:
             bond_type = bond_type_from_order(bond_order)
-            mol.AddBond(a, b, bond_type)
+            mol.AddBond(int(a), int(b), bond_type)
 
         mol = mol.GetMol()
     else:

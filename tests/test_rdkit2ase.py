@@ -28,6 +28,16 @@ def test_rdkit2ase(methanol):
     ase_atoms = rdkit2ase(methanol)
     assert isinstance(ase_atoms, ase.Atoms)
     assert ase_atoms.get_chemical_formula() == "CH4O"
+    assert ase_atoms.info["smiles"] == "CO"
+
+    assert ase_atoms.info["connectivity"] == [
+        (0, 1, 1.0),
+        (0, 2, 1.0),
+        (0, 3, 1.0),
+        (0, 4, 1.0),
+        (1, 5, 1.0),
+    ]
+    assert ase_atoms.get_atomic_numbers().tolist() == [6, 8, 1, 1, 1, 1]
 
 
 def test_ase2rdkit(methane):
@@ -67,6 +77,7 @@ def test_smiles_to_atoms(smiles, formula):
     atoms = smiles2atoms(smiles)
     assert isinstance(atoms, ase.Atoms)
     assert atoms.get_chemical_formula() == formula
+    assert atoms.info["smiles"] == smiles
 
 
 def test_seeded_smiles_to_atoms():

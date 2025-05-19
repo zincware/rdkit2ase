@@ -39,7 +39,9 @@ def rdkit2ase(mol, seed: int = 42) -> ase.Atoms:
         a2 = bond.GetEndAtomIdx()
         order = bond.GetBondTypeAsDouble()
         atoms.info["connectivity"].append((a1, a2, order))
-    atoms.set_initial_charges(charges)
+    # check if any of the charges are not zero
+    if any(charge != 0 for charge in charges):
+        atoms.set_initial_charges(charges)
     return atoms
 
 

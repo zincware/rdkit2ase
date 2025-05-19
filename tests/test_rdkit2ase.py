@@ -102,6 +102,7 @@ def test_smiles_to_atoms(smiles, formula):
     assert isinstance(atoms, ase.Atoms)
     assert atoms.get_chemical_formula() == formula
     assert atoms.info["smiles"] == smiles
+    assert "initial_charges" not in atoms.arrays
 
 
 def test_seeded_smiles_to_atoms():

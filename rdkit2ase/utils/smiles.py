@@ -44,6 +44,9 @@ def smiles2conformers(
 
     images: list[ase.Atoms] = []
     charges = [atom.GetFormalCharge() for atom in mol.GetAtoms()]
+    if not any(charge != 0 for charge in charges):
+        charges = None
+        
 
     # collect the bond information
     bonds = []
@@ -63,7 +66,8 @@ def smiles2conformers(
         )
         atoms.info["smiles"] = smiles
         atoms.info["connectivity"] = bonds
-        atoms.set_initial_charges(charges)
+        if charges is not None:
+            atoms.set_initial_charges(charges)
         images.append(atoms)
 
     return images

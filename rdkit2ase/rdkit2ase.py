@@ -30,7 +30,6 @@ def rdkit2ase(mol, seed: int = 42) -> ase.Atoms:
         positions=mol.GetConformer().GetPositions(),
         numbers=[atom.GetAtomicNum() for atom in mol.GetAtoms()],
     )
-    # add smiles and bond information to atoms.info
     atoms.info["smiles"] = smiles
     atoms.info["connectivity"] = []
     for bond in mol.GetBonds():

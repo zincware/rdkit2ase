@@ -29,7 +29,7 @@ def test_rdkit2ase(methanol):
     assert isinstance(ase_atoms, ase.Atoms)
     assert ase_atoms.get_chemical_formula() == "CH4O"
     assert ase_atoms.info["smiles"] == "CO"
-    # assert connectivity
+
     assert ase_atoms.info["connectivity"] == [
         (0, 1, 1.0),
         (0, 2, 1.0),

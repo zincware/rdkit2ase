@@ -1,10 +1,10 @@
 import io
 
 import ase.io
+import numpy as np
 import rdkit.Chem.AllChem
 import rdkit.Chem.rdDetermineBonds
 from rdkit import Chem
-import numpy as np
 
 
 # Map float bond orders to RDKit bond types

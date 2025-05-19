@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from rdkit import Chem
 
-from rdkit2ase import smiles2conformers, ase2rdkit
+from rdkit2ase import ase2rdkit, smiles2conformers
 
 
 def test_smiles2conformers():
@@ -22,6 +22,7 @@ def test_smiles_info(smiles):
     for atoms in conformers:
         assert atoms.info["smiles"] == smiles
 
+
 @pytest.mark.parametrize("use_numpy", (True, False))
 @pytest.mark.parametrize(
     ("smiles", "connectivity"),
@@ -30,7 +31,7 @@ def test_smiles_info(smiles):
         ("C=O", [(0, 1, 2.0), (0, 2, 1.0), (0, 3, 1.0)]),
         ("C#C", [(0, 1, 3.0), (0, 2, 1.0), (1, 3, 1.0)]),
         (
-            "c1ccccc1", # equal to C1=CC=CC=C1
+            "c1ccccc1",  # equal to C1=CC=CC=C1
             [
                 (0, 1, 1.5),
                 (1, 2, 1.5),
@@ -55,7 +56,7 @@ def test_connectivity_info(smiles, connectivity, use_numpy):
     if use_numpy:
         for atoms in conformers:
             atoms.info["connectivity"] = np.array(atoms.info["connectivity"])
-    
+
     for atoms in conformers:
         if use_numpy:
             assert np.array_equal(atoms.info["connectivity"], connectivity)

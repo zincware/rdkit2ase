@@ -3,7 +3,7 @@ import numpy as np
 import numpy.testing as npt
 import pytest
 
-from rdkit2ase import pack, smiles2conformers
+from rdkit2ase import pack, smiles2conformers, ase2rdkit
 
 
 @pytest.mark.parametrize("packmol", ["packmol", "packmol.jl"])
@@ -99,3 +99,11 @@ def test_pack_charges(packmol):
         atoms.get_initial_charges(),
         [0, 0, 0, -1, 0, 1] + [1, 0, 0, -1, 0, 0, 0, 0, 0, 0],
     )
+
+    # go back to molecule
+
+    mol = ase2rdkit(atoms)
+    assert mol.GetNumAtoms() == len(atoms)
+    # check charges
+    charges = [atom.GetFormalCharge() for atom in mol.GetAtoms()]
+    assert charges == [0, 0, 0, -1, 0, 1] + [1, 0, 0, -1, 0, 0, 0, 0, 0, 0]

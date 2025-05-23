@@ -11,7 +11,7 @@ def compress(
     freeze_molecules: bool = False,
 ) -> ase.Atoms:
     """Compress an ASE Atoms object to a target density.
-    
+
     Arguments
     ---------
     atoms : ase.Atoms

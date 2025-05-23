@@ -8,21 +8,11 @@ import numpy as np
 from ase.io.proteindatabank import write_proteindatabank
 from rdkit import Chem
 
+from rdkit2ase.utils import calculate_box_dimensions
+
 OBJ_OR_STR = t.Union[str, Chem.rdchem.Mol, ase.Atoms]
 OBJ_OR_STR_OR_LIST = t.Union[OBJ_OR_STR, t.List[t.Tuple[OBJ_OR_STR, float]]]
 FORMAT = t.Literal["pdb", "xyz"]
-
-
-def _calculate_box_dimensions(images: list[ase.Atoms], density: float) -> list[float]:
-    """Calculates the dimensions of the simulation box
-
-    based on the molar volume and target density.
-    """
-    total_mass = sum(sum(atoms.get_masses()) for atoms in images)
-    molar_volume = total_mass / density / 1000  # m^3 / mol
-    volume_per_mol = molar_volume * ase.units.m**3 / ase.units.mol
-    box_edge = volume_per_mol ** (1 / 3)
-    return [box_edge] * 3
 
 
 def _select_conformers(
@@ -207,7 +197,7 @@ def pack(
     Atoms(symbols='C10H44O12', pbc=True, cell=[8.4, 8.4, 8.4])
     """
     selected_images = _select_conformers(data, counts, seed)
-    cell = _calculate_box_dimensions(images=selected_images, density=density)
+    cell = calculate_box_dimensions(images=selected_images, density=density)
     packmol_input = _generate_packmol_input(
         selected_images, cell, tolerance, seed, output_format, pbc
     )

@@ -1,8 +1,7 @@
+from collections import defaultdict, deque
+
 import ase
 import ase.units
-from ase.build import separate
-
-from collections import defaultdict, deque
 
 
 def find_connected_components(connectivity: list[tuple[int, int, float]]):
@@ -38,6 +37,7 @@ def find_connected_components(connectivity: list[tuple[int, int, float]]):
                         queue.append(neighbor)
             yield component
 
+
 def calculate_density(atoms: ase.Atoms) -> float:
     """Calculates the density of an ASE Atoms object in kg/m^3.
 
@@ -59,5 +59,3 @@ def calculate_box_dimensions(images: list[ase.Atoms], density: float) -> list[fl
     volume_per_mol = molar_volume * ase.units.m**3 / ase.units.mol
     box_edge = volume_per_mol ** (1 / 3)
     return [box_edge] * 3
-
-

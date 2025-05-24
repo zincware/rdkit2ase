@@ -104,6 +104,7 @@ def test_get_substructure_box(packmol):
     for frame in frames:
         assert frame.get_chemical_symbols() == ["N", "O", "O"]
 
+
 @pytest.mark.parametrize("remove_connectivity", [True, False])
 @pytest.mark.parametrize("packmol", ["packmol.jl"])
 def test_iter_fragments(packmol, remove_connectivity):

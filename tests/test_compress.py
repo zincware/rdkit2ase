@@ -1,7 +1,7 @@
 import pytest
 
 import rdkit2ase
-from rdkit2ase.utils import calculate_density, iter_molecules
+from rdkit2ase.utils import calculate_density
 
 
 @pytest.mark.parametrize("packmol", ["packmol.jl", "packmol"])
@@ -41,7 +41,7 @@ def test_compress_freeze(packmol):
     density = calculate_density(compressed_atoms)
     assert density == pytest.approx(1000, abs=0.01)
     # iterate all the OH bonds and ensure they are not compressed
-    all_molecules = list(iter_molecules(compressed_atoms))
+    all_molecules = list(rdkit2ase.iter_fragments(compressed_atoms))
     assert len(all_molecules) == 10
     ref_water = water[0].copy()
     for molecule in all_molecules:

@@ -1,6 +1,42 @@
 import ase
 import ase.units
+from ase.build import separate
 
+from collections import defaultdict, deque
+
+
+def find_connected_components(connectivity: list[tuple[int, int, float]]):
+    try:
+        import networkx as nx
+
+        graph = nx.Graph()
+        for i, j, _ in connectivity:
+            graph.add_edge(i, j)
+        for component in nx.connected_components(graph):
+            yield component
+    except ImportError:
+        adjacency = defaultdict(list)
+        for i, j, _ in connectivity:
+            adjacency[i].append(j)
+            adjacency[j].append(i)
+
+        visited = set()
+        for start in range(len(adjacency)):
+            if start in visited or start not in adjacency:
+                continue
+            # BFS or DFS to collect connected component
+            component = []
+            queue = deque([start])
+            while queue:
+                node = queue.pop()
+                if node in visited:
+                    continue
+                visited.add(node)
+                component.append(node)
+                for neighbor in adjacency[node]:
+                    if neighbor not in visited:
+                        queue.append(neighbor)
+            yield component
 
 def calculate_density(atoms: ase.Atoms) -> float:
     """Calculates the density of an ASE Atoms object in kg/m^3.
@@ -25,15 +61,3 @@ def calculate_box_dimensions(images: list[ase.Atoms], density: float) -> list[fl
     return [box_edge] * 3
 
 
-def iter_molecules(atoms: ase.Atoms) -> list[ase.Atoms]:
-    """Iterate over the molecules in an ASE Atoms object."""
-    if "connectivity" not in atoms.info:
-        raise ValueError("No connectivity information found in atoms.info")
-    import networkx as nx
-
-    # connectivity is a list of tuples (i, j, bond_type)
-    graph = nx.Graph()
-    for i, j, bond_type in atoms.info["connectivity"]:
-        graph.add_edge(i, j)
-    for component in nx.connected_components(graph):
-        yield atoms[list(component)]

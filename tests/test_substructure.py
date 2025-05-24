@@ -103,3 +103,15 @@ def test_get_substructure_box(packmol):
     assert len(frames) == 9
     for frame in frames:
         assert frame.get_chemical_symbols() == ["N", "O", "O"]
+
+@pytest.mark.parametrize("remove_connectivity", [True, False])
+@pytest.mark.parametrize("packmol", ["packmol.jl"])
+def test_iter_fragments(packmol, remove_connectivity):
+    water = rdkit2ase.smiles2conformers("O", 1)
+    box = rdkit2ase.pack([water], [10], density=500, packmol=packmol)
+    if remove_connectivity:
+        del box.info["connectivity"]
+    fragments = list(rdkit2ase.iter_fragments(box))
+    assert len(fragments) == 10
+    for atoms in fragments:
+        assert len(atoms) == 3

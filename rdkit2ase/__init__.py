@@ -2,7 +2,7 @@ from .compress import compress
 from .pack import pack
 from .rdkit2ase import ase2rdkit, rdkit2ase
 from .smiles import smiles2atoms, smiles2conformers
-from .substructure import get_substructure, match_substructure
+from .substructure import get_substructure, match_substructure, iter_fragments
 
 __all__ = [
     "rdkit2ase",
@@ -13,4 +13,5 @@ __all__ = [
     "compress",
     "match_substructure",
     "get_substructure",
+    "iter_fragments",
 ]

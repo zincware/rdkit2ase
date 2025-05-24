@@ -38,7 +38,7 @@ def match_substructure(
     return matches
 
 
-def get_substructure(
+def get_substructures(
     atoms: ase.Atoms, pattern: str | Chem.Mol | ase.Atoms
 ) -> list[ase.Atoms]:
     """

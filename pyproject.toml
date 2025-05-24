@@ -1,6 +1,6 @@
 [project]
 name = "rdkit2ase"
-version = "0.1.6"
+version = "0.1.7"
 description = "Interface between rdkit and ASE"
 readme = "README.md"
 license = "Apache-2.0"
@@ -19,6 +19,7 @@ dev = [
     "pytest>=8.3.5",
     "ruff>=0.11.8",
     "ipykernel>=6.29.5",
+    "networkx>=3.4.2",
 ]
 
 [tool.ruff.lint]

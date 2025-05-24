@@ -57,21 +57,21 @@ def test_match_substructur_box(packmol):
 def test_get_substructure():
     atoms = rdkit2ase.smiles2atoms("C(C(CO[N+](=O)[O-])O[N+](=O)[O-])O[N+](=O)[O-]")
     # match NO3 group using smarts
-    frames = rdkit2ase.get_substructure(atoms, "[N+](=O)[O-]")
+    frames = rdkit2ase.get_substructures(atoms, "[N+](=O)[O-]")
     assert len(frames) == 3
     for frame in frames:
         assert frame.get_chemical_symbols() == ["N", "O", "O"]
 
     # match using a ase.Atoms object
     ref = rdkit2ase.smiles2atoms("[N+](=O)[O-]")
-    frames = rdkit2ase.get_substructure(atoms, ref)
+    frames = rdkit2ase.get_substructures(atoms, ref)
     assert len(frames) == 3
     for frame in frames:
         assert frame.get_chemical_symbols() == ["N", "O", "O"]
 
     # match using a Chem.Mol object
     ref_mol = Chem.MolFromSmarts("[N+](=O)[O-]")
-    frames = rdkit2ase.get_substructure(atoms, ref_mol)
+    frames = rdkit2ase.get_substructures(atoms, ref_mol)
     assert len(frames) == 3
     for frame in frames:
         assert frame.get_chemical_symbols() == ["N", "O", "O"]
@@ -85,21 +85,21 @@ def test_get_substructure_box(packmol):
     box = rdkit2ase.pack([atoms], counts=[3], packmol=packmol, density=0.5)
 
     # match NO3 group using smarts
-    frames = rdkit2ase.get_substructure(box, "[N+](=O)[O-]")
+    frames = rdkit2ase.get_substructures(box, "[N+](=O)[O-]")
     assert len(frames) == 9
     for frame in frames:
         assert frame.get_chemical_symbols() == ["N", "O", "O"]
 
     # match using a ase.Atoms object
     ref = rdkit2ase.smiles2atoms("[N+](=O)[O-]")
-    frames = rdkit2ase.get_substructure(box, ref)
+    frames = rdkit2ase.get_substructures(box, ref)
     assert len(frames) == 9
     for frame in frames:
         assert frame.get_chemical_symbols() == ["N", "O", "O"]
 
     # match using a Chem.Mol object
     ref_mol = Chem.MolFromSmarts("[N+](=O)[O-]")
-    frames = rdkit2ase.get_substructure(box, ref_mol)
+    frames = rdkit2ase.get_substructures(box, ref_mol)
     assert len(frames) == 9
     for frame in frames:
         assert frame.get_chemical_symbols() == ["N", "O", "O"]

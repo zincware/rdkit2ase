@@ -1,7 +1,7 @@
-import rdkit2ase
 import pytest
 from rdkit import Chem
 
+import rdkit2ase
 
 
 def test_match_substructure():
@@ -11,7 +11,7 @@ def test_match_substructure():
     match = rdkit2ase.match_substructure(atoms, "[C]([H])([H])[H]")
     assert match == ((0, 4, 5, 6),)
     assert atoms[match[0]].get_chemical_symbols() == ["C", "H", "H", "H"]
-    
+
     # now match using a ase.Atoms object
 
     ref = rdkit2ase.smiles2atoms("[C]([H])([H])[H]")
@@ -61,7 +61,7 @@ def test_get_substructure():
     assert len(frames) == 3
     for frame in frames:
         assert frame.get_chemical_symbols() == ["N", "O", "O"]
-    
+
     # match using a ase.Atoms object
     ref = rdkit2ase.smiles2atoms("[N+](=O)[O-]")
     frames = rdkit2ase.get_substructure(atoms, ref)
@@ -76,9 +76,12 @@ def test_get_substructure():
     for frame in frames:
         assert frame.get_chemical_symbols() == ["N", "O", "O"]
 
+
 @pytest.mark.parametrize("packmol", ["packmol.jl"])
 def test_get_substructure_box(packmol):
-    atoms = rdkit2ase.smiles2conformers("C(C(CO[N+](=O)[O-])O[N+](=O)[O-])O[N+](=O)[O-]", 1)
+    atoms = rdkit2ase.smiles2conformers(
+        "C(C(CO[N+](=O)[O-])O[N+](=O)[O-])O[N+](=O)[O-]", 1
+    )
     box = rdkit2ase.pack([atoms], counts=[3], packmol=packmol, density=0.5)
 
     # match NO3 group using smarts

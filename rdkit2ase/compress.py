@@ -55,13 +55,13 @@ def compress(
             root = find(idx)
             groups[root].add(idx)
 
-        M = np.linalg.solve(old_cell.T, new_cell.T)  # Transformation matrix
+        t_mat = np.linalg.solve(old_cell.T, new_cell.T)
 
         positions = atoms.get_positions()
         for group in groups.values():
             group = list(group)
             com = atoms[group].get_center_of_mass()
-            com_new = com @ M
+            com_new = com @ t_mat
             shift = com_new - com
             positions[group] += shift
 

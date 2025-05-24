@@ -12,8 +12,9 @@ def test_find_connected_components_networkx(monkeypatch, networkx):
 
     connectivity = [
         (0, 1, 1.0),
+        (0, 1, 1.0), # duplicate edge
         (1, 2, 1.0),
-        (3, 4, 1.0),
+        (4, 3, 1.0),
         (4, 5, 1.0),
         (6, 7, 1.0),
     ]

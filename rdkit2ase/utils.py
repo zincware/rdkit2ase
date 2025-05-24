@@ -20,21 +20,20 @@ def find_connected_components(connectivity: list[tuple[int, int, float]]):
             adjacency[j].append(i)
 
         visited = set()
-        for start in range(len(adjacency)):
-            if start in visited or start not in adjacency:
+        for start in adjacency:
+            if start in visited:
                 continue
-            # BFS or DFS to collect connected component
+
             component = []
-            queue = deque([start])
-            while queue:
-                node = queue.pop()
+            stack = [start]
+            while stack:
+                node = stack.pop()
                 if node in visited:
                     continue
                 visited.add(node)
                 component.append(node)
-                for neighbor in adjacency[node]:
-                    if neighbor not in visited:
-                        queue.append(neighbor)
+                stack.extend(n for n in adjacency[node] if n not in visited)
+
             yield component
 
 

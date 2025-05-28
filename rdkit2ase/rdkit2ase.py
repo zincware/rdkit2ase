@@ -7,8 +7,10 @@ import rdkit.Chem.AllChem
 import rdkit.Chem.rdDetermineBonds
 from ase.build import separate as ase_separate
 from rdkit import Chem
+import warnings
 
 from rdkit2ase.utils import unwrap_molecule
+from rdkit2ase.connectivity import reconstruct_bonds_from_template
 
 
 # Map float bond orders to RDKit bond types
@@ -49,7 +51,7 @@ def rdkit2ase(mol, seed: int = 42) -> ase.Atoms:
     return atoms
 
 
-def ase2rdkit(atoms: ase.Atoms, separate: bool = True) -> rdkit.Chem.Mol:
+def ase2rdkit(atoms: ase.Atoms, separate: bool = True, suggestions: list[str]| None = None) -> rdkit.Chem.Mol:
     """Convert an ASE Atoms object to an RDKit molecule.
 
     Parameters
@@ -60,8 +62,19 @@ def ase2rdkit(atoms: ase.Atoms, separate: bool = True) -> rdkit.Chem.Mol:
         separate the "atoms" object using ase.build.separate()
         for faster conversion. Very useful for large systems,
         not recommended for small systems.
+    suggestions : list[str] | None, optional
+        A list of SMILES strings to use as suggestions for bond determination.
+        If provided, RDKit will try to match the connectivity based on these SMILES.
     """
+    suggestions = suggestions or []
     if "connectivity" in atoms.info:
+        if len(suggestions) > 0:
+            warnings.warn(
+                f"{suggestions = } will be ignored because "
+                "connectivity information is already present in the atoms object.",
+                UserWarning,
+            )
+
         mol = Chem.RWMol()
         atom_idx_map = []
         charges = atoms.get_initial_charges()
@@ -89,6 +102,39 @@ def ase2rdkit(atoms: ase.Atoms, separate: bool = True) -> rdkit.Chem.Mol:
             sub_structure: ase.Atoms
             # center the sub-structure, remove pbc
             unwrapped_sub_structure = unwrap_molecule(sub_structure)
+            success = False
+            for suggestion in suggestions:
+                # Try to reconstruct the bonds from the template
+                try:
+                    connectivity, charges = reconstruct_bonds_from_template(
+                        unwrapped_sub_structure, suggestion
+                    )
+                    success = True
+
+                    mol = Chem.RWMol()
+                    atom_idx_map = []
+                    for z, charge in zip(
+                        unwrapped_sub_structure.get_chemical_symbols(),
+                        charges,
+                    ):
+                        atom = Chem.Atom(z)
+                        atom.SetFormalCharge(int(charge))
+                        idx = mol.AddAtom(atom)
+                        atom_idx_map.append(idx)
+
+                    for a, b, bond_order in connectivity:
+                        bond_type = bond_type_from_order(bond_order)
+                        mol.AddBond(int(a), int(b), bond_type)
+
+                    mol = mol.GetMol()
+                    mols.append(mol)
+                    
+                    break
+                except ValueError:
+                    continue
+            if success:
+                continue
+
             with io.StringIO() as f:
                 ase.io.write(f, unwrapped_sub_structure, format="xyz")
                 f.seek(0)

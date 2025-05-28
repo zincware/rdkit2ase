@@ -1083,10 +1083,11 @@ wheels = [
 
 [[package]]
 name = "rdkit2ase"
-version = "0.1.7"
+version = "0.1.8"
 source = { editable = "." }
 dependencies = [
     { name = "ase" },
+    { name = "networkx" },
     { name = "rdkit" },
 ]
 
@@ -1102,6 +1103,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "ase", specifier = ">=3.25.0" },
+    { name = "networkx", specifier = ">=3.4.2" },
     { name = "rdkit", specifier = ">=2024" },
 ]
 

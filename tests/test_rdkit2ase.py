@@ -62,6 +62,12 @@ def test_ase2rdkit_methane(methane, separate):
     smiles = rdkit.Chem.MolToSmiles(rdkit_mol)
     assert smiles == "[H]C([H])([H])[H]"
 
+def test_ase2rdkit_methane_suggestions(methane):
+    rdkit_mol = ase2rdkit(methane, suggestions=["C", "CCC"])
+
+    # assert the smiles string
+    smiles = rdkit.Chem.MolToSmiles(rdkit_mol)
+    assert smiles == "[H]C([H])([H])[H]"
 
 # TODO: this is currently not working!
 # def test_ase2rdkit_nacn(nacn):

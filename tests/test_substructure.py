@@ -34,19 +34,19 @@ def test_match_substructur_box(packmol):
     box = rdkit2ase.pack([atoms], counts=[3], packmol=packmol, density=0.5)
 
     # match CH3 fragment using smarts
-    match = rdkit2ase.match_substructure(box, "[C]([H])([H])[H]")
+    match = rdkit2ase.match_substructure(box, smarts="[C]([H])([H])[H]")
     assert match == ((0, 4, 5, 6), (8, 12, 13, 14), (16, 20, 21, 22))
     for m in match:
         assert box[m].get_chemical_symbols() == ["C", "H", "H", "H"]
 
     # now match using a ase.Atoms object
     ref = rdkit2ase.smiles2atoms("[C]([H])([H])[H]")
-    match = rdkit2ase.match_substructure(box, ref)
+    match = rdkit2ase.match_substructure(box, fragment=ref)
     assert match == ((0, 4, 5, 6), (8, 12, 13, 14), (16, 20, 21, 22))
 
     # now match using a Chem.Mol object
     ref_mol = Chem.MolFromSmarts("[C]([H])([H])[H]")
-    match = rdkit2ase.match_substructure(box, ref_mol)
+    match = rdkit2ase.match_substructure(box, mol=ref_mol)
     assert match == ((0, 4, 5, 6), (8, 12, 13, 14), (16, 20, 21, 22))
 
     # check everything else raises TypeError
@@ -85,21 +85,21 @@ def test_get_substructure_box(packmol):
     box = rdkit2ase.pack([atoms], counts=[3], packmol=packmol, density=0.5)
 
     # match NO3 group using smarts
-    frames = rdkit2ase.get_substructures(box, "[N+](=O)[O-]")
+    frames = rdkit2ase.get_substructures(box, smarts="[N+](=O)[O-]")
     assert len(frames) == 9
     for frame in frames:
         assert frame.get_chemical_symbols() == ["N", "O", "O"]
 
     # match using a ase.Atoms object
     ref = rdkit2ase.smiles2atoms("[N+](=O)[O-]")
-    frames = rdkit2ase.get_substructures(box, ref)
+    frames = rdkit2ase.get_substructures(box, fragment=ref)
     assert len(frames) == 9
     for frame in frames:
         assert frame.get_chemical_symbols() == ["N", "O", "O"]
 
     # match using a Chem.Mol object
     ref_mol = Chem.MolFromSmarts("[N+](=O)[O-]")
-    frames = rdkit2ase.get_substructures(box, ref_mol)
+    frames = rdkit2ase.get_substructures(box, mol=ref_mol)
     assert len(frames) == 9
     for frame in frames:
         assert frame.get_chemical_symbols() == ["N", "O", "O"]
@@ -126,7 +126,7 @@ def test_bmim_bf4_no_info():
         [bmim, bf4],
         counts=[10, 10],
         density=500,
-        packmol="packmol",
+        packmol="packmol.jl",
         tolerance=3,
     )
     del box.info["connectivity"]

@@ -7,7 +7,7 @@ from rdkit2ase.utils import find_connected_components
 
 
 def match_substructure(
-    atoms: ase.Atoms, pattern: str | Chem.Mol | ase.Atoms, **kwargs
+    atoms: ase.Atoms, smiles: str|None = None, smarts: str|None = None, mol: Chem.Mol|None = None, fragment: ase.Atoms|None=None, **kwargs
 ) -> tuple[tuple[int, ...]]:
     """
     Find all matches of a substructure pattern in a given ASE Atoms object.
@@ -16,30 +16,51 @@ def match_substructure(
     ----------
     atoms : ase.Atoms
         The molecule or structure in which to search for substructure matches.
-    pattern : str or Chem.Mol or ase.Atoms
-        The substructure to search for, provided as a SMARTS/SMILES string,
-        an RDKit Mol object, or an ASE Atoms object.
+    smiles : str, optional
+        A SMILES string representing the substructure pattern to match.
+    smarts : str, optional
+        A SMARTS string representing the substructure pattern to match.
+    mol : Chem.Mol, optional
+        An RDKit Mol object representing the substructure pattern to match.
+    fragment : ase.Atoms, optional
+        An ASE Atoms object representing the substructure pattern to match.
+        If provided, it will be converted to an RDKit Mol object for matching.
+    **kwargs
+        Additional keyword arguments passed to `ase2rdkit`.
 
     Returns
     -------
     tuple of tuple of int
         A tuple of atom index tuples, each corresponding to one match of the pattern.
     """
-    if isinstance(pattern, str):
-        # assume smiles or smarts and convert to RDKit Mol
-        pattern = Chem.MolFromSmarts(pattern)
-    elif isinstance(pattern, ase.Atoms):
-        pattern = ase2rdkit(pattern)
-    elif not isinstance(pattern, Chem.Mol):
-        raise TypeError("Pattern must be a string, ase.Atoms, or Chem.Mol")
+    pattern = None
+    if smiles is not None:
+        pattern = Chem.MolFromSmiles(smiles)
+        pattern = Chem.AddHs(pattern)  # Ensure hydrogens are added for matching
+    elif smarts is not None:
+        if smarts is None:
+            raise ValueError("Can only specify one pattern")
+        pattern = Chem.MolFromSmarts(smarts)
+    elif mol is not None:
+        if pattern is not None:
+            raise ValueError("Can only specify one pattern")
+        pattern = mol
+    elif fragment is not None:
+        if pattern is not None:
+            raise ValueError("Can only specify one pattern")
+        pattern = ase2rdkit(fragment, **kwargs)
+    else:
+        raise ValueError("Must specify a pattern")
 
+    Chem.SanitizeMol(pattern)
+        
     mol = ase2rdkit(atoms, **kwargs)
     matches = mol.GetSubstructMatches(pattern)
     return matches
 
 
 def get_substructures(
-    atoms: ase.Atoms, pattern: str | Chem.Mol | ase.Atoms
+    atoms: ase.Atoms, smiles: str|None = None, smarts: str|None = None, mol: Chem.Mol|None = None, fragment: ase.Atoms|None=None, **kwargs
 ) -> list[ase.Atoms]:
     """
     Extract all matched substructures from an ASE Atoms object.
@@ -48,15 +69,23 @@ def get_substructures(
     ----------
     atoms : ase.Atoms
         The structure to search in.
-    pattern : str or Chem.Mol or ase.Atoms
-        The substructure pattern to match.
+    smarts : str, optional
+        A SMARTS string to match substructures.
+    smiles : str, optional
+        A SMILES string to match substructures.
+    mol : Chem.Mol, optional
+        An RDKit Mol object to match substructures.
+    fragment : ase.Atoms, optional
+        A specific ASE Atoms object to match against the structure.
+    **kwargs
+        Additional keyword arguments passed to `ase2rdkit`.
 
     Returns
     -------
     list of ase.Atoms
         List of substructure fragments matching the pattern.
     """
-    return [atoms[match] for match in match_substructure(atoms, pattern)]
+    return [atoms[match] for match in match_substructure(atoms, smiles=smiles, smarts=smarts, mol=mol, fragment=fragment, **kwargs)]
 
 
 def iter_fragments(atoms: ase.Atoms) -> list[ase.Atoms]:

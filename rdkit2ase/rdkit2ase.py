@@ -1,4 +1,5 @@
 import io
+import warnings
 from functools import reduce
 
 import ase.io
@@ -7,10 +8,9 @@ import rdkit.Chem.AllChem
 import rdkit.Chem.rdDetermineBonds
 from ase.build import separate as ase_separate
 from rdkit import Chem
-import warnings
 
-from rdkit2ase.utils import unwrap_molecule
 from rdkit2ase.connectivity import reconstruct_bonds_from_template
+from rdkit2ase.utils import unwrap_molecule
 
 
 # Map float bond orders to RDKit bond types
@@ -51,7 +51,9 @@ def rdkit2ase(mol, seed: int = 42) -> ase.Atoms:
     return atoms
 
 
-def ase2rdkit(atoms: ase.Atoms, separate: bool = True, suggestions: list[str]| None = None) -> rdkit.Chem.Mol:
+def ase2rdkit(
+    atoms: ase.Atoms, separate: bool = True, suggestions: list[str] | None = None
+) -> rdkit.Chem.Mol:
     """Convert an ASE Atoms object to an RDKit molecule.
 
     Parameters
@@ -128,7 +130,7 @@ def ase2rdkit(atoms: ase.Atoms, separate: bool = True, suggestions: list[str]| N
 
                     mol = mol.GetMol()
                     mols.append(mol)
-                    
+
                     break
                 except ValueError:
                     continue

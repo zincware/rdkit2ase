@@ -1,9 +1,13 @@
+import pytest
+
 import rdkit2ase
 from rdkit2ase.connectivity import reconstruct_bonds_from_template
 
-import pytest
 
-@pytest.mark.parametrize("smiles", ["CCC", "CCCCN1C=C[N+](=C1)C", "[B-](F)(F)(F)F", "C1=CC=CC=C1", "C1=CC=CC=C1O"])
+@pytest.mark.parametrize(
+    "smiles",
+    ["CCC", "CCCCN1C=C[N+](=C1)C", "[B-](F)(F)(F)F", "C1=CC=CC=C1", "C1=CC=CC=C1O"],
+)
 def test_reconstruct_bonds_from_template(smiles):
     atoms = rdkit2ase.smiles2atoms(smiles)
     true_connectivity = atoms.info["connectivity"]

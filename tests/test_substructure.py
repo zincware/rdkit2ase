@@ -140,23 +140,23 @@ def test_bmim_bf4_no_info():
     bmim_matches = rdkit2ase.match_substructure(
         box,
         smiles="CCCCN1C=C[N+](=C1)C",
-        suggestions=[
-            "CCCCN1C=C[N+](=C1)C"
-        ],
+        suggestions=["CCCCN1C=C[N+](=C1)C"],
     )
     assert len(bmim_matches) == 10
     for match in bmim_matches:
         assert len(match) == 25
-        assert sorted(box[match].get_chemical_symbols()) == sorted(bmim[0].get_chemical_symbols())
+        assert sorted(box[match].get_chemical_symbols()) == sorted(
+            bmim[0].get_chemical_symbols()
+        )
 
     bmim_matches = rdkit2ase.match_substructure(
         box,
         smarts="[H]c1c([H])[n+](C([H])([H])[H])c([H])n1C([H])([H])C([H])([H])C([H])([H])C([H])([H])[H]",
-        suggestions=[
-            "CCCCN1C=C[N+](=C1)C"
-        ],
+        suggestions=["CCCCN1C=C[N+](=C1)C"],
     )
     assert len(bmim_matches) == 10
     for match in bmim_matches:
         assert len(match) == 25
-        assert sorted(box[match].get_chemical_symbols()) == sorted(bmim[0].get_chemical_symbols())
+        assert sorted(box[match].get_chemical_symbols()) == sorted(
+            bmim[0].get_chemical_symbols()
+        )

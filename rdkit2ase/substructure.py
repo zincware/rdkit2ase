@@ -7,7 +7,12 @@ from rdkit2ase.utils import find_connected_components
 
 
 def match_substructure(
-    atoms: ase.Atoms, smiles: str|None = None, smarts: str|None = None, mol: Chem.Mol|None = None, fragment: ase.Atoms|None=None, **kwargs
+    atoms: ase.Atoms,
+    smiles: str | None = None,
+    smarts: str | None = None,
+    mol: Chem.Mol | None = None,
+    fragment: ase.Atoms | None = None,
+    **kwargs,
 ) -> tuple[tuple[int, ...]]:
     """
     Find all matches of a substructure pattern in a given ASE Atoms object.
@@ -53,14 +58,19 @@ def match_substructure(
         raise ValueError("Must specify a pattern")
 
     Chem.SanitizeMol(pattern)
-        
+
     mol = ase2rdkit(atoms, **kwargs)
     matches = mol.GetSubstructMatches(pattern)
     return matches
 
 
 def get_substructures(
-    atoms: ase.Atoms, smiles: str|None = None, smarts: str|None = None, mol: Chem.Mol|None = None, fragment: ase.Atoms|None=None, **kwargs
+    atoms: ase.Atoms,
+    smiles: str | None = None,
+    smarts: str | None = None,
+    mol: Chem.Mol | None = None,
+    fragment: ase.Atoms | None = None,
+    **kwargs,
 ) -> list[ase.Atoms]:
     """
     Extract all matched substructures from an ASE Atoms object.
@@ -85,7 +95,12 @@ def get_substructures(
     list of ase.Atoms
         List of substructure fragments matching the pattern.
     """
-    return [atoms[match] for match in match_substructure(atoms, smiles=smiles, smarts=smarts, mol=mol, fragment=fragment, **kwargs)]
+    return [
+        atoms[match]
+        for match in match_substructure(
+            atoms, smiles=smiles, smarts=smarts, mol=mol, fragment=fragment, **kwargs
+        )
+    ]
 
 
 def iter_fragments(atoms: ase.Atoms) -> list[ase.Atoms]:

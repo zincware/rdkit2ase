@@ -1,8 +1,98 @@
 import sys
 
+import numpy as np
 import pytest
+from ase import Atoms
 
-from rdkit2ase.utils import find_connected_components
+from rdkit2ase.utils import (
+    find_connected_components,
+    unwrap_molecule,  # adjust import to your file name
+)
+
+
+def make_molecule(shift=(0, 0, 0), cell=(10, 10, 10), pbc=True):
+    """Simple diatomic molecule with optional shift and PBC wrapping."""
+    pos = np.array([[0.0, 0.0, 0.0], [1.1, 0.0, 0.0]])  # bond length 1.1
+    pos += shift
+    atoms = Atoms("H2", positions=pos, cell=cell, pbc=pbc)
+    return atoms
+
+
+def get_distance(atoms, i, j):
+    return np.linalg.norm(atoms.positions[i] - atoms.positions[j])
+
+
+@pytest.mark.parametrize(
+    "shift,expected",
+    [
+        ((0, 0, 0), 1.1),  # Normal
+        ((9.5, 0, 0), 1.1),  # Cross x boundary
+        ((0, 9.5, 0), 1.1),  # Cross y boundary
+        ((0, 0, 9.5), 1.1),  # Cross z boundary
+        ((9.5, 9.5, 9.5), 1.1),  # Cross all boundaries
+    ],
+)
+def test_unwrap_diatomic(shift, expected):
+    """Ensure diatomics get unwrapped correctly across boundaries."""
+    atoms = make_molecule(shift=shift)
+    atoms_wrapped = atoms.copy()
+    atoms_unwrapped = unwrap_molecule(atoms_wrapped)
+
+    dist = get_distance(atoms_unwrapped, 0, 1)
+    assert np.isclose(dist, expected, atol=0.05)
+
+
+def test_multiple_molecules():
+    """Test two molecules, one crossing a boundary, one inside."""
+    mol1 = make_molecule(shift=(9.5, 0, 0))  # Wrapped
+    mol2 = make_molecule(shift=(5, 5, 5))  # Inside
+    atoms = mol1 + mol2
+    atoms.set_cell([10, 10, 10])
+    atoms.set_pbc([True, True, True])
+
+    atoms_unwrapped = unwrap_molecule(atoms.copy())
+
+    # Check both H-H distances are ~1.1
+    d1 = get_distance(atoms_unwrapped, 0, 1)
+    d2 = get_distance(atoms_unwrapped, 2, 3)
+
+    assert np.isclose(d1, 1.1, atol=0.05)
+    assert np.isclose(d2, 1.1, atol=0.05)
+
+
+def test_wrapping_corner_case():
+    """Molecule across 3D corner (x, y, z all wrapped)."""
+    # Place one atom near box corner, the other offset by 1.1 Å along the diagonal
+    a1 = np.array([9.9, 9.9, 9.9])
+    bond_length = 1.1 / np.sqrt(3)
+    a2 = (a1 + np.array([bond_length] * 3)) % 10.0  # wrapped across corner
+
+    atoms = Atoms("H2", positions=[a1, a2], cell=[10, 10, 10], pbc=True)
+
+    atoms_unwrapped = unwrap_molecule(atoms.copy())
+    dist = get_distance(atoms_unwrapped, 0, 1)
+
+    assert np.isclose(dist, 1.1, atol=0.05)
+
+
+def test_no_pbc():
+    """Ensure no changes when system has no PBC."""
+    atoms = make_molecule()
+    atoms.set_pbc(False)
+
+    atoms_unwrapped = unwrap_molecule(atoms.copy())
+    dist = get_distance(atoms_unwrapped, 0, 1)
+
+    assert np.isclose(dist, 1.1, atol=0.05)
+
+
+def test_idempotent():
+    """Calling unwrap on an already unwrapped structure should do nothing."""
+    atoms = make_molecule(shift=(0, 0, 0))
+    unwrapped = unwrap_molecule(atoms.copy())
+    unwrapped2 = unwrap_molecule(unwrapped.copy())
+
+    assert np.allclose(unwrapped.get_positions(), unwrapped2.get_positions())
 
 
 @pytest.mark.parametrize("networkx", [True, False])

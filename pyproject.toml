@@ -1,6 +1,6 @@
 [project]
 name = "rdkit2ase"
-version = "0.1.7"
+version = "0.1.8"
 description = "Interface between rdkit and ASE"
 readme = "README.md"
 license = "Apache-2.0"

@@ -53,6 +53,7 @@ def test_rdkit2ase(methanol):
     ]
     assert ase_atoms.get_atomic_numbers().tolist() == [6, 8, 1, 1, 1, 1]
 
+
 @pytest.mark.parametrize("separate", [True, False])
 def test_ase2rdkit_methane(methane, separate):
     rdkit_mol = ase2rdkit(methane, separate=separate)

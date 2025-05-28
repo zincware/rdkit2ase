@@ -116,3 +116,34 @@ def test_iter_fragments(packmol, remove_connectivity):
     assert len(fragments) == 10
     for atoms in fragments:
         assert len(atoms) == 3
+
+
+def test_bmim_bf4_no_info():
+    bmim = rdkit2ase.smiles2conformers("CCCCN1C=C[N+](=C1)C", numConfs=1)
+    bf4 = rdkit2ase.smiles2conformers("[B-](F)(F)(F)F", numConfs=1)
+
+    box = rdkit2ase.pack(
+        [bmim, bf4],
+        counts=[10, 10],
+        density=500,
+        packmol="packmol",
+        tolerance=3,
+    )
+    del box.info["connectivity"]
+    bf4_matches = rdkit2ase.match_substructure(
+        box, "[B-](F)(F)(F)F", suggestions=["[B-](F)(F)(F)F"]
+    )
+    assert len(bf4_matches) == 10
+    for match in bf4_matches:
+        assert box[match].get_chemical_symbols() == bf4[0].get_chemical_symbols()
+
+    bmim_matches = rdkit2ase.match_substructure(
+        box,
+         "[H]c1c([H])[n+](C([H])([H])[H])c([H])n1C([H])([H])C([H])([H])C([H])([H])C([H])([H])[H]",
+        suggestions=[
+            "CCCCN1C=C[N+](=C1)C"
+        ],
+    )
+    assert len(bmim_matches) == 10
+    for match in bmim_matches:
+        assert sorted(box[match].get_chemical_symbols()) == sorted(bmim[0].get_chemical_symbols())

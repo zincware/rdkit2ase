@@ -7,7 +7,7 @@ from rdkit2ase.utils import find_connected_components
 
 
 def match_substructure(
-    atoms: ase.Atoms, pattern: str | Chem.Mol | ase.Atoms
+    atoms: ase.Atoms, pattern: str | Chem.Mol | ase.Atoms, **kwargs
 ) -> tuple[tuple[int, ...]]:
     """
     Find all matches of a substructure pattern in a given ASE Atoms object.
@@ -33,7 +33,7 @@ def match_substructure(
     elif not isinstance(pattern, Chem.Mol):
         raise TypeError("Pattern must be a string, ase.Atoms, or Chem.Mol")
 
-    mol = ase2rdkit(atoms)
+    mol = ase2rdkit(atoms, **kwargs)
     matches = mol.GetSubstructMatches(pattern)
     return matches
 

@@ -19,7 +19,7 @@ def bond_type_from_order(order):
         raise ValueError(f"Unsupported bond order: {order}")
 
 
-def atoms2graph(atoms: Atoms) -> nx.Graph:
+def ase2networkx(atoms: Atoms) -> nx.Graph:
     """
     Converts an ASE Atoms object to a NetworkX graph based on interatomic distances.
 
@@ -85,7 +85,7 @@ def atoms2graph(atoms: Atoms) -> nx.Graph:
     return graph
 
 
-def rdkit2graph(mol: Chem.Mol) -> nx.Graph:
+def rdkit2networkx(mol: Chem.Mol) -> nx.Graph:
     """
     Each atom in the molecule is represented as a node in the graph,
     with node attributes including atomic number, original RDKit
@@ -136,7 +136,7 @@ def rdkit2graph(mol: Chem.Mol) -> nx.Graph:
     return graph
 
 
-def graph2rdkit(graph: nx.Graph) -> Chem.Mol:
+def networkx2rdkit(graph: nx.Graph) -> Chem.Mol:
     """
     Converts a NetworkX graph back to an RDKit molecule.
 
@@ -182,7 +182,7 @@ def graph2rdkit(graph: nx.Graph) -> Chem.Mol:
     return mol.GetMol()
 
 
-def graph2atoms(graph: nx.Graph) -> Atoms:
+def networkx2atoms(graph: nx.Graph) -> Atoms:
     """
     Converts a NetworkX graph to an ASE Atoms object.
 
@@ -339,7 +339,7 @@ def reconstruct_bonds_from_template(atoms_obj: Atoms, smiles_template: str):  # 
     if not atoms_obj:
         raise ValueError("Input ASE Atoms object is empty.")
 
-    ase_graph = atoms2graph(atoms_obj)
+    ase_graph = ase2networkx(atoms_obj)
     if not ase_graph.nodes:
         raise ValueError("Could not generate graph from ASE Atoms object (no nodes).")
 
@@ -349,7 +349,7 @@ def reconstruct_bonds_from_template(atoms_obj: Atoms, smiles_template: str):  # 
 
     mol_template = Chem.AddHs(mol_template)
     Chem.SanitizeMol(mol_template)
-    template_graph = rdkit2graph(mol_template)
+    template_graph = rdkit2networkx(mol_template)
 
     if not template_graph.nodes:
         raise ValueError("Could not generate graph from SMILES template (no nodes).")

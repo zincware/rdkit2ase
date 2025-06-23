@@ -9,7 +9,7 @@ def atoms2graph(atoms: Atoms) -> nx.Graph:
     """
     Converts an ASE Atoms object to a NetworkX graph based on interatomic distances.
 
-    Connectivity between atoms is determined using the sum 
+    Connectivity between atoms is determined using the sum
     of their natural cutoffs (scaled by 1.2). Each node in the resulting
     graph represents an atom and stores its position, atomic number, and original index.
 
@@ -21,13 +21,27 @@ def atoms2graph(atoms: Atoms) -> nx.Graph:
     Returns
     -------
     networkx.Graph
-        An undirected graph where nodes correspond to atoms and edges 
+        An undirected graph where nodes correspond to atoms and edges
         represent connectivity based on cutoff distances.
         Node attributes include:
             - 'position': numpy.ndarray, the atomic position.
             - 'atomic_number': int, the atomic number.
             - 'original_index': int, the atom's index in the original Atoms object.
     """
+    if "connectivity" in atoms.info:
+        connectivity = atoms.info["connectivity"]
+        graph = nx.Graph()
+        for i, j, bond_order in connectivity:
+            graph.add_edge(
+                i,
+                j,
+                bond_order=bond_order,
+            )
+        for i, atom in enumerate(atoms):
+            graph.nodes[i]["position"] = atom.position
+            graph.nodes[i]["atomic_number"] = atom.number
+            graph.nodes[i]["original_index"] = atom.index
+        return graph
     r_ij = atoms.get_all_distances(mic=True, vector=False)  # Get scalar distances
 
     atom_radii = np.array(natural_cutoffs(atoms, mult=1.2))
@@ -42,6 +56,8 @@ def atoms2graph(atoms: Atoms) -> nx.Graph:
     connectivity_matrix[d_ij_temp <= pairwise_cutoffs] = 1
 
     G = nx.from_numpy_array(connectivity_matrix)
+    for u, v in G.edges():
+        G.edges[u, v]["bond_order"] = None
 
     for i, atom in enumerate(atoms):
         G.nodes[i]["position"] = atom.position

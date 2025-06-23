@@ -3,6 +3,21 @@ import pytest
 import rdkit2ase
 from rdkit2ase.connectivity import reconstruct_bonds_from_template
 
+@pytest.mark.parametrize("remove_connectivity", [True, False])
+def test_atoms2graph(remove_connectivity):
+    atoms = rdkit2ase.smiles2atoms("CO")
+    if remove_connectivity:
+        atoms.info.pop("connectivity", None)
+    graph = rdkit2ase.atoms2graph(atoms)
+    assert graph.number_of_nodes() == 6
+    assert graph.number_of_edges() == 5
+
+    assert graph.nodes[0]["atomic_number"] == 6
+    assert graph.nodes[0]["position"].tolist() == pytest.approx([-0.37, 0.0, 0.0], abs=1e-2)
+    assert graph.nodes[0]["original_index"] == 0
+    
+    assert graph.edges[(0, 1)]["bond_order"] in [None, 1]
+
 
 @pytest.mark.parametrize(
     "smiles",

@@ -19,13 +19,13 @@ def bond_type_from_order(order):
         raise ValueError(f"Unsupported bond order: {order}")
 
 
-def atoms2graph(atoms: Atoms) -> nx.Graph:
+def ase2networkx(atoms: Atoms) -> nx.Graph:
     """
-    Converts an ASE Atoms object to a NetworkX graph based on interatomic distances.
+    Convert an ASE Atoms object to a NetworkX graph based on interatomic distances.
 
-    Connectivity between atoms is determined using the sum
-    of their natural cutoffs (scaled by 1.2). Each node in the resulting
-    graph represents an atom and stores its position, atomic number, and original index.
+    Connectivity is determined using the sum of natural atomic cutoffs
+    (scaled by 1.2). Each atom is represented as a node, and an edge is
+    added if two atoms are within bonding distance.
 
     Parameters
     ----------
@@ -35,13 +35,16 @@ def atoms2graph(atoms: Atoms) -> nx.Graph:
     Returns
     -------
     networkx.Graph
-        An undirected graph where nodes correspond to atoms and edges
-        represent connectivity based on cutoff distances.
-        Node attributes include:
-            - 'position': numpy.ndarray, the atomic position.
-            - 'atomic_number': int, the atomic number.
-            - 'original_index': int, the atom's index in the original Atoms object.
-            - 'charge': int, the initial charge of the atom.
+        An undirected NetworkX graph where:
+
+        - **Nodes** represent atoms and include:
+
+          - ``position`` (numpy.ndarray): Cartesian coordinates of the atom.
+          - ``atomic_number`` (int): Atomic number.
+          - ``original_index`` (int): Index in the original ASE Atoms object.
+          - ``charge`` (int): Formal charge of the atom.
+
+        - **Edges** represent interatomic bonds based on cutoff distance.
     """
     charges = atoms.get_initial_charges()
 
@@ -85,12 +88,13 @@ def atoms2graph(atoms: Atoms) -> nx.Graph:
     return graph
 
 
-def rdkit2graph(mol: Chem.Mol) -> nx.Graph:
+def rdkit2networkx(mol: Chem.Mol) -> nx.Graph:
     """
-    Each atom in the molecule is represented as a node in the graph,
-    with node attributes including atomic number, original RDKit
-    atom index, and formal charge. Each bond is represented as an
-    edge, with the bond order as an edge attribute.
+    Convert an RDKit molecule to a NetworkX graph.
+
+    Each atom is represented as a node, with attributes such as atomic number,
+    formal charge, and original RDKit atom index. Each bond is represented as
+    an edge, with the bond order stored as an edge attribute.
 
     Parameters
     ----------
@@ -100,14 +104,18 @@ def rdkit2graph(mol: Chem.Mol) -> nx.Graph:
     Returns
     -------
     nx.Graph
-        A NetworkX graph where nodes correspond to atoms and edges correspond to bonds.
-        Node attributes:
-            - atomic_number (int): Atomic number of the atom.
-            - original_index (int): Original RDKit atom index.
-            - charge (int): Formal charge of the atom.
-        Edge attributes:
-            - bond_order (float): Bond order
-            (1 for single, 2 for double, 3 for triple, 1.5 for aromatic).
+        An undirected NetworkX graph where:
+
+        - **Nodes** represent atoms and include:
+
+          - ``atomic_number`` (int): Atomic number of the atom.
+          - ``original_index`` (int): Original RDKit atom index.
+          - ``charge`` (int): Formal charge of the atom.
+
+        - **Edges** represent chemical bonds and include:
+
+          - ``bond_order`` (float): Bond order
+            (1: single, 2: double, 3: triple, 1.5: aromatic).
     """
     graph = nx.Graph()
     for atom in mol.GetAtoms():
@@ -136,7 +144,7 @@ def rdkit2graph(mol: Chem.Mol) -> nx.Graph:
     return graph
 
 
-def graph2rdkit(graph: nx.Graph) -> Chem.Mol:
+def networkx2rdkit(graph: nx.Graph) -> Chem.Mol:
     """
     Converts a NetworkX graph back to an RDKit molecule.
 
@@ -182,7 +190,7 @@ def graph2rdkit(graph: nx.Graph) -> Chem.Mol:
     return mol.GetMol()
 
 
-def graph2atoms(graph: nx.Graph) -> Atoms:
+def networkx2atoms(graph: nx.Graph) -> Atoms:
     """
     Converts a NetworkX graph to an ASE Atoms object.
 
@@ -339,7 +347,7 @@ def reconstruct_bonds_from_template(atoms_obj: Atoms, smiles_template: str):  # 
     if not atoms_obj:
         raise ValueError("Input ASE Atoms object is empty.")
 
-    ase_graph = atoms2graph(atoms_obj)
+    ase_graph = ase2networkx(atoms_obj)
     if not ase_graph.nodes:
         raise ValueError("Could not generate graph from ASE Atoms object (no nodes).")
 
@@ -349,7 +357,7 @@ def reconstruct_bonds_from_template(atoms_obj: Atoms, smiles_template: str):  # 
 
     mol_template = Chem.AddHs(mol_template)
     Chem.SanitizeMol(mol_template)
-    template_graph = rdkit2graph(mol_template)
+    template_graph = rdkit2networkx(mol_template)
 
     if not template_graph.nodes:
         raise ValueError("Could not generate graph from SMILES template (no nodes).")

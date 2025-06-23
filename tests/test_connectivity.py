@@ -6,11 +6,11 @@ from rdkit2ase.connectivity import reconstruct_bonds_from_template
 
 
 @pytest.mark.parametrize("remove_connectivity", [True, False])
-def test_atoms2graph(remove_connectivity):
+def test_ase2networkx(remove_connectivity):
     atoms = rdkit2ase.smiles2atoms("CO")
     if remove_connectivity:
         atoms.info.pop("connectivity", None)
-    graph = rdkit2ase.atoms2graph(atoms)
+    graph = rdkit2ase.ase2networkx(atoms)
     assert graph.number_of_nodes() == 6
     assert graph.number_of_edges() == 5
 
@@ -24,10 +24,10 @@ def test_atoms2graph(remove_connectivity):
     assert graph.edges[(0, 1)]["bond_order"] in [None, 1]
 
 
-def test_rdkit2graph():
+def test_rdkit2networkx():
     etoh = MolFromSmiles("CCO")
     etoh = AddHs(etoh)
-    graph = rdkit2ase.rdkit2graph(etoh)
+    graph = rdkit2ase.rdkit2networkx(etoh)
     assert graph.number_of_nodes() == 9
     assert graph.number_of_edges() == 8
 
@@ -36,10 +36,10 @@ def test_rdkit2graph():
     assert graph.nodes[0]["charge"] == 0
 
 
-def test_graph2rdkit():
+def test_networkx2rdkit():
     atoms = rdkit2ase.smiles2atoms("CO")
-    graph = rdkit2ase.atoms2graph(atoms)
-    mol = rdkit2ase.graph2rdkit(graph)
+    graph = rdkit2ase.ase2networkx(atoms)
+    mol = rdkit2ase.networkx2rdkit(graph)
     assert mol.GetNumAtoms() == 6
     assert mol.GetNumBonds() == 5
 
@@ -47,10 +47,10 @@ def test_graph2rdkit():
     assert MolToSmiles(mol) == "[H]OC([H])([H])[H]"
 
 
-def test_graph2atoms():
+def test_networkx2atoms():
     atoms = rdkit2ase.smiles2atoms("CO")
-    graph = rdkit2ase.atoms2graph(atoms)
-    new_atoms = rdkit2ase.graph2atoms(graph)
+    graph = rdkit2ase.ase2networkx(atoms)
+    new_atoms = rdkit2ase.networkx2atoms(graph)
     assert new_atoms.get_chemical_symbols() == atoms.get_chemical_symbols()
     assert new_atoms.get_positions().tolist() == atoms.get_positions().tolist()
     assert new_atoms.info["connectivity"] == atoms.info["connectivity"]

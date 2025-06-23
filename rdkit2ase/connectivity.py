@@ -1,18 +1,32 @@
 import networkx as nx
 import numpy as np
 from ase import Atoms
-from ase.neighborlist import natural_cutoffs  # For atoms_to_graph
+from ase.neighborlist import natural_cutoffs
 from rdkit import Chem
 
-# from rdkit.Chem import AllChem # Not strictly needed for this implementation but often useful
 
-
-def atoms_to_graph(atoms: Atoms):
+def atoms_to_graph(atoms: Atoms) -> nx.Graph:
     """
-    Converts an ASE Atoms object to a NetworkX graph.
-    Connectivity is determined using natural_cutoffs.
-    Nodes store atomic number and original index.
-    This function is based on the user's provided snippet.
+    Converts an ASE Atoms object to a NetworkX graph based on interatomic distances.
+
+    Connectivity between atoms is determined using the sum 
+    of their natural cutoffs (scaled by 1.2). Each node in the resulting
+    graph represents an atom and stores its position, atomic number, and original index.
+
+    Parameters
+    ----------
+    atoms : ase.Atoms
+        The ASE Atoms object to convert into a graph.
+
+    Returns
+    -------
+    networkx.Graph
+        An undirected graph where nodes correspond to atoms and edges 
+        represent connectivity based on cutoff distances.
+        Node attributes include:
+            - 'position': numpy.ndarray, the atomic position.
+            - 'atomic_number': int, the atomic number.
+            - 'original_index': int, the atom's index in the original Atoms object.
     """
     r_ij = atoms.get_all_distances(mic=True, vector=False)  # Get scalar distances
 

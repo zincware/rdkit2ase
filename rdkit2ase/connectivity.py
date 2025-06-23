@@ -36,14 +36,14 @@ def ase2networkx(atoms: Atoms) -> nx.Graph:
     -------
     networkx.Graph
         An undirected NetworkX graph where:
-        
+
         - **Nodes** represent atoms and include:
-        
+
           - ``position`` (numpy.ndarray): Cartesian coordinates of the atom.
           - ``atomic_number`` (int): Atomic number.
           - ``original_index`` (int): Index in the original ASE Atoms object.
           - ``charge`` (int): Formal charge of the atom.
-        
+
         - **Edges** represent interatomic bonds based on cutoff distance.
     """
     charges = atoms.get_initial_charges()
@@ -107,13 +107,13 @@ def rdkit2networkx(mol: Chem.Mol) -> nx.Graph:
         An undirected NetworkX graph where:
 
         - **Nodes** represent atoms and include:
-        
+
           - ``atomic_number`` (int): Atomic number of the atom.
           - ``original_index`` (int): Original RDKit atom index.
           - ``charge`` (int): Formal charge of the atom.
-        
+
         - **Edges** represent chemical bonds and include:
-        
+
           - ``bond_order`` (float): Bond order
             (1: single, 2: double, 3: triple, 1.5: aromatic).
     """

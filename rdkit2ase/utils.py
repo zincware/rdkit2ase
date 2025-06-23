@@ -2,6 +2,9 @@ from collections import defaultdict
 
 import ase
 import ase.units
+import numpy as np
+from ase.data import covalent_radii
+from ase.neighborlist import NeighborList
 
 
 def find_connected_components(connectivity: list[tuple[int, int, float]]):
@@ -58,3 +61,52 @@ def calculate_box_dimensions(images: list[ase.Atoms], density: float) -> list[fl
     volume_per_mol = molar_volume * ase.units.m**3 / ase.units.mol
     box_edge = volume_per_mol ** (1 / 3)
     return [box_edge] * 3
+
+
+def unwrap_molecule(atoms, scale=1.2):
+    """Robust unwrapping across PBC using root-referenced traversal."""
+    positions = atoms.get_positions()
+    cell = atoms.get_cell()
+    numbers = atoms.get_atomic_numbers()
+
+    # Cutoffs from covalent radii
+    radii = scale * covalent_radii[numbers]
+    cutoffs = radii
+
+    # Build PBC-aware neighbor list
+    nl = NeighborList(cutoffs=cutoffs, skin=0.3, self_interaction=False, bothways=True)
+    nl.update(atoms)
+
+    n_atoms = len(atoms)
+    visited = np.zeros(n_atoms, dtype=bool)
+    image_shifts = np.zeros(
+        (n_atoms, 3), dtype=int
+    )  # Tracks image shifts (integer multiples of cell)
+
+    def traverse_molecule(root):
+        """Traverse and unwrap molecule starting from root atom."""
+        stack = [root]
+        visited[root] = True
+        while stack:
+            i = stack.pop()
+            neighbors, offsets = nl.get_neighbors(i)
+            for j, offset in zip(neighbors, offsets):
+                if visited[j]:
+                    continue
+                image_shifts[j] = (
+                    image_shifts[i] + offset
+                )  # Accumulate total image shift
+                visited[j] = True
+                stack.append(j)
+
+    # Unwrap all disconnected fragments
+    for i in range(n_atoms):
+        if not visited[i]:
+            traverse_molecule(i)
+
+    # Apply accumulated image shifts to get true positions
+    shifts = np.dot(image_shifts, cell)
+    new_positions = positions + shifts
+    atoms.set_positions(new_positions)
+
+    return atoms

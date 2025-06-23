@@ -54,8 +54,17 @@ def test_rdkit2ase(methanol):
     assert ase_atoms.get_atomic_numbers().tolist() == [6, 8, 1, 1, 1, 1]
 
 
-def test_ase2rdkit(methane):
-    rdkit_mol = ase2rdkit(methane)
+@pytest.mark.parametrize("separate", [True, False])
+def test_ase2rdkit_methane(methane, separate):
+    rdkit_mol = ase2rdkit(methane, separate=separate)
+
+    # assert the smiles string
+    smiles = rdkit.Chem.MolToSmiles(rdkit_mol)
+    assert smiles == "[H]C([H])([H])[H]"
+
+
+def test_ase2rdkit_methane_suggestions(methane):
+    rdkit_mol = ase2rdkit(methane, suggestions=["C", "CCC"])
 
     # assert the smiles string
     smiles = rdkit.Chem.MolToSmiles(rdkit_mol)

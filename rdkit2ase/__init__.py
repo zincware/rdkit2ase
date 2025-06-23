@@ -1,5 +1,5 @@
 from .compress import compress
-from .connectivity import atoms2graph, rdkit2graph
+from .connectivity import atoms2graph, rdkit2graph, graph2rdkit, graph2atoms
 from .pack import pack
 from .rdkit2ase import ase2rdkit, rdkit2ase
 from .smiles import smiles2atoms, smiles2conformers
@@ -17,4 +17,6 @@ __all__ = [
     "iter_fragments",
     "atoms2graph",
     "rdkit2graph",
+    "graph2rdkit",
+    "graph2atoms",
 ]

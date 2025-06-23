@@ -9,22 +9,10 @@ import rdkit.Chem.rdDetermineBonds
 from ase.build import separate as ase_separate
 from rdkit import Chem
 
-from rdkit2ase.connectivity import reconstruct_bonds_from_template
+from rdkit2ase.connectivity import reconstruct_bonds_from_template, bond_type_from_order
 from rdkit2ase.utils import unwrap_molecule
 
 
-# Map float bond orders to RDKit bond types
-def bond_type_from_order(order):
-    if order == 1.0:
-        return Chem.BondType.SINGLE
-    elif order == 2.0:
-        return Chem.BondType.DOUBLE
-    elif order == 3.0:
-        return Chem.BondType.TRIPLE
-    elif order == 1.5:
-        return Chem.BondType.AROMATIC
-    else:
-        raise ValueError(f"Unsupported bond order: {order}")
 
 
 def rdkit2ase(mol, seed: int = 42) -> ase.Atoms:

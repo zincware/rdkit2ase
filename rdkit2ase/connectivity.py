@@ -4,6 +4,20 @@ from ase import Atoms
 from ase.neighborlist import natural_cutoffs
 from rdkit import Chem
 
+# Map float bond orders to RDKit bond types
+def bond_type_from_order(order):
+    if order == 1.0:
+        return Chem.BondType.SINGLE
+    elif order == 2.0:
+        return Chem.BondType.DOUBLE
+    elif order == 3.0:
+        return Chem.BondType.TRIPLE
+    elif order == 1.5:
+        return Chem.BondType.AROMATIC
+    else:
+        raise ValueError(f"Unsupported bond order: {order}")
+
+
 
 def atoms2graph(atoms: Atoms) -> nx.Graph:
     """
@@ -118,6 +132,82 @@ def rdkit2graph(mol: Chem.Mol) -> nx.Graph:
 
         G.add_edge(bond.GetBeginAtomIdx(), bond.GetEndAtomIdx(), bond_order=bond_order)
     return G
+
+def graph2rdkit(G: nx.Graph) -> Chem.Mol:
+    """
+    Converts a NetworkX graph back to an RDKit molecule.
+
+    Parameters
+    ----------
+    G : nx.Graph
+        The input graph with nodes representing atoms and edges representing bonds.
+
+    Returns
+    -------
+    Chem.Mol
+        An RDKit molecule object reconstructed from the graph.
+    """
+    mol = Chem.RWMol()
+    nx_to_rdkit_atom_map = {}
+
+    for node_id, attributes in G.nodes(data=True):
+        atomic_number = attributes.get("atomic_number")
+        charge = attributes.get("charge", 0)
+
+        if atomic_number is None:
+            raise ValueError(f"Node {node_id} is missing 'atomic_number' attribute.")
+        
+        atom = Chem.Atom(int(atomic_number))
+        atom.SetFormalCharge(int(charge))
+        idx = mol.AddAtom(atom)
+        nx_to_rdkit_atom_map[node_id] = idx
+
+    for u, v, data in G.edges(data=True):
+        bond_order = data.get("bond_order")
+
+        if bond_order is None:
+            raise ValueError(f"Edge ({u}, {v}) is missing 'bond_order' attribute.")
+        
+        mol.AddBond(nx_to_rdkit_atom_map[u], nx_to_rdkit_atom_map[v], bond_type_from_order(int(bond_order)))
+
+    Chem.SanitizeMol(mol)
+
+    return mol.GetMol()
+
+
+def graph2atoms(G: nx.Graph) -> Atoms:
+    """
+    Converts a NetworkX graph to an ASE Atoms object.
+
+    Parameters
+    ----------
+    G : nx.Graph
+        The input graph with nodes representing atoms and edges representing bonds.
+
+    Returns
+    -------
+    ase.Atoms
+        An ASE Atoms object reconstructed from the graph.
+    """
+    positions = np.array([G.nodes[n]["position"] for n in G.nodes])
+    numbers = np.array([G.nodes[n]["atomic_number"] for n in G.nodes])
+    charges = np.array([G.nodes[n]["charge"] for n in G.nodes])
+
+    atoms = Atoms(
+        positions=positions,
+        numbers=numbers,
+        charges=charges,
+        pbc=False,
+    )
+
+    connectivity = []
+    for u, v, data in G.edges(data=True):
+        bond_order = data["bond_order"]
+        connectivity.append((u, v, bond_order))
+
+    atoms.info["connectivity"] = connectivity
+
+    return atoms
 
 
 def _recursive_match_attempt(

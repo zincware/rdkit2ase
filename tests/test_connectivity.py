@@ -2,7 +2,7 @@ import pytest
 
 import rdkit2ase
 from rdkit2ase.connectivity import reconstruct_bonds_from_template
-from rdkit.Chem import MolFromSmiles, AddHs
+from rdkit.Chem import MolFromSmiles, AddHs, MolToSmiles
 
 @pytest.mark.parametrize("remove_connectivity", [True, False])
 def test_atoms2graph(remove_connectivity):
@@ -32,6 +32,26 @@ def test_rdkit2graph():
     assert graph.nodes[0]["original_index"] == 0
     assert graph.nodes[0]["charge"] == 0
 
+
+def test_graph2rdkit():
+    atoms = rdkit2ase.smiles2atoms("CO")
+    graph = rdkit2ase.atoms2graph(atoms)
+    mol = rdkit2ase.graph2rdkit(graph)
+    assert mol.GetNumAtoms() == 6
+    assert mol.GetNumBonds() == 5
+
+    # SMILES representation (including hydrogens)
+    assert MolToSmiles(mol) == "[H]OC([H])([H])[H]"
+
+
+def test_graph2atoms():
+    atoms = rdkit2ase.smiles2atoms("CO")
+    graph = rdkit2ase.atoms2graph(atoms)
+    new_atoms = rdkit2ase.graph2atoms(graph)
+    assert new_atoms.get_chemical_symbols() == atoms.get_chemical_symbols()
+    assert new_atoms.get_positions().tolist() == atoms.get_positions().tolist()
+    assert new_atoms.info["connectivity"] == atoms.info["connectivity"]
+    assert new_atoms.get_initial_charges().tolist() == atoms.get_initial_charges().tolist()
 
 @pytest.mark.parametrize(
     "smiles",

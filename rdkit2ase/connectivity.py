@@ -67,17 +67,29 @@ def rdkit_mol_to_graph(mol: Chem.Mol):
     return G
 
 
-def _recursive_match_attempt(G_template, G_ase, mapping, rev_mapping):
+def _recursive_match_attempt(
+    G_template: nx.Graph,
+    G_ase: nx.Graph,
+    mapping: dict[int, int],
+    rev_mapping: dict[int, int],
+) -> dict[int, int] | None:
     """
-    Attempts to find a subgraph isomorphism.
+    Attempts to find a subgraph isomorphism between the template and ASE graphs.
 
-    Args:
-        G_template: The template graph (from RDKit).
-        G_ase: The target graph (from ASE Atoms).
-        mapping: Current mapping from template node index to ASE node index.
-        rev_mapping: Current reverse mapping from ASE node index to template node index.
+    Parameters
+    ----------
+    G_template : nx.Graph
+        The template graph (from RDKit).
+    G_ase : nx.Graph
+        The target graph (from ASE Atoms).
+    mapping : dict[int, int]
+        Current mapping from template node index to ASE node index.
+    rev_mapping : dict[int, int]
+        Current reverse mapping from ASE node index to template node index.
 
-    Returns:
+    Returns
+    -------
+    dict[int, int] or None
         A completed mapping if successful, otherwise None.
     """
     if len(mapping) == len(G_template.nodes):
@@ -147,23 +159,30 @@ def _recursive_match_attempt(G_template, G_ase, mapping, rev_mapping):
 
 def reconstruct_bonds_from_template(atoms_obj: Atoms, smiles_template: str):
     """
-    Reconstructs bond information and atomic charges for an ASE Atoms object
+    Reconstruct bond information and atomic charges for an ASE Atoms object
     using a SMILES template.
 
-    Args:
-        atoms_obj: The ASE Atoms object.
-        smiles_template: A SMILES string for the template molecule.
+    Parameters
+    ----------
+    atoms_obj : ase.Atoms
+        The ASE Atoms object.
+    smiles_template : str
+        A SMILES string for the template molecule.
 
-    Returns:
-        A tuple: (bonds, charges)
-        - bonds: A list of tuples (ase_idx1, ase_idx2, bond_order) representing bonds.
-                 Indices are 0-based original indices from the ASE Atoms object.
-        - charges: A list of integers representing the formal charge on each atom
-                   in the original ASE atoms_obj, derived from the template. Atoms
-                   not part of the template mapping will have a charge of 0.
+    Returns
+    -------
+    bonds : list of tuple
+        A list of tuples (ase_idx1, ase_idx2, bond_order) representing bonds.
+        Indices are 0-based original indices from the ASE Atoms object.
+    charges : list of int
+        A list of integers representing the formal charge on each atom
+        in the original ASE atoms_obj, derived from the template. Atoms
+        not part of the template mapping will have a charge of 0.
 
-    Raises:
-        ValueError: If no valid mapping is found or if atoms counts are inconsistent.
+    Raises
+    ------
+    ValueError
+        If no valid mapping is found or if atom counts are inconsistent.
     """
     if not atoms_obj:
         raise ValueError("Input ASE Atoms object is empty.")
@@ -177,7 +196,6 @@ def reconstruct_bonds_from_template(atoms_obj: Atoms, smiles_template: str):
         raise ValueError(f"Could not parse SMILES string: {smiles_template}")
 
     mol_template = Chem.AddHs(mol_template)
-    # It's good practice to sanitize and perceive charges if not already explicit in SMILES
     Chem.SanitizeMol(mol_template)
     G_template = rdkit_mol_to_graph(mol_template)
 
@@ -208,9 +226,7 @@ def reconstruct_bonds_from_template(atoms_obj: Atoms, smiles_template: str):
             )
 
     if not template_atom_counts:
-        return [], [0] * len(
-            atoms_obj
-        )  # Return empty bonds and zero charges for all atoms
+        return [], [0] * len(atoms_obj)
 
     min_count = float("inf")
     min_atom_type = -1
@@ -268,9 +284,7 @@ def reconstruct_bonds_from_template(atoms_obj: Atoms, smiles_template: str):
                     ) + (bond_order,)
                     bonds.append(bond_tuple)
 
-                # Initialize charges for all atoms in the original ASE object to 0
                 ase_atom_charges = [0] * len(atoms_obj)
-                # Assign charges based on the template mapping
                 for (
                     template_node_idx,
                     ase_node_idx_in_graph,

@@ -37,7 +37,7 @@ def rdkit2ase(mol, seed: int = 42) -> ase.Atoms:
     return atoms
 
 
-def ase2rdkit(
+def ase2rdkit(  # noqa: C901
     atoms: ase.Atoms, separate: bool = True, suggestions: list[str] | None = None
 ) -> rdkit.Chem.Mol:
     """Convert an ASE Atoms object to an RDKit molecule.

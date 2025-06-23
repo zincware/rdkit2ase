@@ -73,23 +73,24 @@ def atoms2graph(atoms: Atoms) -> nx.Graph:
 
     connectivity_matrix[d_ij_temp <= pairwise_cutoffs] = 1
 
-    G = nx.from_numpy_array(connectivity_matrix)
-    for u, v in G.edges():
-        G.edges[u, v]["bond_order"] = None
+    graph = nx.from_numpy_array(connectivity_matrix)
+    for u, v in graph.edges():
+        graph.edges[u, v]["bond_order"] = None
 
     for i, atom in enumerate(atoms):
-        G.nodes[i]["position"] = atom.position
-        G.nodes[i]["atomic_number"] = atom.number
-        G.nodes[i]["original_index"] = atom.index
-        G.nodes[i]["charge"] = charges[i]
-    return G
+        graph.nodes[i]["position"] = atom.position
+        graph.nodes[i]["atomic_number"] = atom.number
+        graph.nodes[i]["original_index"] = atom.index
+        graph.nodes[i]["charge"] = charges[i]
+    return graph
 
 
 def rdkit2graph(mol: Chem.Mol) -> nx.Graph:
     """
-    Each atom in the molecule is represented as a node in the graph, with node attributes
-    including atomic number, original RDKit atom index, and formal charge. Each bond is
-    represented as an edge, with the bond order as an edge attribute.
+    Each atom in the molecule is represented as a node in the graph,
+    with node attributes including atomic number, original RDKit
+    atom index, and formal charge. Each bond is represented as an
+    edge, with the bond order as an edge attribute.
 
     Parameters
     ----------
@@ -108,9 +109,9 @@ def rdkit2graph(mol: Chem.Mol) -> nx.Graph:
             - bond_order (float): Bond order
             (1 for single, 2 for double, 3 for triple, 1.5 for aromatic).
     """
-    G = nx.Graph()
+    graph = nx.Graph()
     for atom in mol.GetAtoms():
-        G.add_node(
+        graph.add_node(
             atom.GetIdx(),
             atomic_number=atom.GetAtomicNum(),
             original_index=atom.GetIdx(),
@@ -129,17 +130,19 @@ def rdkit2graph(mol: Chem.Mol) -> nx.Graph:
         elif bond_type == Chem.BondType.AROMATIC:
             bond_order = 1.5
 
-        G.add_edge(bond.GetBeginAtomIdx(), bond.GetEndAtomIdx(), bond_order=bond_order)
-    return G
+        graph.add_edge(
+            bond.GetBeginAtomIdx(), bond.GetEndAtomIdx(), bond_order=bond_order
+        )
+    return graph
 
 
-def graph2rdkit(G: nx.Graph) -> Chem.Mol:
+def graph2rdkit(graph: nx.Graph) -> Chem.Mol:
     """
     Converts a NetworkX graph back to an RDKit molecule.
 
     Parameters
     ----------
-    G : nx.Graph
+    graph : nx.Graph
         The input graph with nodes representing atoms and edges representing bonds.
 
     Returns
@@ -150,7 +153,7 @@ def graph2rdkit(G: nx.Graph) -> Chem.Mol:
     mol = Chem.RWMol()
     nx_to_rdkit_atom_map = {}
 
-    for node_id, attributes in G.nodes(data=True):
+    for node_id, attributes in graph.nodes(data=True):
         atomic_number = attributes.get("atomic_number")
         charge = attributes.get("charge", 0)
 
@@ -162,7 +165,7 @@ def graph2rdkit(G: nx.Graph) -> Chem.Mol:
         idx = mol.AddAtom(atom)
         nx_to_rdkit_atom_map[node_id] = idx
 
-    for u, v, data in G.edges(data=True):
+    for u, v, data in graph.edges(data=True):
         bond_order = data.get("bond_order")
 
         if bond_order is None:
@@ -179,13 +182,13 @@ def graph2rdkit(G: nx.Graph) -> Chem.Mol:
     return mol.GetMol()
 
 
-def graph2atoms(G: nx.Graph) -> Atoms:
+def graph2atoms(graph: nx.Graph) -> Atoms:
     """
     Converts a NetworkX graph to an ASE Atoms object.
 
     Parameters
     ----------
-    G : nx.Graph
+    graph : nx.Graph
         The input graph with nodes representing atoms and edges representing bonds.
 
     Returns
@@ -193,9 +196,9 @@ def graph2atoms(G: nx.Graph) -> Atoms:
     ase.Atoms
         An ASE Atoms object reconstructed from the graph.
     """
-    positions = np.array([G.nodes[n]["position"] for n in G.nodes])
-    numbers = np.array([G.nodes[n]["atomic_number"] for n in G.nodes])
-    charges = np.array([G.nodes[n]["charge"] for n in G.nodes])
+    positions = np.array([graph.nodes[n]["position"] for n in graph.nodes])
+    numbers = np.array([graph.nodes[n]["atomic_number"] for n in graph.nodes])
+    charges = np.array([graph.nodes[n]["charge"] for n in graph.nodes])
 
     atoms = Atoms(
         positions=positions,
@@ -205,7 +208,7 @@ def graph2atoms(G: nx.Graph) -> Atoms:
     )
 
     connectivity = []
-    for u, v, data in G.edges(data=True):
+    for u, v, data in graph.edges(data=True):
         bond_order = data["bond_order"]
         connectivity.append((u, v, bond_order))
 
@@ -214,9 +217,9 @@ def graph2atoms(G: nx.Graph) -> Atoms:
     return atoms
 
 
-def _recursive_match_attempt(
-    G_template: nx.Graph,
-    G_ase: nx.Graph,
+def _recursive_match_attempt(  # noqa: C901
+    template_graph: nx.Graph,
+    ase_graph: nx.Graph,
     mapping: dict[int, int],
     rev_mapping: dict[int, int],
 ) -> dict[int, int] | None:
@@ -225,9 +228,9 @@ def _recursive_match_attempt(
 
     Parameters
     ----------
-    G_template : nx.Graph
+    template_graph : nx.Graph
         The template graph (from RDKit).
-    G_ase : nx.Graph
+    ase_graph : nx.Graph
         The target graph (from ASE Atoms).
     mapping : dict[int, int]
         Current mapping from template node index to ASE node index.
@@ -239,51 +242,51 @@ def _recursive_match_attempt(
     dict[int, int] or None
         A completed mapping if successful, otherwise None.
     """
-    if len(mapping) == len(G_template.nodes):
-        for u_template, v_template in G_template.edges():
+    if len(mapping) == len(template_graph.nodes):
+        for u_template, v_template in template_graph.edges():
             if not (u_template in mapping and v_template in mapping):
                 return None
 
             u_ase, v_ase = mapping[u_template], mapping[v_template]
-            if not G_ase.has_edge(u_ase, v_ase):
+            if not ase_graph.has_edge(u_ase, v_ase):
                 return None
         return mapping
 
-    unmapped_template_nodes = sorted(
-        list(set(G_template.nodes()) - set(mapping.keys()))
-    )
+    unmapped_template_nodes = sorted(set(template_graph.nodes()) - set(mapping.keys()))
 
     if not unmapped_template_nodes:
         return None
 
     next_template_node_to_map = unmapped_template_nodes[0]
 
-    potential_ase_candidates = sorted(list(G_ase.nodes()))
+    potential_ase_candidates = sorted(ase_graph.nodes())
 
     for ase_candidate_node in potential_ase_candidates:
         if ase_candidate_node in rev_mapping:
             continue
 
         if (
-            G_ase.nodes[ase_candidate_node]["atomic_number"]
-            != G_template.nodes[next_template_node_to_map]["atomic_number"]
+            ase_graph.nodes[ase_candidate_node]["atomic_number"]
+            != template_graph.nodes[next_template_node_to_map]["atomic_number"]
         ):
             continue
 
         compatible = True
-        for mapped_template_neighbor in G_template.neighbors(next_template_node_to_map):
+        for mapped_template_neighbor in template_graph.neighbors(
+            next_template_node_to_map
+        ):
             if mapped_template_neighbor in mapping:
                 ase_mapped_neighbor = mapping[mapped_template_neighbor]
-                if not G_ase.has_edge(ase_candidate_node, ase_mapped_neighbor):
+                if not ase_graph.has_edge(ase_candidate_node, ase_mapped_neighbor):
                     compatible = False
                     break
         if not compatible:
             continue
 
-        for mapped_ase_neighbor in G_ase.neighbors(ase_candidate_node):
+        for mapped_ase_neighbor in ase_graph.neighbors(ase_candidate_node):
             if mapped_ase_neighbor in rev_mapping:
                 corresponding_template_node = rev_mapping[mapped_ase_neighbor]
-                if not G_template.has_edge(
+                if not template_graph.has_edge(
                     next_template_node_to_map, corresponding_template_node
                 ):
                     compatible = False
@@ -294,7 +297,9 @@ def _recursive_match_attempt(
         mapping[next_template_node_to_map] = ase_candidate_node
         rev_mapping[ase_candidate_node] = next_template_node_to_map
 
-        result = _recursive_match_attempt(G_template, G_ase, mapping, rev_mapping)
+        result = _recursive_match_attempt(
+            template_graph, ase_graph, mapping, rev_mapping
+        )
         if result is not None:
             return result
 
@@ -304,7 +309,7 @@ def _recursive_match_attempt(
     return None
 
 
-def reconstruct_bonds_from_template(atoms_obj: Atoms, smiles_template: str):
+def reconstruct_bonds_from_template(atoms_obj: Atoms, smiles_template: str):  # noqa: C901
     """
     Reconstruct bond information and atomic charges for an ASE Atoms object
     using a SMILES template.
@@ -334,8 +339,8 @@ def reconstruct_bonds_from_template(atoms_obj: Atoms, smiles_template: str):
     if not atoms_obj:
         raise ValueError("Input ASE Atoms object is empty.")
 
-    G_ase = atoms2graph(atoms_obj)
-    if not G_ase.nodes:
+    ase_graph = atoms2graph(atoms_obj)
+    if not ase_graph.nodes:
         raise ValueError("Could not generate graph from ASE Atoms object (no nodes).")
 
     mol_template = Chem.MolFromSmiles(smiles_template)
@@ -344,24 +349,24 @@ def reconstruct_bonds_from_template(atoms_obj: Atoms, smiles_template: str):
 
     mol_template = Chem.AddHs(mol_template)
     Chem.SanitizeMol(mol_template)
-    G_template = rdkit2graph(mol_template)
+    template_graph = rdkit2graph(mol_template)
 
-    if not G_template.nodes:
+    if not template_graph.nodes:
         raise ValueError("Could not generate graph from SMILES template (no nodes).")
 
-    if len(G_template.nodes) > len(G_ase.nodes):
+    if len(template_graph.nodes) > len(ase_graph.nodes):
         raise ValueError(
-            f"Template molecule ({len(G_template.nodes)} atoms) is larger than "
-            f"ASE structure ({len(G_ase.nodes)} atoms)."
+            f"Template molecule ({len(template_graph.nodes)} atoms) is larger than "
+            f"ASE structure ({len(ase_graph.nodes)} atoms)."
         )
 
     template_atom_counts = {}
-    for _, data in G_template.nodes(data=True):
+    for _, data in template_graph.nodes(data=True):
         num = data["atomic_number"]
         template_atom_counts[num] = template_atom_counts.get(num, 0) + 1
 
     ase_atom_counts = {}
-    for _, data in G_ase.nodes(data=True):
+    for _, data in ase_graph.nodes(data=True):
         num = data["atomic_number"]
         ase_atom_counts[num] = ase_atom_counts.get(num, 0) + 1
 
@@ -384,13 +389,13 @@ def reconstruct_bonds_from_template(atoms_obj: Atoms, smiles_template: str):
 
     start_template_nodes = [
         n
-        for n, data in G_template.nodes(data=True)
+        for n, data in template_graph.nodes(data=True)
         if data["atomic_number"] == min_atom_type
     ]
 
     start_ase_nodes = [
         n
-        for n, data in G_ase.nodes(data=True)
+        for n, data in ase_graph.nodes(data=True)
         if data["atomic_number"] == min_atom_type
     ]
 
@@ -400,12 +405,15 @@ def reconstruct_bonds_from_template(atoms_obj: Atoms, smiles_template: str):
             initial_rev_mapping = {ase_start_node_idx: template_start_node_idx}
 
             solution_mapping = _recursive_match_attempt(
-                G_template, G_ase, initial_mapping.copy(), initial_rev_mapping.copy()
+                template_graph,
+                ase_graph,
+                initial_mapping.copy(),
+                initial_rev_mapping.copy(),
             )
 
             if solution_mapping is not None:
                 bonds = []
-                for u_template, v_template, data_template in G_template.edges(
+                for u_template, v_template, data_template in template_graph.edges(
                     data=True
                 ):
                     if (
@@ -417,10 +425,10 @@ def reconstruct_bonds_from_template(atoms_obj: Atoms, smiles_template: str):
                     ase_node_u_idx_in_graph = solution_mapping[u_template]
                     ase_node_v_idx_in_graph = solution_mapping[v_template]
 
-                    original_ase_idx_u = G_ase.nodes[ase_node_u_idx_in_graph][
+                    original_ase_idx_u = ase_graph.nodes[ase_node_u_idx_in_graph][
                         "original_index"
                     ]
-                    original_ase_idx_v = G_ase.nodes[ase_node_v_idx_in_graph][
+                    original_ase_idx_v = ase_graph.nodes[ase_node_v_idx_in_graph][
                         "original_index"
                     ]
 
@@ -436,13 +444,13 @@ def reconstruct_bonds_from_template(atoms_obj: Atoms, smiles_template: str):
                     template_node_idx,
                     ase_node_idx_in_graph,
                 ) in solution_mapping.items():
-                    original_ase_idx = G_ase.nodes[ase_node_idx_in_graph][
+                    original_ase_idx = ase_graph.nodes[ase_node_idx_in_graph][
                         "original_index"
                     ]
-                    charge = G_template.nodes[template_node_idx]["charge"]
+                    charge = template_graph.nodes[template_node_idx]["charge"]
                     ase_atom_charges[original_ase_idx] = charge
 
-                return sorted(list(set(bonds))), ase_atom_charges
+                return sorted(set(bonds)), ase_atom_charges
 
     raise ValueError(
         "Could not find a valid mapping between the template and the ASE structure."

@@ -49,7 +49,7 @@ def ase2rdkit(
     separate : bool, optional
         separate the "atoms" object using ase.build.separate()
         for faster conversion. Very useful for large systems,
-        not recommended for small systems.
+        not necessary for small systems.
     suggestions : list[str] | None, optional
         A list of SMILES strings to use as suggestions for bond determination.
         If provided, RDKit will try to match the connectivity based on these SMILES.

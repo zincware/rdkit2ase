@@ -18,10 +18,6 @@ def make_molecule(shift=(0, 0, 0), cell=(10, 10, 10), pbc=True):
     return atoms
 
 
-def get_distance(atoms, i, j):
-    return np.linalg.norm(atoms.positions[i] - atoms.positions[j])
-
-
 @pytest.mark.parametrize(
     "shift,expected",
     [
@@ -38,7 +34,7 @@ def test_unwrap_diatomic(shift, expected):
     atoms_wrapped = atoms.copy()
     atoms_unwrapped = unwrap_molecule(atoms_wrapped)
 
-    dist = get_distance(atoms_unwrapped, 0, 1)
+    dist = atoms_unwrapped.get_distance(0, 1, mic=True)
     assert np.isclose(dist, expected, atol=0.05)
 
 
@@ -53,8 +49,8 @@ def test_multiple_molecules():
     atoms_unwrapped = unwrap_molecule(atoms.copy())
 
     # Check both H-H distances are ~1.1
-    d1 = get_distance(atoms_unwrapped, 0, 1)
-    d2 = get_distance(atoms_unwrapped, 2, 3)
+    d1 = atoms_unwrapped.get_distance(0, 1, mic=True)
+    d2 = atoms_unwrapped.get_distance(2, 3, mic=True)
 
     assert np.isclose(d1, 1.1, atol=0.05)
     assert np.isclose(d2, 1.1, atol=0.05)
@@ -70,7 +66,7 @@ def test_wrapping_corner_case():
     atoms = Atoms("H2", positions=[a1, a2], cell=[10, 10, 10], pbc=True)
 
     atoms_unwrapped = unwrap_molecule(atoms.copy())
-    dist = get_distance(atoms_unwrapped, 0, 1)
+    dist = atoms_unwrapped.get_distance(0, 1, mic=True)
 
     assert np.isclose(dist, 1.1, atol=0.05)
 
@@ -81,7 +77,7 @@ def test_no_pbc():
     atoms.set_pbc(False)
 
     atoms_unwrapped = unwrap_molecule(atoms.copy())
-    dist = get_distance(atoms_unwrapped, 0, 1)
+    dist = atoms_unwrapped.get_distance(0, 1)
 
     assert np.isclose(dist, 1.1, atol=0.05)
 

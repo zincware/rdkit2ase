@@ -42,19 +42,19 @@ def match_substructure(
     if smiles is not None:
         pattern = Chem.MolFromSmiles(smiles)
         pattern = Chem.AddHs(pattern)  # Ensure hydrogens are added for matching
-    elif smarts is not None:
-        if smarts is None:
+    if smarts is not None:
+        if pattern is not None:
             raise ValueError("Can only specify one pattern")
         pattern = Chem.MolFromSmarts(smarts)
-    elif mol is not None:
+    if mol is not None:
         if pattern is not None:
             raise ValueError("Can only specify one pattern")
         pattern = mol
-    elif fragment is not None:
+    if fragment is not None:
         if pattern is not None:
             raise ValueError("Can only specify one pattern")
         pattern = ase2rdkit(fragment, **kwargs)
-    else:
+    if pattern is None:
         raise ValueError("Must specify a pattern")
 
     Chem.SanitizeMol(pattern)

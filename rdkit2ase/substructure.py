@@ -66,10 +66,6 @@ def match_substructure(
 
 def get_substructures(
     atoms: ase.Atoms,
-    smiles: str | None = None,
-    smarts: str | None = None,
-    mol: Chem.Mol | None = None,
-    fragment: ase.Atoms | None = None,
     **kwargs,
 ) -> list[ase.Atoms]:
     """
@@ -88,19 +84,14 @@ def get_substructures(
     fragment : ase.Atoms, optional
         A specific ASE Atoms object to match against the structure.
     **kwargs
-        Additional keyword arguments passed to `ase2rdkit`.
+        Additional keyword arguments passed to `match_substructure`.
 
     Returns
     -------
     list of ase.Atoms
         List of substructure fragments matching the pattern.
     """
-    return [
-        atoms[match]
-        for match in match_substructure(
-            atoms, smiles=smiles, smarts=smarts, mol=mol, fragment=fragment, **kwargs
-        )
-    ]
+    return [atoms[match] for match in match_substructure(atoms, **kwargs)]
 
 
 def iter_fragments(atoms: ase.Atoms) -> list[ase.Atoms]:

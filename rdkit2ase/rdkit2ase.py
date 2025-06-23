@@ -9,10 +9,8 @@ import rdkit.Chem.rdDetermineBonds
 from ase.build import separate as ase_separate
 from rdkit import Chem
 
-from rdkit2ase.connectivity import reconstruct_bonds_from_template, bond_type_from_order
+from rdkit2ase.connectivity import bond_type_from_order, reconstruct_bonds_from_template
 from rdkit2ase.utils import unwrap_molecule
-
-
 
 
 def rdkit2ase(mol, seed: int = 42) -> ase.Atoms:

@@ -4,6 +4,7 @@ from ase import Atoms
 from ase.neighborlist import natural_cutoffs
 from rdkit import Chem
 
+
 # Map float bond orders to RDKit bond types
 def bond_type_from_order(order):
     if order == 1.0:
@@ -16,7 +17,6 @@ def bond_type_from_order(order):
         return Chem.BondType.AROMATIC
     else:
         raise ValueError(f"Unsupported bond order: {order}")
-
 
 
 def atoms2graph(atoms: Atoms) -> nx.Graph:
@@ -77,7 +77,6 @@ def atoms2graph(atoms: Atoms) -> nx.Graph:
     for u, v in G.edges():
         G.edges[u, v]["bond_order"] = None
 
-
     for i, atom in enumerate(atoms):
         G.nodes[i]["position"] = atom.position
         G.nodes[i]["atomic_number"] = atom.number
@@ -106,7 +105,7 @@ def rdkit2graph(mol: Chem.Mol) -> nx.Graph:
             - original_index (int): Original RDKit atom index.
             - charge (int): Formal charge of the atom.
         Edge attributes:
-            - bond_order (float): Bond order 
+            - bond_order (float): Bond order
             (1 for single, 2 for double, 3 for triple, 1.5 for aromatic).
     """
     G = nx.Graph()
@@ -133,6 +132,7 @@ def rdkit2graph(mol: Chem.Mol) -> nx.Graph:
         G.add_edge(bond.GetBeginAtomIdx(), bond.GetEndAtomIdx(), bond_order=bond_order)
     return G
 
+
 def graph2rdkit(G: nx.Graph) -> Chem.Mol:
     """
     Converts a NetworkX graph back to an RDKit molecule.
@@ -156,7 +156,7 @@ def graph2rdkit(G: nx.Graph) -> Chem.Mol:
 
         if atomic_number is None:
             raise ValueError(f"Node {node_id} is missing 'atomic_number' attribute.")
-        
+
         atom = Chem.Atom(int(atomic_number))
         atom.SetFormalCharge(int(charge))
         idx = mol.AddAtom(atom)
@@ -167,8 +167,12 @@ def graph2rdkit(G: nx.Graph) -> Chem.Mol:
 
         if bond_order is None:
             raise ValueError(f"Edge ({u}, {v}) is missing 'bond_order' attribute.")
-        
-        mol.AddBond(nx_to_rdkit_atom_map[u], nx_to_rdkit_atom_map[v], bond_type_from_order(int(bond_order)))
+
+        mol.AddBond(
+            nx_to_rdkit_atom_map[u],
+            nx_to_rdkit_atom_map[v],
+            bond_type_from_order(int(bond_order)),
+        )
 
     Chem.SanitizeMol(mol)
 

@@ -130,9 +130,7 @@ def test_bmim_bf4_no_info():
         tolerance=3,
     )
     del box.info["connectivity"]
-    bf4_matches = rdkit2ase.match_substructure(
-        box, smiles="[B-](F)(F)(F)F"
-    )
+    bf4_matches = rdkit2ase.match_substructure(box, smiles="[B-](F)(F)(F)F")
     assert len(bf4_matches) == 10
     for match in bf4_matches:
         assert box[match].get_chemical_symbols() == bf4[0].get_chemical_symbols()

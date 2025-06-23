@@ -131,7 +131,7 @@ def test_bmim_bf4_no_info():
     )
     del box.info["connectivity"]
     bf4_matches = rdkit2ase.match_substructure(
-        box, "[B-](F)(F)(F)F", suggestions=["[B-](F)(F)(F)F"]
+        box, smiles="[B-](F)(F)(F)F"
     )
     assert len(bf4_matches) == 10
     for match in bf4_matches:
@@ -140,7 +140,6 @@ def test_bmim_bf4_no_info():
     bmim_matches = rdkit2ase.match_substructure(
         box,
         smiles="CCCCN1C=C[N+](=C1)C",
-        suggestions=["CCCCN1C=C[N+](=C1)C"],
     )
     assert len(bmim_matches) == 10
     for match in bmim_matches:
@@ -152,7 +151,6 @@ def test_bmim_bf4_no_info():
     bmim_matches = rdkit2ase.match_substructure(
         box,
         smarts="[H]c1c([H])[n+](C([H])([H])[H])c([H])n1C([H])([H])C([H])([H])C([H])([H])C([H])([H])[H]",
-        suggestions=["CCCCN1C=C[N+](=C1)C"],
     )
     assert len(bmim_matches) == 10
     for match in bmim_matches:

@@ -27,7 +27,10 @@ def atoms2graph(atoms: Atoms) -> nx.Graph:
             - 'position': numpy.ndarray, the atomic position.
             - 'atomic_number': int, the atomic number.
             - 'original_index': int, the atom's index in the original Atoms object.
+            - 'charge': int, the initial charge of the atom.
     """
+    charges = atoms.get_initial_charges()
+
     if "connectivity" in atoms.info:
         connectivity = atoms.info["connectivity"]
         graph = nx.Graph()
@@ -41,6 +44,7 @@ def atoms2graph(atoms: Atoms) -> nx.Graph:
             graph.nodes[i]["position"] = atom.position
             graph.nodes[i]["atomic_number"] = atom.number
             graph.nodes[i]["original_index"] = atom.index
+            graph.nodes[i]["charge"] = charges[i]
         return graph
     r_ij = atoms.get_all_distances(mic=True, vector=False)  # Get scalar distances
 
@@ -59,27 +63,46 @@ def atoms2graph(atoms: Atoms) -> nx.Graph:
     for u, v in G.edges():
         G.edges[u, v]["bond_order"] = None
 
+
     for i, atom in enumerate(atoms):
         G.nodes[i]["position"] = atom.position
         G.nodes[i]["atomic_number"] = atom.number
         G.nodes[i]["original_index"] = atom.index
+        G.nodes[i]["charge"] = charges[i]
     return G
 
 
-def rdkit_mol_to_graph(mol: Chem.Mol):
+def rdkit2graph(mol: Chem.Mol) -> nx.Graph:
     """
-    Converts an RDKit Mol object to a NetworkX graph.
-    Nodes store atomic_number, original_rdkit_index, and formal_charge.
-    Edges store bond_order.
+    Each atom in the molecule is represented as a node in the graph, with node attributes
+    including atomic number, original RDKit atom index, and formal charge. Each bond is
+    represented as an edge, with the bond order as an edge attribute.
+
+    Parameters
+    ----------
+    mol : Chem.Mol
+        RDKit molecule object to be converted.
+
+    Returns
+    -------
+    nx.Graph
+        A NetworkX graph where nodes correspond to atoms and edges correspond to bonds.
+        Node attributes:
+            - atomic_number (int): Atomic number of the atom.
+            - original_index (int): Original RDKit atom index.
+            - charge (int): Formal charge of the atom.
+        Edge attributes:
+            - bond_order (float): Bond order 
+            (1 for single, 2 for double, 3 for triple, 1.5 for aromatic).
     """
     G = nx.Graph()
     for atom in mol.GetAtoms():
         G.add_node(
             atom.GetIdx(),
             atomic_number=atom.GetAtomicNum(),
-            original_rdkit_index=atom.GetIdx(),
-            formal_charge=atom.GetFormalCharge(),
-        )  # Store formal charge
+            original_index=atom.GetIdx(),
+            charge=atom.GetFormalCharge(),
+        )
 
     for bond in mol.GetBonds():
         bond_type = bond.GetBondType()
@@ -227,7 +250,7 @@ def reconstruct_bonds_from_template(atoms_obj: Atoms, smiles_template: str):
 
     mol_template = Chem.AddHs(mol_template)
     Chem.SanitizeMol(mol_template)
-    G_template = rdkit_mol_to_graph(mol_template)
+    G_template = rdkit2graph(mol_template)
 
     if not G_template.nodes:
         raise ValueError("Could not generate graph from SMILES template (no nodes).")
@@ -322,7 +345,7 @@ def reconstruct_bonds_from_template(atoms_obj: Atoms, smiles_template: str):
                     original_ase_idx = G_ase.nodes[ase_node_idx_in_graph][
                         "original_index"
                     ]
-                    charge = G_template.nodes[template_node_idx]["formal_charge"]
+                    charge = G_template.nodes[template_node_idx]["charge"]
                     ase_atom_charges[original_ase_idx] = charge
 
                 return sorted(list(set(bonds))), ase_atom_charges

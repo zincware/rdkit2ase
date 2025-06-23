@@ -2,6 +2,7 @@ import pytest
 
 import rdkit2ase
 from rdkit2ase.connectivity import reconstruct_bonds_from_template
+from rdkit.Chem import MolFromSmiles, AddHs
 
 @pytest.mark.parametrize("remove_connectivity", [True, False])
 def test_atoms2graph(remove_connectivity):
@@ -15,8 +16,21 @@ def test_atoms2graph(remove_connectivity):
     assert graph.nodes[0]["atomic_number"] == 6
     assert graph.nodes[0]["position"].tolist() == pytest.approx([-0.37, 0.0, 0.0], abs=1e-2)
     assert graph.nodes[0]["original_index"] == 0
-    
+    assert graph.nodes[0]["charge"] == 0
+
     assert graph.edges[(0, 1)]["bond_order"] in [None, 1]
+
+
+def test_rdkit2graph():
+    etoh = MolFromSmiles("CCO")
+    etoh = AddHs(etoh)
+    graph = rdkit2ase.rdkit2graph(etoh)
+    assert graph.number_of_nodes() == 9
+    assert graph.number_of_edges() == 8
+
+    assert graph.nodes[0]["atomic_number"] == 6
+    assert graph.nodes[0]["original_index"] == 0
+    assert graph.nodes[0]["charge"] == 0
 
 
 @pytest.mark.parametrize(

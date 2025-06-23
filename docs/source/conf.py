@@ -20,7 +20,13 @@ copyright = f"2025, {author}"
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = ["nbsphinx", "sphinx_copybutton"]
+extensions = [
+    "nbsphinx",
+    "sphinx_copybutton",
+    "sphinx.ext.autodoc",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.viewcode",
+]
 
 templates_path = ["_templates"]
 exclude_patterns = []

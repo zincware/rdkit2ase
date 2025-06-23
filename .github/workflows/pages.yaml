@@ -25,6 +25,10 @@ jobs:
       - name: Install packmol.jl
         run: |
           julia -e 'import Pkg; Pkg.add("Packmol")'
+      - name: Install pandoc
+        run: |
+          sudo apt update
+          sudo apt install -y pandoc
       - name: Build documentation
         run: |
             cd docs

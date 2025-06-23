@@ -1,0 +1,35 @@
+name: docs
+
+on:
+  push:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - "3.13"
+        os:
+          - ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: julia-actions/setup-julia@v2
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install the project
+        run: uv sync --all-extras --dev --all-groups
+      - name: Install packmol.jl
+        run: |
+          julia -e 'import Pkg; Pkg.add("Packmol")'
+      - name: Build documentation
+        run: |
+            cd docs
+            uv run make html
+      - name: Deploy to GitHub Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+            path: docs/_build/html

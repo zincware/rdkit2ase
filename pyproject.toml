@@ -23,6 +23,8 @@ dev = [
     "networkx>=3.4.2",
 ]
 docs = [
+    "furo>=2024.8.6",
+    "nbsphinx>=0.9.7",
     "sphinx>=8.1.3",
 ]
 

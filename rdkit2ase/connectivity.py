@@ -5,7 +5,7 @@ from ase.neighborlist import natural_cutoffs
 from rdkit import Chem
 
 
-def atoms_to_graph(atoms: Atoms) -> nx.Graph:
+def atoms2graph(atoms: Atoms) -> nx.Graph:
     """
     Converts an ASE Atoms object to a NetworkX graph based on interatomic distances.
 
@@ -201,7 +201,7 @@ def reconstruct_bonds_from_template(atoms_obj: Atoms, smiles_template: str):
     if not atoms_obj:
         raise ValueError("Input ASE Atoms object is empty.")
 
-    G_ase = atoms_to_graph(atoms_obj)
+    G_ase = atoms2graph(atoms_obj)
     if not G_ase.nodes:
         raise ValueError("Could not generate graph from ASE Atoms object (no nodes).")
 

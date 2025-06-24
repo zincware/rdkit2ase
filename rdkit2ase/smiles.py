@@ -34,6 +34,7 @@ def smiles2conformers(
         images (list[ase.Atoms]): The list of conformers.
     """
     mol = Chem.MolFromSmiles(smiles)
+    # TODO: add special case for PF6!
     mol = Chem.AddHs(mol)
     rdDistGeom.EmbedMultipleConfs(
         mol,

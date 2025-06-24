@@ -2,11 +2,14 @@ import sys
 
 import numpy as np
 import pytest
+import rdkit.Chem
 from ase import Atoms
 
+import rdkit2ase
 from rdkit2ase.utils import (
     find_connected_components,
-    unwrap_molecule,  # adjust import to your file name
+    rdkit_determine_bonds,
+    unwrap_molecule,
 )
 
 
@@ -110,3 +113,21 @@ def test_find_connected_components_networkx(monkeypatch, networkx):
     assert set(components[0]) == {0, 1, 2}
     assert set(components[1]) == {3, 4, 5}
     assert set(components[2]) == {6, 7}
+
+
+@pytest.mark.parametrize(
+    "smiles",
+    ["O", "CC", "C1=CC=CC=C1", "C1CCCCC1", "C1=CC=CC=C1O", "F[B-](F)(F)F", "[Li+]", "[Cl-]"],
+)
+def test_rdkit_determine_bonds(smiles: str):
+    atoms = rdkit2ase.smiles2atoms(smiles)
+    del atoms.info["connectivity"]
+    del atoms.info["smiles"]
+    mol = rdkit_determine_bonds(atoms)
+
+    target_mol = rdkit.Chem.MolFromSmiles(smiles)
+    target_mol = rdkit.Chem.AddHs(target_mol)
+    target_smiles = rdkit.Chem.MolToSmiles(target_mol)
+    found_smiles = rdkit.Chem.MolToSmiles(mol)
+
+    assert target_smiles == found_smiles

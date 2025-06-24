@@ -1,8 +1,11 @@
+import io
 from collections import defaultdict
 
-import ase
+import ase.io
 import ase.units
 import numpy as np
+import rdkit.Chem
+import rdkit.Chem.rdDetermineBonds
 from ase.data import covalent_radii
 from ase.neighborlist import NeighborList
 
@@ -110,3 +113,40 @@ def unwrap_molecule(atoms, scale=1.2):
     atoms.set_positions(new_positions)
 
     return atoms
+
+
+def rdkit_determine_bonds(unwrapped_atoms: ase.Atoms) -> rdkit.Chem.Mol:
+    if len(unwrapped_atoms) == 0:
+        raise ValueError("Cannot determine bonds for an empty structure.")
+    with io.StringIO() as f:
+        ase.io.write(f, unwrapped_atoms, format="xyz")
+        f.seek(0)
+        xyz = f.read()
+        raw_mol = rdkit.Chem.MolFromXYZBlock(xyz)
+    mol = rdkit.Chem.Mol(raw_mol)
+    if len(unwrapped_atoms) == 1:
+        if unwrapped_atoms.get_chemical_symbols()[0] in ["Li", "Na", "K", "Rb", "Cs"]:
+            return rdkit.Chem.MolFromSmiles(
+                f"[{unwrapped_atoms.get_chemical_symbols()[0]}+]"
+            )
+        if unwrapped_atoms.get_chemical_symbols()[0] in ["Cl", "Br", "I", "F"]:
+            return rdkit.Chem.MolFromSmiles(
+                f"[{unwrapped_atoms.get_chemical_symbols()[0]}-]"
+            )
+    for charge in [0, 1, -1, 2, -2]:
+        # TODO: make this a function
+        try:
+            rdkit.Chem.rdDetermineBonds.DetermineBonds(
+                mol,
+                charge=int(sum(unwrapped_atoms.get_initial_charges())) + charge,
+            )
+            # TODO: set positions of the sub-structure (not unwrapped)
+            return mol
+        except ValueError:
+            pass
+    else:
+        raise ValueError(
+            "Failed to determine bonds for sub-structure up to charge "
+            f"{sum(unwrapped_atoms.get_initial_charges()) + charge}"
+            f"and {unwrapped_atoms.get_chemical_symbols()}"
+        )

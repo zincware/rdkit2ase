@@ -1,12 +1,20 @@
+from rdkit2ase.ase2x import ase2networkx
+from rdkit2ase.networkx2x import networkx2ase, networkx2rdkit
+from rdkit2ase.rdkit2x import rdkit2ase, rdkit2networkx
+
+#
+from rdkit2ase.smiles2x import smiles2atoms, smiles2conformers
+
 from .compress import compress
-from .connectivity import ase2networkx, networkx2atoms, networkx2rdkit, rdkit2networkx
+
+# from .connectivity import networkx2atoms, networkx2rdkit
 from .pack import pack
-from .rdkit2ase import ase2rdkit, rdkit2ase
-from .smiles import smiles2atoms, smiles2conformers
+from .rdkit2ase import ase2rdkit
+
+#
 from .substructure import get_substructures, iter_fragments, match_substructure
 
 __all__ = [
-    "rdkit2ase",
     "ase2rdkit",
     "smiles2atoms",
     "pack",
@@ -15,8 +23,12 @@ __all__ = [
     "match_substructure",
     "get_substructures",
     "iter_fragments",
+    #
     "ase2networkx",
+    #
     "rdkit2networkx",
+    "rdkit2ase",
+    #
     "networkx2rdkit",
-    "networkx2atoms",
+    "networkx2ase",
 ]

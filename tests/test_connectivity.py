@@ -47,10 +47,10 @@ def test_networkx2rdkit():
     assert MolToSmiles(mol) == "[H]OC([H])([H])[H]"
 
 
-def test_networkx2atoms():
+def test_networkx2ase():
     atoms = rdkit2ase.smiles2atoms("CO")
     graph = rdkit2ase.ase2networkx(atoms)
-    new_atoms = rdkit2ase.networkx2atoms(graph)
+    new_atoms = rdkit2ase.networkx2ase(graph)
     assert new_atoms.get_chemical_symbols() == atoms.get_chemical_symbols()
     assert new_atoms.get_positions().tolist() == atoms.get_positions().tolist()
     assert new_atoms.info["connectivity"] == atoms.info["connectivity"]

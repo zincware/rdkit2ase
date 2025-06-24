@@ -3,13 +3,25 @@ from collections import defaultdict
 
 import ase.io
 import ase.units
-import networkx as nx
 import numpy as np
 import rdkit.Chem
 import rdkit.Chem.rdDetermineBonds
 from ase.data import covalent_radii
 from ase.neighborlist import NeighborList
-from networkx.algorithms import isomorphism
+from rdkit import Chem
+
+
+def bond_type_from_order(order):
+    if order == 1.0:
+        return Chem.BondType.SINGLE
+    elif order == 2.0:
+        return Chem.BondType.DOUBLE
+    elif order == 3.0:
+        return Chem.BondType.TRIPLE
+    elif order == 1.5:
+        return Chem.BondType.AROMATIC
+    else:
+        raise ValueError(f"Unsupported bond order: {order}")
 
 
 def find_connected_components(connectivity: list[tuple[int, int, float]]):
@@ -68,7 +80,7 @@ def calculate_box_dimensions(images: list[ase.Atoms], density: float) -> list[fl
     return [box_edge] * 3
 
 
-def unwrap_molecule(atoms, scale=1.2):
+def unwrap_molecule(atoms, scale=1.2) -> ase.Atoms:
     """Robust unwrapping across PBC using root-referenced traversal."""
     positions = atoms.get_positions()
     cell = atoms.get_cell()
@@ -157,49 +169,3 @@ def rdkit_determine_bonds(unwrapped_atoms: ase.Atoms) -> rdkit.Chem.Mol:
             f"{sum(unwrapped_atoms.get_initial_charges()) + charge}"
             f"and {unwrapped_atoms.get_chemical_symbols()}"
         )
-
-
-def sort_templates(graphs: list[nx.Graph]) -> list[nx.Graph]:
-    return sorted(
-        graphs, key=lambda g: (g.number_of_nodes(), g.number_of_edges()), reverse=True
-    )
-
-
-def match_and_label_subgraphs(
-    graph: nx.Graph, templates: list[nx.Graph]
-) -> tuple[dict[str, list[list[int]]], nx.Graph]:
-    """
-    Matches and labels subgraphs in a molecular graph using template graphs.
-
-    Parameters
-    ----------
-    graph : nx.Graph
-        The molecular graph to be decomposed. Nodes must have an "atomic_number" attribute.
-    templates : list of nx.Graph
-        List of template graphs (fragments) to match against the molecular graph.
-    """
-    from rdkit2ase import networkx2rdkit
-
-    # TODO: could update the bond order in the graph.
-    #  Would work it networx2ase would be lossless
-    templates = sort_templates(templates)
-
-    matches = defaultdict(list)
-
-    for mol_graph in templates:
-        while True:
-            graph_matcher = isomorphism.GraphMatcher(
-                graph,
-                mol_graph,
-                node_match=lambda n1, n2: n1["atomic_number"] == n2["atomic_number"],
-            )
-            match = next(graph_matcher.subgraph_isomorphisms_iter(), None)
-            if match is None:
-                break
-            graph.remove_nodes_from(match.keys())
-
-            smiles = rdkit.Chem.MolToSmiles(networkx2rdkit(mol_graph))
-            # append the indices of the matched atoms
-            matches[smiles].append(list(match))
-
-    return dict(matches), graph

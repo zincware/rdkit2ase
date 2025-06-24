@@ -37,6 +37,28 @@ def rdkit2ase(mol, seed: int = 42) -> ase.Atoms:
     return atoms
 
 
+def _connectivtiy2rdkit(atoms: ase.Atoms) -> rdkit.Chem.Mol:
+    mol = Chem.RWMol()
+    atom_idx_map = []
+    charges = atoms.get_initial_charges()
+
+    for z, charge in zip(atoms.get_chemical_symbols(), charges):
+        atom = Chem.Atom(z)
+        atom.SetFormalCharge(int(charge))
+        idx = mol.AddAtom(atom)
+        atom_idx_map.append(idx)
+
+    if isinstance(atoms.info["connectivity"], np.ndarray):
+        con = atoms.info["connectivity"].tolist()
+    else:
+        con = atoms.info["connectivity"]
+    for a, b, bond_order in con:
+        bond_type = bond_type_from_order(bond_order)
+        mol.AddBond(int(a), int(b), bond_type)
+
+    return mol.GetMol()
+
+
 def ase2rdkit(  # noqa: C901
     atoms: ase.Atoms, separate: bool = True, suggestions: list[str] | None = None
 ) -> rdkit.Chem.Mol:
@@ -53,7 +75,24 @@ def ase2rdkit(  # noqa: C901
     suggestions : list[str] | None, optional
         A list of SMILES strings to use as suggestions for bond determination.
         If provided, RDKit will try to match the connectivity based on these SMILES.
+
+    Notes
+    -----
+    This is split into three attempts:
+        1. If the ASE Atoms object has connectivity information this will be used
+        2. If suggestions are provided, they will be used to reconstruct the bonds.
+        3. For any remaining atoms or if not suggestions are provided, we use rdkit's
+           `rdkit.Chem.rdDetermineBonds.DetermineBonds` to guess the bonds
+           based on the positions and atomic numbers.
     """
+
+    # Tests
+    # check CCCC before CC or C
+    # check if you test e.g. NH3 vs SO3 - they have the same graph but would match differently
+    # if a rest stays after the graph was decomposed, use rdkit_determine_bonds
+    # if only a bond through a structure that has been cut, try the substructures again. E.g. if CCC - Li - CCC and they are only connected through Li, try to match CCC and Li separately
+    # if alkalimetal, always unbound and +1
+
     suggestions = suggestions or []
     if "connectivity" in atoms.info:
         if len(suggestions) > 0:
@@ -62,26 +101,8 @@ def ase2rdkit(  # noqa: C901
                 "connectivity information is already present in the atoms object.",
                 UserWarning,
             )
+        mol = _connectivtiy2rdkit(atoms)
 
-        mol = Chem.RWMol()
-        atom_idx_map = []
-        charges = atoms.get_initial_charges()
-
-        for z, charge in zip(atoms.get_chemical_symbols(), charges):
-            atom = Chem.Atom(z)
-            atom.SetFormalCharge(int(charge))
-            idx = mol.AddAtom(atom)
-            atom_idx_map.append(idx)
-
-        if isinstance(atoms.info["connectivity"], np.ndarray):
-            con = atoms.info["connectivity"].tolist()
-        else:
-            con = atoms.info["connectivity"]
-        for a, b, bond_order in con:
-            bond_type = bond_type_from_order(bond_order)
-            mol.AddBond(int(a), int(b), bond_type)
-
-        mol = mol.GetMol()
     elif separate:
         mols = []
         charge = 0

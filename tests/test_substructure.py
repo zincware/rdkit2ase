@@ -4,11 +4,6 @@ from rdkit import Chem
 import rdkit2ase
 
 
-@pytest.fixture
-def ec_emc_li_pf6():
-    pass
-
-
 def test_match_substructure():
     atoms = rdkit2ase.smiles2atoms("CC(=O)O")
 

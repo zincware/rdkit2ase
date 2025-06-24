@@ -8,9 +8,32 @@ from ase import Atoms
 import rdkit2ase
 from rdkit2ase.utils import (
     find_connected_components,
+    match_and_label_subgraphs,
     rdkit_determine_bonds,
     unwrap_molecule,
 )
+
+
+class SMILES:
+    PF6: str = "F[P-](F)(F)(F)(F)F"
+    Li: str = "[Li+]"
+    EC: str = "C1COC(=O)O1"
+    EMC: str = "CCOC(=O)OC"
+
+
+@pytest.fixture
+def ec_emc_li_pf6():
+    atoms_pf6 = rdkit2ase.smiles2conformers(SMILES.PF6, numConfs=10)
+    atoms_li = rdkit2ase.smiles2conformers(SMILES.Li, numConfs=10)
+    atoms_ec = rdkit2ase.smiles2conformers(SMILES.EC, numConfs=10)
+    atoms_emc = rdkit2ase.smiles2conformers(SMILES.EMC, numConfs=10)
+
+    return rdkit2ase.pack(
+        data=[atoms_pf6, atoms_li, atoms_ec, atoms_emc],
+        counts=[3, 3, 8, 12],
+        density=1400,
+        packmol="packmol.jl",
+    )
 
 
 def make_molecule(shift=(0, 0, 0), cell=(10, 10, 10), pbc=True):
@@ -114,65 +137,57 @@ def test_find_connected_components_networkx(monkeypatch, networkx):
     assert set(components[1]) == {3, 4, 5}
     assert set(components[2]) == {6, 7}
 
+
 @pytest.mark.parametrize(
     "smiles",
     [
         # Simple neutral molecules
-        "O",                 # Water
-        "CC",                # Ethane
-        "C1CCCCC1",          # Cyclohexane
-        "C1=CC=CC=C1",       # Benzene
-        "C1=CC=CC=C1O",      # Phenol
-
+        "O",  # Water
+        "CC",  # Ethane
+        "C1CCCCC1",  # Cyclohexane
+        "C1=CC=CC=C1",  # Benzene
+        "C1=CC=CC=C1O",  # Phenol
         # Simple anions/cations
-        "[Li+]",             # Lithium ion
-        "[Na+]",             # Sodium ion
-        "[Cl-]",             # Chloride
-        "[OH-]",             # Hydroxide
-        "[NH4+]",            # Ammonium
-        "[CH3-]",            # Methyl anion
-        "[C-]#N",           # Cyanide anion"
-
+        "[Li+]",  # Lithium ion
+        "[Na+]",  # Sodium ion
+        "[Cl-]",  # Chloride
+        "[OH-]",  # Hydroxide
+        "[NH4+]",  # Ammonium
+        "[CH3-]",  # Methyl anion
+        "[C-]#N",  # Cyanide anion"
         # Phosphate and sulfate groups
-        "OP(=O)(O)O ",          # H3PO4
-        "OP(=O)(O)[O-]",        # H2PO4-
-        "[O-]P(=O)(O)[O-]",     # HPO4 2-
+        "OP(=O)(O)O ",  # H3PO4
+        "OP(=O)(O)[O-]",  # H2PO4-
+        "[O-]P(=O)(O)[O-]",  # HPO4 2-
         "[O-]P(=O)([O-])[O-]",  # PO4 3-
-        "OP(=O)=O",             # HPO3
-        "[O-]P(=O)=O",          # PO3 -
-        "OS(=O)(=O)O",          # H2SO4
-        "OS(=O)(=O)[O-]",       # HSO4-
-        "[O-]S(=O)(=O)[O-]",    # SO4 2-
+        "OP(=O)=O",  # HPO3
+        "[O-]P(=O)=O",  # PO3 -
+        "OS(=O)(=O)O",  # H2SO4
+        "OS(=O)(=O)[O-]",  # HSO4-
+        "[O-]S(=O)(=O)[O-]",  # SO4 2-
         "[O-]S(=O)(=O)([O-])",  # SO3 2-
-
-
         # Multiply charged ions
         # "[Fe+3]",            # Iron(III)
         # "[Fe++]",            # Iron(II) alternative syntax
         # "[O-2]",             # Oxide dianion
         # "[Mg+2]",            # Magnesium ion
         # "[Ca+2]",            # Calcium ion
-
         # Charged organic fragments
-        "C[N+](C)(C)C",      # Tetramethylammonium
+        "C[N+](C)(C)C",  # Tetramethylammonium
         # "[N-]=[N+]=[N-]",       # Azide ion
         "C1=[N+](C=CC=C1)[O-]",  # Nitrobenzene
-
         # Complex anions
-        "F[B-](F)(F)F",        # Tetrafluoroborate
+        "F[B-](F)(F)F",  # Tetrafluoroborate
         "F[P-](F)(F)(F)(F)F",  # Hexafluorophosphate
         "[O-]C(=O)C(=O)[O-]",  # Oxalate dianion
-
         # Zwitterions
-        "C(C(=O)[O-])N",     # Glycine
+        "C(C(=O)[O-])N",  # Glycine
         "C1=CC(=CC=C1)[N+](=O)[O-]",  # Nitrobenzene
-
         # Aromatic heterocycles
-        "c1ccncc1",          # Pyridine
-        "c1cccnc1",          # Pyrimidine
-
+        "c1ccncc1",  # Pyridine
+        "c1cccnc1",  # Pyrimidine
         # Polyaromatics
-        "c1ccc2ccccc2c1",    # Naphthalene
+        "c1ccc2ccccc2c1",  # Naphthalene
         "c1ccc2c(c1)ccc3c2cccc3",  # Phenanthrene
     ],
 )
@@ -188,3 +203,78 @@ def test_rdkit_determine_bonds(smiles: str):
     found_smiles = rdkit.Chem.MolToSmiles(mol)
 
     assert target_smiles == found_smiles
+
+
+def test_match_and_label_subgraphs(ec_emc_li_pf6):
+    ec_emc_li_pf6.info.pop("connectivity")
+    graph = rdkit2ase.ase2networkx(ec_emc_li_pf6)
+    mols = [
+        rdkit.Chem.MolFromSmiles(SMILES.PF6),
+        rdkit.Chem.MolFromSmiles(SMILES.Li),
+        rdkit.Chem.MolFromSmiles(SMILES.EC),
+        rdkit.Chem.MolFromSmiles(SMILES.EMC),
+    ]
+    mols = [rdkit.Chem.AddHs(mol) for mol in mols]
+    mol_graphs = [rdkit2ase.rdkit2networkx(mol) for mol in mols]
+
+    matches, remainder_graph = match_and_label_subgraphs(graph, mol_graphs)
+
+    assert len(matches) == 4
+
+    assert len(matches["F[P-](F)(F)(F)(F)F"]) == 3
+    assert len(set(y for x in matches["F[P-](F)(F)(F)(F)F"] for y in x)) == 3 * 7
+    assert len(matches["[Li+]"]) == 3
+    assert len(set(y for x in matches["[Li+]"] for y in x)) == 3 * 1
+    assert len(matches["[H]C([H])([H])OC(=O)OC([H])([H])C([H])([H])[H]"]) == 12
+    assert (
+        len(
+            set(
+                y
+                for x in matches["[H]C([H])([H])OC(=O)OC([H])([H])C([H])([H])[H]"]
+                for y in x
+            )
+        )
+        == 15 * 12
+    )
+    assert len(matches["[H]C1([H])OC(=O)OC1([H])[H]"]) == 8
+    assert (
+        len(set(y for x in matches["[H]C1([H])OC(=O)OC1([H])[H]"] for y in x)) == 10 * 8
+    )
+
+    assert len(remainder_graph.nodes) == 0
+
+
+def test_match_and_label_subgraphs_remainder(ec_emc_li_pf6):
+    ec_emc_li_pf6.info.pop("connectivity")
+    graph = rdkit2ase.ase2networkx(ec_emc_li_pf6)
+    mols = [
+        rdkit.Chem.MolFromSmiles(SMILES.PF6),
+        rdkit.Chem.MolFromSmiles(SMILES.EC),
+        rdkit.Chem.MolFromSmiles(SMILES.EMC),
+    ]
+    mols = [rdkit.Chem.AddHs(mol) for mol in mols]
+    mol_graphs = [rdkit2ase.rdkit2networkx(mol) for mol in mols]
+
+    matches, remainder_graph = match_and_label_subgraphs(graph, mol_graphs)
+
+    assert len(matches) == 3
+
+    assert len(matches["F[P-](F)(F)(F)(F)F"]) == 3
+    assert len(set(y for x in matches["F[P-](F)(F)(F)(F)F"] for y in x)) == 3 * 7
+    assert len(matches["[H]C([H])([H])OC(=O)OC([H])([H])C([H])([H])[H]"]) == 12
+    assert (
+        len(
+            set(
+                y
+                for x in matches["[H]C([H])([H])OC(=O)OC([H])([H])C([H])([H])[H]"]
+                for y in x
+            )
+        )
+        == 15 * 12
+    )
+    assert len(matches["[H]C1([H])OC(=O)OC1([H])[H]"]) == 8
+    assert (
+        len(set(y for x in matches["[H]C1([H])OC(=O)OC1([H])[H]"] for y in x)) == 10 * 8
+    )
+
+    assert len(remainder_graph.nodes) == 3

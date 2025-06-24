@@ -133,6 +133,10 @@ def rdkit_determine_bonds(unwrapped_atoms: ase.Atoms) -> rdkit.Chem.Mol:
             return rdkit.Chem.MolFromSmiles(
                 f"[{unwrapped_atoms.get_chemical_symbols()[0]}-]"
             )
+    # edge case for PF6
+    if len(unwrapped_atoms) == 7:
+        if sorted(unwrapped_atoms.get_chemical_symbols()) == sorted(["P", "F", "F", "F", "F", "F", "F"]):
+            return rdkit.Chem.MolFromSmiles("F[P-](F)(F)(F)(F)F")
     for charge in [0, 1, -1, 2, -2]:
         # TODO: make this a function
         try:
@@ -140,7 +144,6 @@ def rdkit_determine_bonds(unwrapped_atoms: ase.Atoms) -> rdkit.Chem.Mol:
                 mol,
                 charge=int(sum(unwrapped_atoms.get_initial_charges())) + charge,
             )
-            # TODO: set positions of the sub-structure (not unwrapped)
             return mol
         except ValueError:
             pass

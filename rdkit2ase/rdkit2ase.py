@@ -10,7 +10,7 @@ from ase.build import separate as ase_separate
 from rdkit import Chem
 
 from rdkit2ase.connectivity import bond_type_from_order, reconstruct_bonds_from_template
-from rdkit2ase.utils import unwrap_molecule, rdkit_determine_bonds
+from rdkit2ase.utils import rdkit_determine_bonds, unwrap_molecule
 
 
 def rdkit2ase(mol, seed: int = 42) -> ase.Atoms:
@@ -124,31 +124,6 @@ def ase2rdkit(  # noqa: C901
                 continue
 
             mols.append(rdkit_determine_bonds(unwrapped_sub_structure))
-
-            # with io.StringIO() as f:
-            #     ase.io.write(f, unwrapped_sub_structure, format="xyz")
-            #     f.seek(0)
-            #     xyz = f.read()
-            #     raw_mol = rdkit.Chem.MolFromXYZBlock(xyz)
-            # mol = rdkit.Chem.Mol(raw_mol)
-            # for charge in [0, 1, -1, 2, -2]:
-            #     # TODO: make this a function
-            #     try:
-            #         rdkit.Chem.rdDetermineBonds.DetermineBonds(
-            #             mol,
-            #             charge=int(sum(sub_structure.get_initial_charges())) + charge,
-            #         )
-            #         # TODO: set positions of the sub-structure (not unwrapped)
-            #         mols.append(mol)
-            #         break
-            #     except ValueError:
-            #         pass
-            # else:
-            #     raise ValueError(
-            #         "Failed to determine bonds for sub-structure up to charge "
-            #         f"{sum(sub_structure.get_initial_charges()) + charge}"
-            #         f"and {sub_structure.get_chemical_symbols()}"
-            #     )
         mol = reduce(Chem.CombineMols, mols)
     else:
         # If no connectivity information is available, guess the bonds

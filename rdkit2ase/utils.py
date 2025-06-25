@@ -166,6 +166,6 @@ def rdkit_determine_bonds(unwrapped_atoms: ase.Atoms) -> rdkit.Chem.Mol:
     else:
         raise ValueError(
             "Failed to determine bonds for sub-structure up to charge "
-            f"{sum(unwrapped_atoms.get_initial_charges()) + charge}"
+            f"{sum(unwrapped_atoms.get_initial_charges()) + charge} "
             f"and {unwrapped_atoms.get_chemical_symbols()}"
         )

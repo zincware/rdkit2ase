@@ -174,16 +174,34 @@ def test_ase2networkx_ec_emc_li_pf6(ec_emc_li_pf6):
         assert graph.has_edge(i, j)
         assert graph.edges[i, j]["bond_order"] == bond_order
 
+    li_nodes = [d for _, d in graph.nodes(data=True) if d["atomic_number"] == 3]
+    assert len(li_nodes) == 3
+    for d in li_nodes:
+        assert d["charge"] == 1
+
 def test_ase2networkx_ec_emc_li_pf6_no_connectivity(ec_emc_li_pf6):
     connectivity = ec_emc_li_pf6.info.pop("connectivity")
+    ec_emc_li_pf6.set_initial_charges()
     graph = rdkit2ase.ase2networkx(ec_emc_li_pf6)
     for i, j, bond_order in connectivity:
         assert graph.has_edge(i, j)
         assert graph.edges[i, j]["bond_order"] is None
+    
+    # There is no charge information if not using suggestions
+    # li_nodes = [d for _, d in graph.nodes(data=True) if d["atomic_number"] == 3]
+    # assert len(li_nodes) == 3
+    # for d in li_nodes:
+    #     assert d["charge"] == 1
 
 def test_ase2networkx_ec_emc_li_pf6_guess_connectivity(ec_emc_li_pf6):
     connectivity = ec_emc_li_pf6.info.pop("connectivity")
+    ec_emc_li_pf6.set_initial_charges()
     graph = rdkit2ase.ase2networkx(ec_emc_li_pf6, suggestions=[])
     for i, j, bond_order in connectivity:
         assert graph.has_edge(i, j)
         assert graph.edges[i, j]["bond_order"] == bond_order
+    
+    li_nodes = [d for _, d in graph.nodes(data=True) if d["atomic_number"] == 3]
+    assert len(li_nodes) == 3
+    for d in li_nodes:
+        assert d["charge"] == 1

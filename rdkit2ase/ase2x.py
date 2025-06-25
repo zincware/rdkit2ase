@@ -6,18 +6,22 @@ from rdkit import Chem
 
 
 def _suggestions2networkx(smiles: list[str]) -> list[nx.Graph]:
+    print(f"Converting {len(smiles)} SMILES to NetworkX graphs")
     from rdkit2ase import rdkit2networkx
     mols = []
     for _smiles in smiles:
         mol = Chem.MolFromSmiles(_smiles)
         mol = Chem.AddHs(mol)
+        mols.append(mol)
     return [rdkit2networkx(mol) for mol in mols]
 
 def update_bond_order(graph: nx.Graph, suggestions: list[str]|None = None) -> None:
     from rdkit2ase.bond_order import update_bond_order_from_suggestions, update_bond_order_determine, has_bond_order
+
     if not has_bond_order(graph):
         if suggestions is not None:
             suggestion_graphs = _suggestions2networkx(suggestions)
+            print(f"Updating bond order from {len(suggestion_graphs)} suggestions")
             update_bond_order_from_suggestions(graph, suggestion_graphs)
         update_bond_order_determine(graph)
 
@@ -70,9 +74,8 @@ def ase2networkx(atoms: ase.Atoms, suggestions: list[str]|None = None) -> nx.Gra
                 bond_order=bond_order,
             )
         return graph
-    
+    # non-bonding positive charged atoms / ions.
     non_bonding_atomic_numbers = {3, 11, 19, 37, 55, 87} 
-    # non_bonding_atomic_numbers = set() 
 
 
     atomic_numbers = atoms.get_atomic_numbers()
@@ -101,8 +104,10 @@ def ase2networkx(atoms: ase.Atoms, suggestions: list[str]|None = None) -> nx.Gra
         graph.nodes[i]["position"] = atom.position
         graph.nodes[i]["atomic_number"] = atom.number
         graph.nodes[i]["original_index"] = atom.index
-        graph.nodes[i]["charge"] = charges[i]
-    
+        graph.nodes[i]["charge"] = float(charges[i])
+        if atom.number in non_bonding_atomic_numbers:
+            graph.nodes[i]["charge"] = 1.0
+
     if suggestions is not None:
         update_bond_order(graph, suggestions)
 

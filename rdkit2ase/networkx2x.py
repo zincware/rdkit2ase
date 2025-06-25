@@ -3,6 +3,8 @@ import networkx as nx
 from rdkit import Chem
 import numpy as np
 from rdkit2ase.utils import bond_type_from_order
+from rdkit.Chem import rdmolops
+
 
 def networkx2ase(graph: nx.Graph) -> ase.Atoms:
     positions = np.array([graph.nodes[n]["position"] for n in graph.nodes])

@@ -31,7 +31,6 @@ def update_bond_order_from_suggestions(graph, suggestions: list[nx.Graph]) -> No
             match = next(graph_matcher.subgraph_isomorphisms_iter(), None)
             # include the nodes and edges into the new graph
 
-
             if match is None:
                 break
             graph_copy.remove_nodes_from(match.keys())
@@ -49,6 +48,11 @@ def update_bond_order_from_suggestions(graph, suggestions: list[nx.Graph]) -> No
                     v_g = inv_match[v]
                     if graph.has_edge(u_g, v_g):
                         graph[u_g][v_g]["bond_order"] = data["bond_order"]
+                        # # set the charge if available
+                        # if "charge" in mol_graph.nodes[v]:
+                        #     graph.nodes[u_g]["charge"] = mol_graph.nodes[v]["charge"]
+                        # if "charge" in mol_graph.nodes[u]:
+                        #     graph.nodes[v_g]["charge"] = mol_graph.nodes[u]["charge"]
 
 
 def update_bond_order_determine(graph: nx.Graph) -> None:
@@ -62,7 +66,9 @@ def update_bond_order_determine(graph: nx.Graph) -> None:
     # iterate all parts of the graph that have at least one part where bond order is None
     for component in nx.connected_components(graph):
         subgraph = graph.subgraph(component)
-        if any(data.get("bond_order") is None for u, v, data in subgraph.edges(data=True)):
+        missing = sum(data.get("bond_order") is None for u, v, data in subgraph.edges(data=True))
+        if missing > 0:
+            print(f"Updating bond order for {missing} edges in component with {len(subgraph.nodes)} ({subgraph.nodes})")
             # convert the subgraph to RDKit molecule
             atoms = networkx2ase(subgraph)
             atoms = unwrap_molecule(atoms)

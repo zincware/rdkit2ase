@@ -6,7 +6,6 @@ from rdkit import Chem
 
 
 def _suggestions2networkx(smiles: list[str]) -> list[nx.Graph]:
-    print(f"Converting {len(smiles)} SMILES to NetworkX graphs")
     from rdkit2ase import rdkit2networkx
 
     mols = []
@@ -27,7 +26,6 @@ def update_bond_order(graph: nx.Graph, suggestions: list[str] | None = None) -> 
     if not has_bond_order(graph):
         if suggestions is not None:
             suggestion_graphs = _suggestions2networkx(suggestions)
-            print(f"Updating bond order from {len(suggestion_graphs)} suggestions")
             update_bond_order_from_suggestions(graph, suggestion_graphs)
         update_bond_order_determine(graph)
 

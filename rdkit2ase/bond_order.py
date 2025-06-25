@@ -73,29 +73,12 @@ def update_bond_order_determine(graph: nx.Graph) -> None:
             data.get("bond_order") is None for u, v, data in subgraph.edges(data=True)
         )
         if missing > 0:
-            print(
-                f"Updating bond order for {missing} edges in component with {len(subgraph.nodes)} ({subgraph.nodes})"
-            )
             # convert the subgraph to RDKit molecule
             atoms = networkx2ase(subgraph)
             atoms = unwrap_molecule(atoms)
             # determine the bond order using RDKit
             rdkit_mol = rdkit_determine_bonds(atoms)
-            print(atoms)
-
-            for atom in rdkit_mol.GetAtoms():
-                if atom.GetSymbol() == "F":
-                    print(atom.GetSymbol(), atom.GetFormalCharge())
-
             # convert the RDKit molecule back to a graph
             rdkit_graph = rdkit2networkx(rdkit_mol)
-
-            for node in rdkit_graph.nodes:
-                my_node = rdkit_graph.nodes[node]
-                if my_node["atomic_number"] == 15:
-                    print(
-                        f"{my_node}"
-                    )
-
             # update the bond order in the original graph
             update_bond_order_from_suggestions(graph, [rdkit_graph])

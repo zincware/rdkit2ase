@@ -1,7 +1,9 @@
-import pytest
 import numpy.testing as npt
-import rdkit2ase
+import pytest
 from rdkit import Chem
+
+import rdkit2ase
+
 
 class SMILES:
     PF6: str = "F[P-](F)(F)(F)(F)F"
@@ -76,9 +78,11 @@ SMILES_LIST = [
     "C1CCC2C(C1)CCC1CCCCC12",  # Phenanthrene
 ]
 
+
 def normalize_connectivity(connectivity):
     """Normalize bond tuples to ensure consistent comparison."""
     return sorted((min(i, j), max(i, j), order) for i, j, order in connectivity)
+
 
 @pytest.fixture
 def graph_smiles_atoms(request):
@@ -101,6 +105,7 @@ def test_networkx2ase(graph_smiles_atoms):
     npt.assert_array_equal(new_atoms.positions, atoms.positions)
     npt.assert_array_equal(new_atoms.numbers, atoms.numbers)
     npt.assert_array_equal(new_atoms.get_initial_charges(), atoms.get_initial_charges())
+
 
 def test_networkx2ase_ec_emc_li_pf6(ec_emc_li_pf6):
     atoms = ec_emc_li_pf6
@@ -129,6 +134,7 @@ def test_networkx2rdkit(graph_smiles_atoms):
     assert Chem.MolToSmiles(mol, canonical=True) == Chem.MolToSmiles(
         Chem.AddHs(Chem.MolFromSmiles(smiles)), canonical=True
     )
+
 
 def test_networkx2rdkit_ec_emc_li_pf6(ec_emc_li_pf6):
     atoms = ec_emc_li_pf6

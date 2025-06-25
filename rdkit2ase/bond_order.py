@@ -16,46 +16,55 @@ def has_bond_order(graph: nx.Graph) -> bool:
     return all(x[2]["bond_order"] is not None for x in graph.edges(data=True))
 
 
+def update_graph_data(
+    working_graph: nx.Graph, graph: nx.Graph, mol_graph: nx.Graph
+) -> bool:
+    graph_matcher = isomorphism.GraphMatcher(
+        working_graph,
+        mol_graph,
+        node_match=lambda n1, n2: n1["atomic_number"] == n2["atomic_number"],
+    )
+    match = next(graph_matcher.subgraph_isomorphisms_iter(), None)
+    if match is None:
+        return False
+
+    # Remove matched nodes from future matching
+    working_graph.remove_nodes_from(match.keys())
+
+    # Transfer bond order from template
+    inv_match = {v: k for k, v in match.items()}
+    for u, v, data in mol_graph.edges(data=True):
+        if "bond_order" in data:
+            if data["bond_order"] is None:
+                raise ValueError(
+                    "Cannot update bond order with None value. "
+                    "Please check the input templates."
+                )
+            u_g = inv_match[u]
+            v_g = inv_match[v]
+            if graph.has_edge(u_g, v_g):
+                graph[u_g][v_g]["bond_order"] = data["bond_order"]
+
+    # Assign charges for matched nodes
+    for graph_node, template_node in match.items():
+        if "charge" in mol_graph.nodes[template_node]:
+            graph.nodes[graph_node]["charge"] = mol_graph.nodes[template_node]["charge"]
+    return True
+
+
 def update_bond_order_from_suggestions(graph, suggestions: list[nx.Graph]) -> None:
     if has_bond_order(graph):
         return
 
     # Copy to avoid mutating while iterating
-    graph_copy = graph.copy()
+    working_graph = graph.copy()
     suggestions = sort_templates(suggestions)  # Assumes this sorts by decreasing size
 
     for mol_graph in suggestions:
         while True:
-            graph_matcher = isomorphism.GraphMatcher(
-                graph_copy,
-                mol_graph,
-                node_match=lambda n1, n2: n1["atomic_number"] == n2["atomic_number"],
-            )
-            match = next(graph_matcher.subgraph_isomorphisms_iter(), None)
-            if match is None:
-                break  # No more matches
-
-            # Remove matched nodes from future matching
-            graph_copy.remove_nodes_from(match.keys())
-
-            # Transfer bond order from template
-            inv_match = {v: k for k, v in match.items()}
-            for u, v, data in mol_graph.edges(data=True):
-                if "bond_order" in data:
-                    if data["bond_order"] is None:
-                        raise ValueError(
-                            "Cannot update bond order with None value. "
-                            "Please check the input templates."
-                        )
-                    u_g = inv_match[u]
-                    v_g = inv_match[v]
-                    if graph.has_edge(u_g, v_g):
-                        graph[u_g][v_g]["bond_order"] = data["bond_order"]
-
-            # Assign charges for matched nodes
-            for graph_node, template_node in match.items():
-                if "charge" in mol_graph.nodes[template_node]:
-                    graph.nodes[graph_node]["charge"] = mol_graph.nodes[template_node]["charge"]
+            updated = update_graph_data(working_graph, graph, mol_graph)
+            if not updated:
+                break
 
 
 def update_bond_order_determine(graph: nx.Graph) -> None:

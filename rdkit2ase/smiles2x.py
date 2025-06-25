@@ -31,7 +31,7 @@ def get_pf6() -> ase.Atoms:
 
     atoms.info["connectivity"] = [(0, i, 1.0) for i in range(1, 7)]
     atoms.info["smiles"] = "F[P-](F)(F)(F)(F)F"
-    atoms.set_initial_charges([+5] + [-1] * 6)
+    atoms.set_initial_charges([-1] + [0] * 6)
 
     return atoms
 

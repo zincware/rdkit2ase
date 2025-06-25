@@ -2,6 +2,28 @@ import pytest
 import rdkit2ase
 from rdkit import Chem
 
+class SMILES:
+    PF6: str = "F[P-](F)(F)(F)(F)F"
+    Li: str = "[Li+]"
+    EC: str = "C1COC(=O)O1"
+    EMC: str = "CCOC(=O)OC"
+
+
+@pytest.fixture
+def ec_emc_li_pf6():
+    atoms_pf6 = rdkit2ase.smiles2conformers(SMILES.PF6, numConfs=10)
+    atoms_li = rdkit2ase.smiles2conformers(SMILES.Li, numConfs=10)
+    atoms_ec = rdkit2ase.smiles2conformers(SMILES.EC, numConfs=10)
+    atoms_emc = rdkit2ase.smiles2conformers(SMILES.EMC, numConfs=10)
+
+    return rdkit2ase.pack(
+        data=[atoms_pf6, atoms_li, atoms_ec, atoms_emc],
+        counts=[3, 3, 8, 12],
+        density=1400,
+        packmol="packmol.jl",
+    )
+
+
 # Shared test cases
 SMILES_LIST = [
         # Simple neutral molecules
@@ -142,3 +164,26 @@ def test_ase2rdkit_smiles_connectivity(atoms_and_connectivity):
     atoms.info.pop("connectivity")
     mol = rdkit2ase.ase2rdkit(atoms, suggestions=[smiles])
     assert Chem.MolToSmiles(mol, canonical=True) == Chem.MolToSmiles(Chem.AddHs(Chem.MolFromSmiles(smiles)), canonical=True)
+
+
+def test_ase2networkx_ec_emc_li_pf6(ec_emc_li_pf6):
+    graph = rdkit2ase.ase2networkx(ec_emc_li_pf6)
+    assert len(graph.nodes) == 3 * 7 + 3 * 1 + 15 * 12 + 10 * 8
+    connectivity = ec_emc_li_pf6.info["connectivity"]
+    for i, j, bond_order in connectivity:
+        assert graph.has_edge(i, j)
+        assert graph.edges[i, j]["bond_order"] == bond_order
+
+def test_ase2networkx_ec_emc_li_pf6_no_connectivity(ec_emc_li_pf6):
+    connectivity = ec_emc_li_pf6.info.pop("connectivity")
+    graph = rdkit2ase.ase2networkx(ec_emc_li_pf6)
+    for i, j, bond_order in connectivity:
+        assert graph.has_edge(i, j)
+        assert graph.edges[i, j]["bond_order"] is None
+
+def test_ase2networkx_ec_emc_li_pf6_guess_connectivity(ec_emc_li_pf6):
+    connectivity = ec_emc_li_pf6.info.pop("connectivity")
+    graph = rdkit2ase.ase2networkx(ec_emc_li_pf6, suggestions=[])
+    for i, j, bond_order in connectivity:
+        assert graph.has_edge(i, j)
+        assert graph.edges[i, j]["bond_order"] == bond_order

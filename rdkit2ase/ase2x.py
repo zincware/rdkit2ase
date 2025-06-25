@@ -53,20 +53,35 @@ def ase2networkx(atoms: ase.Atoms, suggestions: list[str]|None = None) -> nx.Gra
     if "connectivity" in atoms.info:
         connectivity = atoms.info["connectivity"]
         graph = nx.Graph()
+        # add nodes
+        for i, atom in enumerate(atoms):
+            graph.add_node(
+                i,
+                position=atom.position,
+                atomic_number=atom.number,
+                original_index=atom.index,
+                charge=charges[i],
+            )
+
         for i, j, bond_order in connectivity:
             graph.add_edge(
                 i,
                 j,
                 bond_order=bond_order,
             )
-        for i, atom in enumerate(atoms):
-            graph.nodes[i]["position"] = atom.position
-            graph.nodes[i]["atomic_number"] = atom.number
-            graph.nodes[i]["original_index"] = atom.index
-            graph.nodes[i]["charge"] = charges[i]
         return graph
     
-    r_ij = atoms.get_all_distances(mic=True, vector=False)  # Get scalar distances
+    non_bonding_atomic_numbers = {3, 11, 19, 37, 55, 87} 
+    # non_bonding_atomic_numbers = set() 
+
+
+    atomic_numbers = atoms.get_atomic_numbers()
+    excluded_mask = np.isin(atomic_numbers, list(non_bonding_atomic_numbers))
+    
+    d_ij = atoms.get_all_distances(mic=True, vector=False)
+    # mask out non-bonding atoms
+    d_ij[excluded_mask, :] = np.inf
+    d_ij[:, excluded_mask] = np.inf
 
     atom_radii = np.array(natural_cutoffs(atoms, mult=1.2))
 
@@ -74,10 +89,9 @@ def ase2networkx(atoms: ase.Atoms, suggestions: list[str]|None = None) -> nx.Gra
 
     connectivity_matrix = np.zeros((len(atoms), len(atoms)), dtype=int)
 
-    d_ij_temp = r_ij.copy()
-    np.fill_diagonal(d_ij_temp, np.inf)
+    np.fill_diagonal(d_ij, np.inf)
 
-    connectivity_matrix[d_ij_temp <= pairwise_cutoffs] = 1
+    connectivity_matrix[d_ij <= pairwise_cutoffs] = 1
 
     graph = nx.from_numpy_array(connectivity_matrix, edge_attr=None)
     for u, v in graph.edges():

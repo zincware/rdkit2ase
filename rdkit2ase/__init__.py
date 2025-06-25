@@ -1,4 +1,4 @@
-from rdkit2ase.ase2x import ase2networkx
+from rdkit2ase.ase2x import ase2networkx, ase2rdkit
 from rdkit2ase.networkx2x import networkx2ase, networkx2rdkit
 from rdkit2ase.rdkit2x import rdkit2ase, rdkit2networkx
 
@@ -9,7 +9,6 @@ from .compress import compress
 
 # from .connectivity import networkx2atoms, networkx2rdkit
 from .pack import pack
-from .rdkit2ase import ase2rdkit
 
 #
 from .substructure import get_substructures, iter_fragments, match_substructure

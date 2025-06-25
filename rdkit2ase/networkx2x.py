@@ -50,7 +50,7 @@ def networkx2rdkit(graph: nx.Graph) -> Chem.Mol:
         mol.AddBond(
             nx_to_rdkit_atom_map[u],
             nx_to_rdkit_atom_map[v],
-            bond_type_from_order(int(bond_order)),
+            bond_type_from_order(bond_order),
         )
 
     Chem.SanitizeMol(mol)

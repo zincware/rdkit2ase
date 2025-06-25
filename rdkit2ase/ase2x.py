@@ -97,9 +97,7 @@ def ase2networkx(atoms: ase.Atoms, suggestions: list[str]|None = None) -> nx.Gra
 
 def ase2rdkit(atoms: ase.Atoms, suggestions: list[str]|None = None) -> Chem.Mol:
     from rdkit2ase import ase2networkx, networkx2rdkit
-    graph = ase2networkx(atoms)
-    update_bond_order(graph, suggestions)
-    
+    graph = ase2networkx(atoms, suggestions=suggestions)    
     return networkx2rdkit(graph)
 
 

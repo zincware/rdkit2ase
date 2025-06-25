@@ -225,3 +225,23 @@ def test_ase2networkx_ec_emc_li_pf6_guess_connectivity(ec_emc_li_pf6):
     assert len(li_nodes) == 3
     for d in li_nodes:
         assert d["charge"] == 1
+
+@pytest.mark.parametrize("smiles", ["[CH3]", "[O]", "C[O]"])
+def test_radicals(smiles):
+    atoms = rdkit2ase.smiles2atoms(smiles)
+    graph = rdkit2ase.ase2networkx(atoms)
+    # Validate atom charges match radical states
+    mol = Chem.MolFromSmiles(smiles)
+    for i, atom in enumerate(mol.GetAtoms()):
+        assert graph.nodes[i]["charge"] == atom.GetFormalCharge()
+
+@pytest.mark.parametrize("smiles,expected_charge", [
+    ("[NH4+]", 1),
+    ("[O-2]", -2),
+    ("[Fe+3]", 3),
+    ("C[N+](C)(C)C", 1)
+])
+def test_formal_charges(smiles, expected_charge):
+    atoms = rdkit2ase.smiles2atoms(smiles)
+    total_charge = sum(atoms.get_initial_charges())
+    assert total_charge == pytest.approx(expected_charge)

@@ -25,7 +25,8 @@ def rdkit2ase(mol, seed: int = 42) -> ase.Atoms:
     # check if any of the charges are not zero
     if any(charge != 0 for charge in charges):
         atoms.set_initial_charges(charges)
-    return atoms    
+    return atoms
+
 
 def rdkit2networkx(mol: Chem.Mol) -> nx.Graph:
     """

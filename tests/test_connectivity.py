@@ -2,6 +2,7 @@ import pytest
 from rdkit.Chem import AddHs, MolFromSmiles, MolToSmiles
 
 import rdkit2ase
+
 # from rdkit2ase.connectivity import reconstruct_bonds_from_template
 
 

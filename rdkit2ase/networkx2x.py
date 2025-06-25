@@ -1,9 +1,9 @@
 import ase
 import networkx as nx
-from rdkit import Chem
 import numpy as np
+from rdkit import Chem
+
 from rdkit2ase.utils import bond_type_from_order
-from rdkit.Chem import rdmolops
 
 
 def networkx2ase(graph: nx.Graph) -> ase.Atoms:
@@ -26,6 +26,7 @@ def networkx2ase(graph: nx.Graph) -> ase.Atoms:
     atoms.info["connectivity"] = connectivity
 
     return atoms
+
 
 def networkx2rdkit(graph: nx.Graph) -> Chem.Mol:
     mol = Chem.RWMol()
@@ -58,4 +59,3 @@ def networkx2rdkit(graph: nx.Graph) -> Chem.Mol:
     Chem.SanitizeMol(mol)
 
     return mol.GetMol()
-

@@ -1,6 +1,8 @@
 import pytest
-import rdkit2ase
 from rdkit import Chem
+
+import rdkit2ase
+
 
 class SMILES:
     PF6: str = "F[P-](F)(F)(F)(F)F"
@@ -26,54 +28,55 @@ def ec_emc_li_pf6():
 
 # Shared test cases
 SMILES_LIST = [
-        # Simple neutral molecules
-        "O",  # Water
-        "CC",  # Ethane
-        "C1CCCCC1",  # Cyclohexane
-        "C1=CC=CC=C1",  # Benzene
-        "C1=CC=CC=C1O",  # Phenol
-        # Simple anions/cations
-        "[Li+]",  # Lithium ion
-        "[Na+]",  # Sodium ion
-        "[Cl-]",  # Chloride
-        "[OH-]",  # Hydroxide
-        "[NH4+]",  # Ammonium
-        "[CH3-]",  # Methyl anion
-        "[C-]#N",  # Cyanide anion"
-        # Phosphate and sulfate groups
-        "OP(=O)(O)O ",  # H3PO4
-        "OP(=O)(O)[O-]",  # H2PO4-
-        # "[O-]P(=O)(O)[O-]",  # HPO4 2-
-        # "[O-]P(=O)([O-])[O-]",  # PO4 3-
-        "OP(=O)=O",  # HPO3
-        # "[O-]P(=O)=O",  # PO3 -
-        "OS(=O)(=O)O",  # H2SO4
-        "OS(=O)(=O)[O-]",  # HSO4-
-        # "[O-]S(=O)(=O)[O-]",  # SO4 2-
-        # "[O-]S(=O)(=O)([O-])",  # SO3 2-
-        # Multiply charged ions
-        # "[Fe+3]",            # Iron(III)
-        # "[Fe++]",            # Iron(II) alternative syntax
-        # "[O-2]",             # Oxide dianion
-        # "[Mg+2]",            # Magnesium ion
-        # "[Ca+2]",            # Calcium ion
-        # Charged organic fragments
-        "C[N+](C)(C)C",  # Tetramethylammonium
-        # "[N-]=[N+]=[N-]",       # Azide ion
-        "C1=[N+](C=CC=C1)[O-]",  # Nitrobenzene
-        # Complex anions
-        "F[B-](F)(F)F",  # Tetrafluoroborate
-        "F[P-](F)(F)(F)(F)F",  # Hexafluorophosphate
-        # "[O-]C(=O)C(=O)[O-]",  # Oxalate dianion
-        # Zwitterions
-        "C(C(=O)[O-])N",  # Glycine
-        "C1=CC(=CC=C1)[N+](=O)[O-]",  # Nitrobenzene
-        # Aromatic heterocycles
-        "C1CCNCC1",
-        # Polyaromatics
-        "C1CCC2CCCCC2C1",  # Naphthalene
-        "C1CCC2C(C1)CCC1CCCCC12",  # Phenanthrene
+    # Simple neutral molecules
+    "O",  # Water
+    "CC",  # Ethane
+    "C1CCCCC1",  # Cyclohexane
+    "C1=CC=CC=C1",  # Benzene
+    "C1=CC=CC=C1O",  # Phenol
+    # Simple anions/cations
+    "[Li+]",  # Lithium ion
+    "[Na+]",  # Sodium ion
+    "[Cl-]",  # Chloride
+    "[OH-]",  # Hydroxide
+    "[NH4+]",  # Ammonium
+    "[CH3-]",  # Methyl anion
+    "[C-]#N",  # Cyanide anion"
+    # Phosphate and sulfate groups
+    "OP(=O)(O)O ",  # H3PO4
+    "OP(=O)(O)[O-]",  # H2PO4-
+    # "[O-]P(=O)(O)[O-]",  # HPO4 2-
+    # "[O-]P(=O)([O-])[O-]",  # PO4 3-
+    "OP(=O)=O",  # HPO3
+    # "[O-]P(=O)=O",  # PO3 -
+    "OS(=O)(=O)O",  # H2SO4
+    "OS(=O)(=O)[O-]",  # HSO4-
+    # "[O-]S(=O)(=O)[O-]",  # SO4 2-
+    # "[O-]S(=O)(=O)([O-])",  # SO3 2-
+    # Multiply charged ions
+    # "[Fe+3]",            # Iron(III)
+    # "[Fe++]",            # Iron(II) alternative syntax
+    # "[O-2]",             # Oxide dianion
+    # "[Mg+2]",            # Magnesium ion
+    # "[Ca+2]",            # Calcium ion
+    # Charged organic fragments
+    "C[N+](C)(C)C",  # Tetramethylammonium
+    # "[N-]=[N+]=[N-]",       # Azide ion
+    "C1=[N+](C=CC=C1)[O-]",  # Nitrobenzene
+    # Complex anions
+    "F[B-](F)(F)F",  # Tetrafluoroborate
+    "F[P-](F)(F)(F)(F)F",  # Hexafluorophosphate
+    # "[O-]C(=O)C(=O)[O-]",  # Oxalate dianion
+    # Zwitterions
+    "C(C(=O)[O-])N",  # Glycine
+    "C1=CC(=CC=C1)[N+](=O)[O-]",  # Nitrobenzene
+    # Aromatic heterocycles
+    "C1CCNCC1",
+    # Polyaromatics
+    "C1CCC2CCCCC2C1",  # Naphthalene
+    "C1CCC2C(C1)CCC1CCCCC12",  # Phenanthrene
 ]
+
 
 @pytest.fixture
 def atoms_and_connectivity(request):
@@ -129,7 +132,9 @@ def test_ase2networkx_smiles_connectivity(atoms_and_connectivity):
 def test_ase2rdkit(atoms_and_connectivity):
     smiles, atoms, connectivity = atoms_and_connectivity
     mol = rdkit2ase.ase2rdkit(atoms)
-    assert Chem.MolToSmiles(mol, canonical=True) == Chem.MolToSmiles(Chem.AddHs(Chem.MolFromSmiles(smiles)), canonical=True)
+    assert Chem.MolToSmiles(mol, canonical=True) == Chem.MolToSmiles(
+        Chem.AddHs(Chem.MolFromSmiles(smiles)), canonical=True
+    )
 
     for bond in mol.GetBonds():
         a1 = bond.GetBeginAtomIdx()
@@ -140,7 +145,9 @@ def test_ase2rdkit(atoms_and_connectivity):
         elif (a2, a1, order) in connectivity:
             pass
         else:
-            raise AssertionError(f"Bond ({a1}, {a2}, {order}) not found in connectivity: {connectivity}")
+            raise AssertionError(
+                f"Bond ({a1}, {a2}, {order}) not found in connectivity: {connectivity}"
+            )
 
 
 @pytest.mark.parametrize("atoms_and_connectivity", SMILES_LIST, indirect=True)
@@ -152,7 +159,9 @@ def test_ase2rdkit_no_connectivity(atoms_and_connectivity):
             rdkit2ase.ase2rdkit(atoms)
     else:
         mol = rdkit2ase.ase2rdkit(atoms)
-        assert Chem.MolToSmiles(mol, canonical=True) == Chem.MolToSmiles(Chem.AddHs(Chem.MolFromSmiles(smiles)), canonical=True)
+        assert Chem.MolToSmiles(mol, canonical=True) == Chem.MolToSmiles(
+            Chem.AddHs(Chem.MolFromSmiles(smiles)), canonical=True
+        )
 
 
 @pytest.mark.parametrize("atoms_and_connectivity", SMILES_LIST, indirect=True)
@@ -160,14 +169,19 @@ def test_ase2rdkit_guess_connectivity(atoms_and_connectivity):
     smiles, atoms, connectivity = atoms_and_connectivity
     atoms.info.pop("connectivity")
     mol = rdkit2ase.ase2rdkit(atoms, suggestions=[])
-    assert Chem.MolToSmiles(mol, canonical=True) == Chem.MolToSmiles(Chem.AddHs(Chem.MolFromSmiles(smiles)), canonical=True)
+    assert Chem.MolToSmiles(mol, canonical=True) == Chem.MolToSmiles(
+        Chem.AddHs(Chem.MolFromSmiles(smiles)), canonical=True
+    )
+
 
 @pytest.mark.parametrize("atoms_and_connectivity", SMILES_LIST, indirect=True)
 def test_ase2rdkit_smiles_connectivity(atoms_and_connectivity):
     smiles, atoms, connectivity = atoms_and_connectivity
     atoms.info.pop("connectivity")
     mol = rdkit2ase.ase2rdkit(atoms, suggestions=[smiles])
-    assert Chem.MolToSmiles(mol, canonical=True) == Chem.MolToSmiles(Chem.AddHs(Chem.MolFromSmiles(smiles)), canonical=True)
+    assert Chem.MolToSmiles(mol, canonical=True) == Chem.MolToSmiles(
+        Chem.AddHs(Chem.MolFromSmiles(smiles)), canonical=True
+    )
 
 
 def test_ase2networkx_ec_emc_li_pf6(ec_emc_li_pf6):
@@ -183,6 +197,7 @@ def test_ase2networkx_ec_emc_li_pf6(ec_emc_li_pf6):
     for d in li_nodes:
         assert d["charge"] == 1
 
+
 def test_ase2networkx_ec_emc_li_pf6_no_connectivity(ec_emc_li_pf6):
     connectivity = ec_emc_li_pf6.info.pop("connectivity")
     ec_emc_li_pf6.set_initial_charges()
@@ -190,12 +205,13 @@ def test_ase2networkx_ec_emc_li_pf6_no_connectivity(ec_emc_li_pf6):
     for i, j, bond_order in connectivity:
         assert graph.has_edge(i, j)
         assert graph.edges[i, j]["bond_order"] is None
-    
+
     # There is no charge information if not using suggestions
     # li_nodes = [d for _, d in graph.nodes(data=True) if d["atomic_number"] == 3]
     # assert len(li_nodes) == 3
     # for d in li_nodes:
     #     assert d["charge"] == 1
+
 
 def test_ase2networkx_ec_emc_li_pf6_guess_connectivity(ec_emc_li_pf6):
     connectivity = ec_emc_li_pf6.info.pop("connectivity")
@@ -204,7 +220,7 @@ def test_ase2networkx_ec_emc_li_pf6_guess_connectivity(ec_emc_li_pf6):
     for i, j, bond_order in connectivity:
         assert graph.has_edge(i, j)
         assert graph.edges[i, j]["bond_order"] == bond_order
-    
+
     li_nodes = [d for _, d in graph.nodes(data=True) if d["atomic_number"] == 3]
     assert len(li_nodes) == 3
     for d in li_nodes:

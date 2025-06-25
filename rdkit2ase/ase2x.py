@@ -1,6 +1,6 @@
+import ase
 import networkx as nx
 import numpy as np
-import ase
 from ase.neighborlist import natural_cutoffs
 from rdkit import Chem
 
@@ -8,6 +8,7 @@ from rdkit import Chem
 def _suggestions2networkx(smiles: list[str]) -> list[nx.Graph]:
     print(f"Converting {len(smiles)} SMILES to NetworkX graphs")
     from rdkit2ase import rdkit2networkx
+
     mols = []
     for _smiles in smiles:
         mol = Chem.MolFromSmiles(_smiles)
@@ -15,8 +16,13 @@ def _suggestions2networkx(smiles: list[str]) -> list[nx.Graph]:
         mols.append(mol)
     return [rdkit2networkx(mol) for mol in mols]
 
-def update_bond_order(graph: nx.Graph, suggestions: list[str]|None = None) -> None:
-    from rdkit2ase.bond_order import update_bond_order_from_suggestions, update_bond_order_determine, has_bond_order
+
+def update_bond_order(graph: nx.Graph, suggestions: list[str] | None = None) -> None:
+    from rdkit2ase.bond_order import (
+        has_bond_order,
+        update_bond_order_determine,
+        update_bond_order_from_suggestions,
+    )
 
     if not has_bond_order(graph):
         if suggestions is not None:
@@ -25,7 +31,8 @@ def update_bond_order(graph: nx.Graph, suggestions: list[str]|None = None) -> No
             update_bond_order_from_suggestions(graph, suggestion_graphs)
         update_bond_order_determine(graph)
 
-def ase2networkx(atoms: ase.Atoms, suggestions: list[str]|None = None) -> nx.Graph:
+
+def ase2networkx(atoms: ase.Atoms, suggestions: list[str] | None = None) -> nx.Graph:
     """
     Convert an ASE Atoms object to a NetworkX graph based on interatomic distances.
 
@@ -75,12 +82,11 @@ def ase2networkx(atoms: ase.Atoms, suggestions: list[str]|None = None) -> nx.Gra
             )
         return graph
     # non-bonding positive charged atoms / ions.
-    non_bonding_atomic_numbers = {3, 11, 19, 37, 55, 87} 
-
+    non_bonding_atomic_numbers = {3, 11, 19, 37, 55, 87}
 
     atomic_numbers = atoms.get_atomic_numbers()
     excluded_mask = np.isin(atomic_numbers, list(non_bonding_atomic_numbers))
-    
+
     d_ij = atoms.get_all_distances(mic=True, vector=False)
     # mask out non-bonding atoms
     d_ij[excluded_mask, :] = np.inf
@@ -114,9 +120,8 @@ def ase2networkx(atoms: ase.Atoms, suggestions: list[str]|None = None) -> nx.Gra
     return graph
 
 
-def ase2rdkit(atoms: ase.Atoms, suggestions: list[str]|None = None) -> Chem.Mol:
+def ase2rdkit(atoms: ase.Atoms, suggestions: list[str] | None = None) -> Chem.Mol:
     from rdkit2ase import ase2networkx, networkx2rdkit
-    graph = ase2networkx(atoms, suggestions=suggestions)    
+
+    graph = ase2networkx(atoms, suggestions=suggestions)
     return networkx2rdkit(graph)
-
-

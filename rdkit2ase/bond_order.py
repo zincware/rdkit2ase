@@ -1,8 +1,9 @@
 import networkx as nx
 from networkx.algorithms import isomorphism
+
 from rdkit2ase.networkx2x import networkx2ase
 from rdkit2ase.rdkit2x import rdkit2networkx
-from rdkit2ase.utils import unwrap_molecule, rdkit_determine_bonds
+from rdkit2ase.utils import rdkit_determine_bonds, unwrap_molecule
 
 
 def sort_templates(graphs: list[nx.Graph]) -> list[nx.Graph]:
@@ -10,13 +11,15 @@ def sort_templates(graphs: list[nx.Graph]) -> list[nx.Graph]:
         graphs, key=lambda g: (g.number_of_nodes(), g.number_of_edges()), reverse=True
     )
 
+
 def has_bond_order(graph: nx.Graph) -> bool:
     return all(x[2]["bond_order"] is not None for x in graph.edges(data=True))
+
 
 def update_bond_order_from_suggestions(graph, suggestions: list[nx.Graph]) -> None:
     if has_bond_order(graph):
         return
-    
+
     # TODO: do not update parts that already have bond order
 
     graph_copy = graph.copy()
@@ -66,9 +69,13 @@ def update_bond_order_determine(graph: nx.Graph) -> None:
     # iterate all parts of the graph that have at least one part where bond order is None
     for component in nx.connected_components(graph):
         subgraph = graph.subgraph(component)
-        missing = sum(data.get("bond_order") is None for u, v, data in subgraph.edges(data=True))
+        missing = sum(
+            data.get("bond_order") is None for u, v, data in subgraph.edges(data=True)
+        )
         if missing > 0:
-            print(f"Updating bond order for {missing} edges in component with {len(subgraph.nodes)} ({subgraph.nodes})")
+            print(
+                f"Updating bond order for {missing} edges in component with {len(subgraph.nodes)} ({subgraph.nodes})"
+            )
             # convert the subgraph to RDKit molecule
             atoms = networkx2ase(subgraph)
             atoms = unwrap_molecule(atoms)

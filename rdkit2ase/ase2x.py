@@ -62,6 +62,9 @@ def ase2networkx(atoms: ase.Atoms, suggestions: list[str] | None = None) -> nx.G
     if "connectivity" in atoms.info:
         connectivity = atoms.info["connectivity"]
         graph = nx.Graph()
+        # pbc and cell
+        graph.graph["pbc"] = atoms.pbc
+        graph.graph["cell"] = atoms.cell
         # add nodes
         for i, atom in enumerate(atoms):
             graph.add_node(
@@ -114,6 +117,10 @@ def ase2networkx(atoms: ase.Atoms, suggestions: list[str] | None = None) -> nx.G
 
     if suggestions is not None:
         update_bond_order(graph, suggestions)
+
+    # pbc and cell
+    graph.graph["pbc"] = atoms.pbc
+    graph.graph["cell"] = atoms.cell
 
     return graph
 

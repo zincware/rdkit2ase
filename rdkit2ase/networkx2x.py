@@ -15,7 +15,8 @@ def networkx2ase(graph: nx.Graph) -> ase.Atoms:
         positions=positions,
         numbers=numbers,
         charges=charges,
-        pbc=False,
+        pbc=graph.graph.get("pbc", False),
+        cell=graph.graph.get("cell", None),
     )
 
     connectivity = []

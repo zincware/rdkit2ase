@@ -55,7 +55,9 @@ def update_bond_order_from_suggestions(graph, suggestions: list[nx.Graph]) -> No
             # Assign charges for matched nodes
             for graph_node, template_node in match.items():
                 if "charge" in mol_graph.nodes[template_node]:
-                    graph.nodes[graph_node]["charge"] = mol_graph.nodes[template_node]["charge"]
+                    graph.nodes[graph_node]["charge"] = mol_graph.nodes[template_node][
+                        "charge"
+                    ]
 
 
 def update_bond_order_determine(graph: nx.Graph) -> None:

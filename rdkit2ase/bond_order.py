@@ -75,12 +75,12 @@ def update_bond_order_determine(graph: nx.Graph) -> None:
     if has_bond_order(graph):
         return
 
-    # iterate all parts of the graph that have at least one part where bond order is None
     for component in nx.connected_components(graph):
         subgraph = graph.subgraph(component)
         missing = sum(
             data.get("bond_order") is None for u, v, data in subgraph.edges(data=True)
         )
+        # if any bond information is missing, we update the bond order
         if missing > 0:
             # convert the subgraph to RDKit molecule
             atoms = networkx2ase(subgraph)

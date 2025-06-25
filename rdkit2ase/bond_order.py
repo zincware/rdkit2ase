@@ -20,10 +20,10 @@ def update_bond_order_from_suggestions(graph, suggestions: list[nx.Graph]) -> No
     if has_bond_order(graph):
         return
 
-    # TODO: do not update parts that already have bond order
-
+    # Copy to avoid mutating while iterating
     graph_copy = graph.copy()
-    suggestions = sort_templates(suggestions)
+    suggestions = sort_templates(suggestions)  # Assumes this sorts by decreasing size
+
     for mol_graph in suggestions:
         while True:
             graph_matcher = isomorphism.GraphMatcher(
@@ -32,13 +32,13 @@ def update_bond_order_from_suggestions(graph, suggestions: list[nx.Graph]) -> No
                 node_match=lambda n1, n2: n1["atomic_number"] == n2["atomic_number"],
             )
             match = next(graph_matcher.subgraph_isomorphisms_iter(), None)
-            # include the nodes and edges into the new graph
-
             if match is None:
-                break
+                break  # No more matches
+
+            # Remove matched nodes from future matching
             graph_copy.remove_nodes_from(match.keys())
-            # the edges in mol_graph contain data "bond_order"
-            # update the edges in graph to contain this information for the matched nodes
+
+            # Transfer bond order from template
             inv_match = {v: k for k, v in match.items()}
             for u, v, data in mol_graph.edges(data=True):
                 if "bond_order" in data:
@@ -51,11 +51,11 @@ def update_bond_order_from_suggestions(graph, suggestions: list[nx.Graph]) -> No
                     v_g = inv_match[v]
                     if graph.has_edge(u_g, v_g):
                         graph[u_g][v_g]["bond_order"] = data["bond_order"]
-                        # # set the charge if available
-                        # if "charge" in mol_graph.nodes[v]:
-                        #     graph.nodes[u_g]["charge"] = mol_graph.nodes[v]["charge"]
-                        # if "charge" in mol_graph.nodes[u]:
-                        #     graph.nodes[v_g]["charge"] = mol_graph.nodes[u]["charge"]
+
+            # Assign charges for matched nodes
+            for graph_node, template_node in match.items():
+                if "charge" in mol_graph.nodes[template_node]:
+                    graph.nodes[graph_node]["charge"] = mol_graph.nodes[template_node]["charge"]
 
 
 def update_bond_order_determine(graph: nx.Graph) -> None:
@@ -81,7 +81,21 @@ def update_bond_order_determine(graph: nx.Graph) -> None:
             atoms = unwrap_molecule(atoms)
             # determine the bond order using RDKit
             rdkit_mol = rdkit_determine_bonds(atoms)
+            print(atoms)
+
+            for atom in rdkit_mol.GetAtoms():
+                if atom.GetSymbol() == "F":
+                    print(atom.GetSymbol(), atom.GetFormalCharge())
+
             # convert the RDKit molecule back to a graph
             rdkit_graph = rdkit2networkx(rdkit_mol)
+
+            for node in rdkit_graph.nodes:
+                my_node = rdkit_graph.nodes[node]
+                if my_node["atomic_number"] == 15:
+                    print(
+                        f"{my_node}"
+                    )
+
             # update the bond order in the original graph
             update_bond_order_from_suggestions(graph, [rdkit_graph])

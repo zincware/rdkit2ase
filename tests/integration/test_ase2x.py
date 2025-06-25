@@ -33,22 +33,22 @@ SMILES_LIST = [
         "C1=CC=CC=C1",  # Benzene
         "C1=CC=CC=C1O",  # Phenol
         # Simple anions/cations
-        # "[Li+]",  # Lithium ion
-        # "[Na+]",  # Sodium ion
-        # "[Cl-]",  # Chloride
+        "[Li+]",  # Lithium ion
+        "[Na+]",  # Sodium ion
+        "[Cl-]",  # Chloride
         "[OH-]",  # Hydroxide
         "[NH4+]",  # Ammonium
         "[CH3-]",  # Methyl anion
         "[C-]#N",  # Cyanide anion"
         # Phosphate and sulfate groups
-        # "OP(=O)(O)O ",  # H3PO4
-        # "OP(=O)(O)[O-]",  # H2PO4-
+        "OP(=O)(O)O ",  # H3PO4
+        "OP(=O)(O)[O-]",  # H2PO4-
         # "[O-]P(=O)(O)[O-]",  # HPO4 2-
         # "[O-]P(=O)([O-])[O-]",  # PO4 3-
-        # "OP(=O)=O",  # HPO3
+        "OP(=O)=O",  # HPO3
         # "[O-]P(=O)=O",  # PO3 -
-        # "OS(=O)(=O)O",  # H2SO4
-        # "OS(=O)(=O)[O-]",  # HSO4-
+        "OS(=O)(=O)O",  # H2SO4
+        "OS(=O)(=O)[O-]",  # HSO4-
         # "[O-]S(=O)(=O)[O-]",  # SO4 2-
         # "[O-]S(=O)(=O)([O-])",  # SO3 2-
         # Multiply charged ions
@@ -147,8 +147,12 @@ def test_ase2rdkit(atoms_and_connectivity):
 def test_ase2rdkit_no_connectivity(atoms_and_connectivity):
     smiles, atoms, connectivity = atoms_and_connectivity
     atoms.info.pop("connectivity")
-    with pytest.raises(ValueError):
-        rdkit2ase.ase2rdkit(atoms)
+    if len(connectivity) > 0:
+        with pytest.raises(ValueError):
+            rdkit2ase.ase2rdkit(atoms)
+    else:
+        mol = rdkit2ase.ase2rdkit(atoms)
+        assert Chem.MolToSmiles(mol, canonical=True) == Chem.MolToSmiles(Chem.AddHs(Chem.MolFromSmiles(smiles)), canonical=True)
 
 
 @pytest.mark.parametrize("atoms_and_connectivity", SMILES_LIST, indirect=True)

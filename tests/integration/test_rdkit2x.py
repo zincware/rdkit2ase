@@ -3,7 +3,6 @@ from rdkit import Chem
 
 import rdkit2ase
 
-
 # Shared test cases
 SMILES_LIST = [
     # Simple neutral molecules
@@ -55,12 +54,15 @@ SMILES_LIST = [
     "C1CCC2C(C1)CCC1CCCCC12",  # Phenanthrene
 ]
 
+
 @pytest.mark.parametrize("smiles", SMILES_LIST)
 def test_rdkit2ase(smiles):
     mol = Chem.MolFromSmiles(smiles)
     mol = Chem.AddHs(mol)
     atoms = rdkit2ase.rdkit2ase(mol)
-    assert sorted(atoms.get_chemical_symbols()) == sorted([atom.GetSymbol() for atom in mol.GetAtoms()])
+    assert sorted(atoms.get_chemical_symbols()) == sorted(
+        [atom.GetSymbol() for atom in mol.GetAtoms()]
+    )
     assert len(atoms) == mol.GetNumAtoms()
 
     connectivity = atoms.info["connectivity"]
@@ -75,7 +77,6 @@ def test_rdkit2networkx(smiles):
     mol = Chem.MolFromSmiles(smiles)
     mol = Chem.AddHs(mol)
     graph = rdkit2ase.rdkit2networkx(mol)
-    
 
     for u, v, data in graph.edges(data=True):
         bond_order = data.get("bond_order")

@@ -141,12 +141,10 @@ def test_networkx2rdkit_ec_emc_li_pf6(ec_emc_li_pf6):
     graph = rdkit2ase.ase2networkx(atoms)
     mol = rdkit2ase.networkx2rdkit(graph)
 
-    # asser the length of the mol is equal to the number of atoms
     assert len(mol.GetAtoms()) == len(atoms)
     atom_types = [atom.GetAtomicNum() for atom in mol.GetAtoms()]
     assert sorted(atom_types) == sorted(atoms.get_atomic_numbers().tolist())
 
-    # assert the bonds
     connectivity = atoms.info["connectivity"]
     assert len(connectivity) == 266
     for i, j, bond_order in connectivity:

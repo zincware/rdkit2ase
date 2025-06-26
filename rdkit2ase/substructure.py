@@ -2,7 +2,7 @@ import ase
 from ase.build import separate
 from rdkit import Chem
 
-from rdkit2ase.rdkit2ase import ase2rdkit
+from rdkit2ase.ase2x import ase2rdkit
 from rdkit2ase.utils import find_connected_components
 
 

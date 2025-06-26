@@ -54,6 +54,7 @@ def rdkit2ase(mol: Chem.Mol, seed: int = 42) -> ase.Atoms:
         atoms.set_initial_charges(charges)
     return atoms
 
+
 def rdkit2networkx(mol: Chem.Mol) -> nx.Graph:
     """Convert an RDKit molecule to a NetworkX graph.
 

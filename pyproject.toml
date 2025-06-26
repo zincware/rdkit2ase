@@ -38,3 +38,7 @@ extend-ignore = [
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+
+[tool.codespell]
+skip = "*.ipynb"

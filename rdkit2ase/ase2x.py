@@ -45,7 +45,7 @@ def ase2networkx(atoms: ase.Atoms, suggestions: list[str] | None = None) -> nx.G
     Notes
     -----
     The graph contains the following information:
-    
+
     - Nodes represent atoms with properties:
         * position: Cartesian coordinates (numpy.ndarray)
         * atomic_number: Element atomic number (int)
@@ -58,7 +58,7 @@ def ase2networkx(atoms: ase.Atoms, suggestions: list[str] | None = None) -> nx.G
         * cell: Unit cell vectors
 
     Connectivity is determined by:
-    
+
     1. Using explicit connectivity if present in atoms.info
     2. Otherwise using distance-based cutoffs and use SMILES patterns
     3. Use rdkit's bond order determination algorithm if no suggestions are provided.

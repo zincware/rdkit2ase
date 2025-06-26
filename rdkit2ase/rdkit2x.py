@@ -4,8 +4,35 @@ from rdkit import Chem
 from rdkit.Chem import AllChem
 
 
-def rdkit2ase(mol, seed: int = 42) -> ase.Atoms:
-    """Convert an RDKit molecule to an ASE atoms object."""
+def rdkit2ase(mol: Chem.Mol, seed: int = 42) -> ase.Atoms:
+    """Convert an RDKit molecule to an ASE Atoms object.
+
+    Parameters
+    ----------
+    mol : rdkit.Chem.Mol
+        RDKit molecule to convert
+    seed : int, optional
+        Random seed for conformer generation (default is 42)
+
+    Returns
+    -------
+    ase.Atoms
+        ASE Atoms object with:
+        - Atomic positions from conformer coordinates
+        - Atomic numbers from molecular structure
+        - Connectivity information in atoms.info
+        - Formal charges if present
+        - SMILES string in atoms.info
+
+    Examples
+    --------
+    >>> from rdkit import Chem
+    >>> from rdkit2ase import rdkit2ase
+    >>> mol = Chem.MolFromSmiles('CCO')
+    >>> atoms = rdkit2ase(mol)
+    >>> len(atoms)
+    9
+    """
     smiles = Chem.MolToSmiles(mol)
     mol = Chem.AddHs(mol)
     charges = [atom.GetFormalCharge() for atom in mol.GetAtoms()]
@@ -27,36 +54,46 @@ def rdkit2ase(mol, seed: int = 42) -> ase.Atoms:
         atoms.set_initial_charges(charges)
     return atoms
 
-
 def rdkit2networkx(mol: Chem.Mol) -> nx.Graph:
-    """
-    Convert an RDKit molecule to a NetworkX graph.
-
-    Each atom is represented as a node, with attributes such as atomic number,
-    formal charge, and original RDKit atom index. Each bond is represented as
-    an edge, with the bond order stored as an edge attribute.
+    """Convert an RDKit molecule to a NetworkX graph.
 
     Parameters
     ----------
-    mol : Chem.Mol
-        RDKit molecule object to be converted.
+    mol : rdkit.Chem.Mol
+        RDKit molecule object to be converted
 
     Returns
     -------
-    nx.Graph
-        An undirected NetworkX graph where:
+    networkx.Graph
+        Undirected graph representing the molecule where:
 
-        - **Nodes** represent atoms and include:
+        Nodes contain:
+            * atomic_number (int): Atomic number
+            * original_index (int): RDKit atom index
+            * charge (int): Formal charge
+        Edges contain:
+            * bond_order (float): Bond order (1.0, 1.5, 2.0, or 3.0)
 
-          - ``atomic_number`` (int): Atomic number of the atom.
-          - ``original_index`` (int): Original RDKit atom index.
-          - ``charge`` (int): Formal charge of the atom.
+    Notes
+    -----
+    Bond orders are converted as follows:
+        * SINGLE -> 1.0
+        * DOUBLE -> 2.0
+        * TRIPLE -> 3.0
+        * AROMATIC -> 1.5
 
-        - **Edges** represent chemical bonds and include:
-
-          - ``bond_order`` (float): Bond order
-            (1: single, 2: double, 3: triple, 1.5: aromatic).
+    Examples
+    --------
+    >>> from rdkit import Chem
+    >>> from rdkit2ase import rdkit2networkx
+    >>> mol = Chem.MolFromSmiles('C=O')
+    >>> graph = rdkit2networkx(mol)
+    >>> len(graph.nodes)
+    4
+    >>> len(graph.edges)
+    3
     """
+    mol = Chem.AddHs(mol)
     graph = nx.Graph()
     for atom in mol.GetAtoms():
         graph.add_node(

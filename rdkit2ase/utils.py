@@ -137,8 +137,7 @@ def rdkit_determine_bonds(unwrapped_atoms: ase.Atoms) -> rdkit.Chem.Mol:
         ase.io.write(f, unwrapped_atoms, format="xyz")
         f.seek(0)
         xyz = f.read()
-        raw_mol = rdkit.Chem.MolFromXYZBlock(xyz)
-    mol = rdkit.Chem.Mol(raw_mol)
+        mol = rdkit.Chem.MolFromXYZBlock(xyz)
     if len(unwrapped_atoms) == 1:
         if unwrapped_atoms.get_chemical_symbols()[0] in ["Li", "Na", "K", "Rb", "Cs"]:
             return rdkit.Chem.MolFromSmiles(

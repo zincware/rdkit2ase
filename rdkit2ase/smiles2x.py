@@ -31,14 +31,32 @@ def get_pf6() -> ase.Atoms:
 
 
 def smiles2atoms(smiles: str, seed: int = 42) -> ase.Atoms:
-    """
-    Convert a SMILES string to an ASE Atoms object.
+    """Convert a SMILES string to an ASE Atoms object.
 
-    Args:
-        smiles (str): The SMILES string.
+    Parameters
+    ----------
+    smiles : str
+        The SMILES string to convert.
+    seed : int, optional
+        Random seed for conformer generation (default is 42).
 
-    Returns:
-        atoms (ase.Atoms): The Atoms object.
+    Returns
+    -------
+    ase.Atoms
+        The generated Atoms object (first conformer).
+
+    Notes
+    -----
+    This is a convenience wrapper around smiles2conformers that returns
+    just the first conformer.
+
+    Examples
+    --------
+    >>> from rdkit2ase import smiles2atoms
+    >>> import ase
+    >>> atoms = smiles2atoms("CCO")
+    >>> isinstance(atoms, ase.Atoms)
+    True
     """
     return smiles2conformers(smiles, 1, seed)[0]
 
@@ -49,16 +67,45 @@ def smiles2conformers(
     randomSeed: int = 42,  # noqa N803
     maxAttempts: int = 1000,  # noqa N803
 ) -> list[ase.Atoms]:
-    """Create multiple conformers for a SMILES string.
+    """Generate multiple molecular conformers from a SMILES string.
 
-    Args:
-        smiles (str): The SMILES string.
-        numConfs (int): The number of conformers to generate.
-        randomSeed (int): The random seed.
-        maxAttempts (int): The maximum number of attempts.
+    Parameters
+    ----------
+    smiles : str
+        The SMILES string to convert.
+    numConfs : int
+        Number of conformers to generate.
+    randomSeed : int, optional
+        Random seed for conformer generation (default is 42).
+    maxAttempts : int, optional
+        Maximum number of embedding attempts (default is 1000).
 
-    Returns:
-        images (list[ase.Atoms]): The list of conformers.
+    Returns
+    -------
+    list[ase.Atoms]
+        List of generated conformers as ASE Atoms objects.
+
+    Notes
+    -----
+    Special handling is included for PF6- (hexafluorophosphate) which
+    is treated as a special case.
+
+    Each Atoms object in the returned list includes:
+    - Atomic positions
+    - Atomic numbers
+    - SMILES string in the info dictionary
+    - Connectivity information in the info dictionary
+    - Formal charges when present
+
+    Examples
+    --------
+    >>> from rdkit2ase import smiles2conformers
+    >>> import ase
+    >>> frames = smiles2conformers("CCO", numConfs=3)
+    >>> len(frames)
+    3
+    >>> all(isinstance(atoms, ase.Atoms) for atoms in frames)
+    True
     """
     mol = Chem.MolFromSmiles(smiles)
     if Chem.MolToSmiles(mol, canonical=True) == "F[P-](F)(F)(F)(F)F":

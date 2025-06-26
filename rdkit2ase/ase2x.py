@@ -22,31 +22,56 @@ def update_bond_order(graph: nx.Graph, suggestions: list[str] | None = None) -> 
 
 
 def ase2networkx(atoms: ase.Atoms, suggestions: list[str] | None = None) -> nx.Graph:
-    """
-    Convert an ASE Atoms object to a NetworkX graph based on interatomic distances.
-
-    Connectivity is determined using the sum of natural atomic cutoffs
-    (scaled by 1.2). Each atom is represented as a node, and an edge is
-    added if two atoms are within bonding distance.
+    """Convert an ASE Atoms object to a NetworkX graph with bonding information.
 
     Parameters
     ----------
     atoms : ase.Atoms
         The ASE Atoms object to convert into a graph.
+    suggestions : list[str], optional
+        List of SMILES patterns to suggest bond orders (default is None).
+        If None, bond order is only determined from connectivity.
+        If you provide an empty list, bond order will be determined
+        using rdkit's bond order determination algorithm.
+        If SMILES patterns are provided, they will be used to
+        suggest bond orders first, and then
+        rdkit's bond order determination algorithm will be used.
 
     Returns
     -------
     networkx.Graph
-        An undirected NetworkX graph where:
+        An undirected NetworkX graph with atomic properties and bonding information.
 
-        - **Nodes** represent atoms and include:
+    Notes
+    -----
+    The graph contains the following information:
+    
+    - Nodes represent atoms with properties:
+        * position: Cartesian coordinates (numpy.ndarray)
+        * atomic_number: Element atomic number (int)
+        * original_index: Index in original Atoms object (int)
+        * charge: Formal charge (float)
+    - Edges represent bonds with:
+        * bond_order: Bond order (float or None if unknown)
+    - Graph properties include:
+        * pbc: Periodic boundary conditions
+        * cell: Unit cell vectors
 
-          - ``position`` (numpy.ndarray): Cartesian coordinates of the atom.
-          - ``atomic_number`` (int): Atomic number.
-          - ``original_index`` (int): Index in the original ASE Atoms object.
-          - ``charge`` (int): Formal charge of the atom.
+    Connectivity is determined by:
+    
+    1. Using explicit connectivity if present in atoms.info
+    2. Otherwise using distance-based cutoffs and use SMILES patterns
+    3. Use rdkit's bond order determination algorithm if no suggestions are provided.
 
-        - **Edges** represent interatomic bonds based on cutoff distance.
+    Examples
+    --------
+    >>> from rdkit2ase import ase2networkx, smiles2atoms
+    >>> atoms = smiles2atoms(smiles="O")
+    >>> graph = ase2networkx(atoms)
+    >>> len(graph.nodes)
+    3
+    >>> len(graph.edges)
+    2
     """
     charges = atoms.get_initial_charges()
 
@@ -116,6 +141,34 @@ def ase2networkx(atoms: ase.Atoms, suggestions: list[str] | None = None) -> nx.G
 
 
 def ase2rdkit(atoms: ase.Atoms, suggestions: list[str] | None = None) -> Chem.Mol:
+    """Convert an ASE Atoms object to an RDKit molecule.
+
+    Parameters
+    ----------
+    atoms : ase.Atoms
+        The ASE Atoms object to convert.
+    suggestions : list[str], optional
+        List of SMARTS patterns to suggest bond orders (default is None).
+
+    Returns
+    -------
+    rdkit.Chem.Mol
+        The resulting RDKit molecule with 3D coordinates.
+
+    Notes
+    -----
+    This function first converts the Atoms object to a NetworkX graph using
+    ase2networkx, then converts the graph to an RDKit molecule using
+    networkx2rdkit.
+
+    Examples
+    --------
+    >>> from rdkit2ase import ase2rdkit, smiles2atoms
+    >>> atoms = smiles2atoms(smiles="C=O")
+    >>> mol = ase2rdkit(atoms)
+    >>> mol.GetNumAtoms()
+    4
+    """
     from rdkit2ase import ase2networkx, networkx2rdkit
 
     graph = ase2networkx(atoms, suggestions=suggestions)

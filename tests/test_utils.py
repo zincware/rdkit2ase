@@ -9,6 +9,7 @@ import rdkit2ase
 from rdkit2ase.utils import (
     find_connected_components,
     rdkit_determine_bonds,
+    suggestions2networkx,
     unwrap_molecule,
 )
 
@@ -202,3 +203,13 @@ def test_rdkit_determine_bonds(smiles: str):
     found_smiles = rdkit.Chem.MolToSmiles(mol)
 
     assert target_smiles == found_smiles
+
+
+def test_suggestions2networkx():
+    graphs = suggestions2networkx(smiles=["C", "C=O"])
+    assert len(graphs) == 2
+    assert graphs[0].number_of_nodes() == 5
+    assert graphs[0].number_of_edges() == 4
+
+    assert graphs[1].number_of_nodes() == 4  # pbc and cell
+    assert graphs[1].number_of_edges() == 3

@@ -5,12 +5,6 @@ from rdkit.Chem import rdDistGeom
 
 
 def get_pf6() -> ase.Atoms:
-    """
-    Returns an ASE Atoms object representing the hexafluorophosphate (PF6-) ion.
-
-    The geometry is idealized as octahedral with approximate P-F bond lengths (~1.57 Å).
-    """
-    # Octahedral geometry: 6 unit vectors along ±x, ±y, ±z
     directions = np.array(
         [
             [1, 0, 0],
@@ -21,8 +15,8 @@ def get_pf6() -> ase.Atoms:
             [0, 0, -1],
         ]
     )
-    p_position = np.zeros(3, dtype=float)  # P at origin
-    f_positions = directions * 1.57  # P–F bond length in Å
+    p_position = np.zeros(3, dtype=float)
+    f_positions = directions * 1.57
 
     positions = [p_position] + list(f_positions)
     symbols = ["P"] + ["F"] * 6
@@ -67,8 +61,7 @@ def smiles2conformers(
         images (list[ase.Atoms]): The list of conformers.
     """
     mol = Chem.MolFromSmiles(smiles)
-    # TODO: add special case for PF6!
-    if Chem.MolToSmiles(mol) == "F[P-](F)(F)(F)(F)F":
+    if Chem.MolToSmiles(mol, canonical=True) == "F[P-](F)(F)(F)(F)F":
         return [get_pf6()] * numConfs
 
     mol = Chem.AddHs(mol)

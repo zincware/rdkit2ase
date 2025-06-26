@@ -56,9 +56,8 @@ def update_bond_order_from_suggestions(graph, suggestions: list[nx.Graph]) -> No
     if has_bond_order(graph):
         return
 
-    # Copy to avoid mutating while iterating
     working_graph = graph.copy()
-    suggestions = sort_templates(suggestions)  # Assumes this sorts by decreasing size
+    suggestions = sort_templates(suggestions)
 
     for mol_graph in suggestions:
         while True:
@@ -82,12 +81,9 @@ def update_bond_order_determine(graph: nx.Graph) -> None:
         )
         # if any bond information is missing, we update the bond order
         if missing > 0:
-            # convert the subgraph to RDKit molecule
             atoms = networkx2ase(subgraph)
             atoms = unwrap_molecule(atoms)
-            # determine the bond order using RDKit
             rdkit_mol = rdkit_determine_bonds(atoms)
-            # convert the RDKit molecule back to a graph
             rdkit_graph = rdkit2networkx(rdkit_mol)
             # update the bond order in the original graph
             update_bond_order_from_suggestions(graph, [rdkit_graph])

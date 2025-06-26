@@ -3,6 +3,7 @@ from collections import defaultdict
 
 import ase.io
 import ase.units
+import networkx as nx
 import numpy as np
 import rdkit.Chem
 import rdkit.Chem.rdDetermineBonds
@@ -147,14 +148,12 @@ def rdkit_determine_bonds(unwrapped_atoms: ase.Atoms) -> rdkit.Chem.Mol:
             return rdkit.Chem.MolFromSmiles(
                 f"[{unwrapped_atoms.get_chemical_symbols()[0]}-]"
             )
-    # edge case for PF6
     if len(unwrapped_atoms) == 7:
         if sorted(unwrapped_atoms.get_chemical_symbols()) == sorted(
             ["P", "F", "F", "F", "F", "F", "F"]
         ):
             return rdkit.Chem.MolFromSmiles("F[P-](F)(F)(F)(F)F")
     for charge in [0, 1, -1, 2, -2]:
-        # TODO: make this a function
         try:
             rdkit.Chem.rdDetermineBonds.DetermineBonds(
                 mol,
@@ -169,3 +168,14 @@ def rdkit_determine_bonds(unwrapped_atoms: ase.Atoms) -> rdkit.Chem.Mol:
             f"{sum(unwrapped_atoms.get_initial_charges()) + charge} "
             f"and {unwrapped_atoms.get_chemical_symbols()}"
         )
+
+
+def suggestions2networkx(smiles: list[str]) -> list[nx.Graph]:
+    from rdkit2ase import rdkit2networkx
+
+    mols = []
+    for _smiles in smiles:
+        mol = Chem.MolFromSmiles(_smiles)
+        mol = Chem.AddHs(mol)
+        mols.append(mol)
+    return [rdkit2networkx(mol) for mol in mols]

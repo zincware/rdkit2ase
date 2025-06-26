@@ -125,9 +125,6 @@ def test_ase2networkx_smiles_connectivity(atoms_and_connectivity):
         assert graph.edges[i, j]["bond_order"] == bond_order
 
 
-# TODO: test with boxes as well!
-
-
 @pytest.mark.parametrize("atoms_and_connectivity", SMILES_LIST, indirect=True)
 def test_ase2rdkit(atoms_and_connectivity):
     smiles, atoms, connectivity = atoms_and_connectivity
@@ -231,7 +228,7 @@ def test_ase2networkx_ec_emc_li_pf6_guess_connectivity(ec_emc_li_pf6):
 def test_radicals(smiles):
     atoms = rdkit2ase.smiles2atoms(smiles)
     graph = rdkit2ase.ase2networkx(atoms)
-    # Validate atom charges match radical states
+
     mol = Chem.MolFromSmiles(smiles)
     for i, atom in enumerate(mol.GetAtoms()):
         assert graph.nodes[i]["charge"] == atom.GetFormalCharge()

@@ -4,16 +4,7 @@ import numpy as np
 from ase.neighborlist import natural_cutoffs
 from rdkit import Chem
 
-
-def _suggestions2networkx(smiles: list[str]) -> list[nx.Graph]:
-    from rdkit2ase import rdkit2networkx
-
-    mols = []
-    for _smiles in smiles:
-        mol = Chem.MolFromSmiles(_smiles)
-        mol = Chem.AddHs(mol)
-        mols.append(mol)
-    return [rdkit2networkx(mol) for mol in mols]
+from rdkit2ase.utils import suggestions2networkx
 
 
 def update_bond_order(graph: nx.Graph, suggestions: list[str] | None = None) -> None:
@@ -25,7 +16,7 @@ def update_bond_order(graph: nx.Graph, suggestions: list[str] | None = None) -> 
 
     if not has_bond_order(graph):
         if suggestions is not None:
-            suggestion_graphs = _suggestions2networkx(suggestions)
+            suggestion_graphs = suggestions2networkx(suggestions)
             update_bond_order_from_suggestions(graph, suggestion_graphs)
         update_bond_order_determine(graph)
 
@@ -62,10 +53,10 @@ def ase2networkx(atoms: ase.Atoms, suggestions: list[str] | None = None) -> nx.G
     if "connectivity" in atoms.info:
         connectivity = atoms.info["connectivity"]
         graph = nx.Graph()
-        # pbc and cell
+
         graph.graph["pbc"] = atoms.pbc
         graph.graph["cell"] = atoms.cell
-        # add nodes
+
         for i, atom in enumerate(atoms):
             graph.add_node(
                 i,
@@ -118,7 +109,6 @@ def ase2networkx(atoms: ase.Atoms, suggestions: list[str] | None = None) -> nx.G
     if suggestions is not None:
         update_bond_order(graph, suggestions)
 
-    # pbc and cell
     graph.graph["pbc"] = atoms.pbc
     graph.graph["cell"] = atoms.cell
 

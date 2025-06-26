@@ -1,6 +1,6 @@
 [project]
 name = "rdkit2ase"
-version = "0.1.8"
+version = "0.1.9"
 description = "Interface between rdkit and ASE"
 readme = "README.md"
 license = "Apache-2.0"
@@ -39,6 +39,7 @@ extend-ignore = [
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+
 [tool.codespell]
 ignore-words-list = "basf"
-skip = "*.svg,paper/bibliography.bib"
+skip = "*.svg,paper/bibliography.bib,*.ipynb"

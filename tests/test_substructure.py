@@ -130,7 +130,9 @@ def test_bmim_bf4_no_info():
         tolerance=3,
     )
     del box.info["connectivity"]
-    bf4_matches = rdkit2ase.match_substructure(box, smiles="[B-](F)(F)(F)F")
+    bf4_matches = rdkit2ase.match_substructure(
+        box, smiles="[B-](F)(F)(F)F", suggestions=[]
+    )
     assert len(bf4_matches) == 10
     for match in bf4_matches:
         assert box[match].get_chemical_symbols() == bf4[0].get_chemical_symbols()
@@ -138,6 +140,7 @@ def test_bmim_bf4_no_info():
     bmim_matches = rdkit2ase.match_substructure(
         box,
         smiles="CCCCN1C=C[N+](=C1)C",
+        suggestions=[],
     )
     assert len(bmim_matches) == 10
     for match in bmim_matches:
@@ -149,6 +152,7 @@ def test_bmim_bf4_no_info():
     bmim_matches = rdkit2ase.match_substructure(
         box,
         smarts="[H]c1c([H])[n+](C([H])([H])[H])c([H])n1C([H])([H])C([H])([H])C([H])([H])C([H])([H])[H]",
+        suggestions=[],
     )
     assert len(bmim_matches) == 10
     for match in bmim_matches:

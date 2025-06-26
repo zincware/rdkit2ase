@@ -1,10 +1,28 @@
+import io
 from collections import defaultdict
 
-import ase
+import ase.io
 import ase.units
+import networkx as nx
 import numpy as np
+import rdkit.Chem
+import rdkit.Chem.rdDetermineBonds
 from ase.data import covalent_radii
 from ase.neighborlist import NeighborList
+from rdkit import Chem
+
+
+def bond_type_from_order(order):
+    if order == 1.0:
+        return Chem.BondType.SINGLE
+    elif order == 2.0:
+        return Chem.BondType.DOUBLE
+    elif order == 3.0:
+        return Chem.BondType.TRIPLE
+    elif order == 1.5:
+        return Chem.BondType.AROMATIC
+    else:
+        raise ValueError(f"Unsupported bond order: {order}")
 
 
 def find_connected_components(connectivity: list[tuple[int, int, float]]):
@@ -63,7 +81,7 @@ def calculate_box_dimensions(images: list[ase.Atoms], density: float) -> list[fl
     return [box_edge] * 3
 
 
-def unwrap_molecule(atoms, scale=1.2):
+def unwrap_molecule(atoms, scale=1.2) -> ase.Atoms:
     """Robust unwrapping across PBC using root-referenced traversal."""
     positions = atoms.get_positions()
     cell = atoms.get_cell()
@@ -110,3 +128,53 @@ def unwrap_molecule(atoms, scale=1.2):
     atoms.set_positions(new_positions)
 
     return atoms
+
+
+def rdkit_determine_bonds(unwrapped_atoms: ase.Atoms) -> rdkit.Chem.Mol:
+    if len(unwrapped_atoms) == 0:
+        raise ValueError("Cannot determine bonds for an empty structure.")
+    with io.StringIO() as f:
+        ase.io.write(f, unwrapped_atoms, format="xyz")
+        f.seek(0)
+        xyz = f.read()
+        mol = rdkit.Chem.MolFromXYZBlock(xyz)
+    if len(unwrapped_atoms) == 1:
+        if unwrapped_atoms.get_chemical_symbols()[0] in ["Li", "Na", "K", "Rb", "Cs"]:
+            return rdkit.Chem.MolFromSmiles(
+                f"[{unwrapped_atoms.get_chemical_symbols()[0]}+]"
+            )
+        if unwrapped_atoms.get_chemical_symbols()[0] in ["Cl", "Br", "I", "F"]:
+            return rdkit.Chem.MolFromSmiles(
+                f"[{unwrapped_atoms.get_chemical_symbols()[0]}-]"
+            )
+    if len(unwrapped_atoms) == 7:
+        if sorted(unwrapped_atoms.get_chemical_symbols()) == sorted(
+            ["P", "F", "F", "F", "F", "F", "F"]
+        ):
+            return rdkit.Chem.MolFromSmiles("F[P-](F)(F)(F)(F)F")
+    for charge in [0, 1, -1, 2, -2]:
+        try:
+            rdkit.Chem.rdDetermineBonds.DetermineBonds(
+                mol,
+                charge=int(sum(unwrapped_atoms.get_initial_charges())) + charge,
+            )
+            return mol
+        except ValueError:
+            pass
+    else:
+        raise ValueError(
+            "Failed to determine bonds for sub-structure up to charge "
+            f"{sum(unwrapped_atoms.get_initial_charges()) + charge} "
+            f"and {unwrapped_atoms.get_chemical_symbols()}"
+        )
+
+
+def suggestions2networkx(smiles: list[str]) -> list[nx.Graph]:
+    from rdkit2ase import rdkit2networkx
+
+    mols = []
+    for _smiles in smiles:
+        mol = Chem.MolFromSmiles(_smiles)
+        mol = Chem.AddHs(mol)
+        mols.append(mol)
+    return [rdkit2networkx(mol) for mol in mols]

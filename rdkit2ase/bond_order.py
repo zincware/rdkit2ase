@@ -92,8 +92,7 @@ def update_bond_order_determine(graph: nx.Graph) -> None:
     for component in nx.connected_components(graph):
         subgraph = graph.subgraph(component)
         # add pbc and cell information to the subgraph
-        subgraph.graph["pbc"] = graph.graph.get("pbc", False)
-        subgraph.graph["cell"] = graph.graph.get("cell", None)
+        subgraph.graph.update(graph.graph)
         missing = sum(
             data.get("bond_order") is None for u, v, data in subgraph.edges(data=True)
         )

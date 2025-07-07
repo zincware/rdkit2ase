@@ -1,9 +1,7 @@
 import networkx as nx
 from networkx.algorithms import isomorphism
 
-from rdkit2ase.networkx2x import networkx2ase
-from rdkit2ase.rdkit2x import rdkit2networkx
-from rdkit2ase.utils import rdkit_determine_bonds, unwrap_molecule
+from rdkit2ase.utils import rdkit_determine_bonds, suggestions2networkx, unwrap_molecule
 
 
 def sort_templates(graphs: list[nx.Graph]) -> list[nx.Graph]:
@@ -66,21 +64,40 @@ def update_bond_order_from_suggestions(graph, suggestions: list[nx.Graph]) -> No
                 break
 
 
+def update_bond_order(graph: nx.Graph, suggestions: list[str] | None = None) -> None:
+    if not has_bond_order(graph):
+        if suggestions is not None:
+            suggestion_graphs = suggestions2networkx(suggestions)
+            for component in nx.connected_components(graph):
+                subgraph = graph.subgraph(component)
+                update_bond_order_from_suggestions(subgraph, suggestion_graphs)
+                for u, v, data in subgraph.edges(data=True):
+                    graph[u][v].update(data)
+
+        update_bond_order_determine(graph)
+
+
 def update_bond_order_determine(graph: nx.Graph) -> None:
     """
     Update the bond order in the graph based on the suggestions.
     If the graph already has bond order, it will not be updated.
     """
+    from rdkit2ase.networkx2x import networkx2ase
+    from rdkit2ase.rdkit2x import rdkit2networkx
+
     if has_bond_order(graph):
         return
 
     for component in nx.connected_components(graph):
         subgraph = graph.subgraph(component)
+        # add pbc and cell information to the subgraph
+        subgraph.graph.update(graph.graph)
         missing = sum(
             data.get("bond_order") is None for u, v, data in subgraph.edges(data=True)
         )
         # if any bond information is missing, we update the bond order
         if missing > 0:
+            # Unwrapping could be made nicer, by utilizing the connectivity
             atoms = networkx2ase(subgraph)
             atoms = unwrap_molecule(atoms)
             rdkit_mol = rdkit_determine_bonds(atoms)

@@ -24,7 +24,7 @@ def test_example():
     )
 
     b = rdkit2ase.ase2networkx(
-        wrapped_atoms, suggestions=[VC, DMC, PF6, Li, EC, EMC]
+        wrapped_atoms, suggestions=[VC, DMC]
     )
 
     for node in a.nodes:

@@ -62,7 +62,6 @@ def update_bond_order_from_suggestions(graph, suggestions: list[nx.Graph]) -> No
             updated = update_graph_data(working_graph, graph, mol_graph)
             if not updated:
                 break
-            print(f"Updated bond order from template {mol_graph}")
 
 
 def update_bond_order(graph: nx.Graph, suggestions: list[str] | None = None) -> None:

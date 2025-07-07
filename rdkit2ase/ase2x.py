@@ -4,21 +4,9 @@ import numpy as np
 from ase.neighborlist import natural_cutoffs
 from rdkit import Chem
 
-from rdkit2ase.utils import suggestions2networkx
+from rdkit2ase.bond_order import update_bond_order
 
 
-def update_bond_order(graph: nx.Graph, suggestions: list[str] | None = None) -> None:
-    from rdkit2ase.bond_order import (
-        has_bond_order,
-        update_bond_order_determine,
-        update_bond_order_from_suggestions,
-    )
-
-    if not has_bond_order(graph):
-        if suggestions is not None:
-            suggestion_graphs = suggestions2networkx(suggestions)
-            update_bond_order_from_suggestions(graph, suggestion_graphs)
-        update_bond_order_determine(graph)
 
 
 def ase2networkx(atoms: ase.Atoms, suggestions: list[str] | None = None) -> nx.Graph:
@@ -98,6 +86,7 @@ def ase2networkx(atoms: ase.Atoms, suggestions: list[str] | None = None) -> nx.G
                 bond_order=bond_order,
             )
         return graph
+    
     # non-bonding positive charged atoms / ions.
     non_bonding_atomic_numbers = {3, 11, 19, 37, 55, 87}
 
@@ -131,11 +120,11 @@ def ase2networkx(atoms: ase.Atoms, suggestions: list[str] | None = None) -> nx.G
         if atom.number in non_bonding_atomic_numbers:
             graph.nodes[i]["charge"] = 1.0
 
-    if suggestions is not None:
-        update_bond_order(graph, suggestions)
-
     graph.graph["pbc"] = atoms.pbc
     graph.graph["cell"] = atoms.cell
+
+    if suggestions is not None:
+        update_bond_order(graph, suggestions)
 
     return graph
 

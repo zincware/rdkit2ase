@@ -6,6 +6,7 @@ from rdkit import Chem
 from rdkit2ase.utils import bond_type_from_order
 
 
+
 def networkx2ase(graph: nx.Graph) -> ase.Atoms:
     """Convert a NetworkX graph to an ASE Atoms object.
 

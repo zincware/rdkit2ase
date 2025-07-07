@@ -7,8 +7,6 @@ from rdkit import Chem
 from rdkit2ase.bond_order import update_bond_order
 
 
-
-
 def ase2networkx(atoms: ase.Atoms, suggestions: list[str] | None = None) -> nx.Graph:
     """Convert an ASE Atoms object to a NetworkX graph with bonding information.
 
@@ -86,7 +84,7 @@ def ase2networkx(atoms: ase.Atoms, suggestions: list[str] | None = None) -> nx.G
                 bond_order=bond_order,
             )
         return graph
-    
+
     # non-bonding positive charged atoms / ions.
     non_bonding_atomic_numbers = {3, 11, 19, 37, 55, 87}
 

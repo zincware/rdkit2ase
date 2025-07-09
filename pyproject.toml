@@ -41,4 +41,5 @@ build-backend = "hatchling.build"
 
 
 [tool.codespell]
-skip = "*.ipynb"
+ignore-words-list = "basf"
+skip = "*.svg,paper/bibliography.bib,*.ipynb"

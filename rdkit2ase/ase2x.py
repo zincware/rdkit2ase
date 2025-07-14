@@ -106,7 +106,7 @@ def ase2networkx(
     pairwise_cutoffs = atom_radii[:, None] + atom_radii[None, :]
 
     max_cutoff = np.max(pairwise_cutoffs)
-    
+
     if vesin is not None:
         i, j, d, s = vesin.ase_neighbor_list(
             "ijdS", atoms, cutoff=max_cutoff, self_interaction=False
@@ -115,7 +115,7 @@ def ase2networkx(
         i, j, d, s = neighbor_list(
             "ijdS", atoms, cutoff=max_cutoff, self_interaction=False
         )
-    
+
     # If pbc=False, filter out bonds that cross periodic boundaries
     if not pbc:
         # Keep only bonds where all shift vectors are zero (no periodic wrapping)
@@ -123,11 +123,11 @@ def ase2networkx(
         i = i[non_periodic_mask]
         j = j[non_periodic_mask]
         d = d[non_periodic_mask]
-    
+
     d_ij = np.full((len(atoms), len(atoms)), np.inf)
     d_ij[i, j] = d
     np.fill_diagonal(d_ij, 0.0)
-    
+
     # mask out non-bonding atoms
     d_ij[excluded_mask, :] = np.inf
     d_ij[:, excluded_mask] = np.inf

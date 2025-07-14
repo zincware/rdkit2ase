@@ -1,7 +1,8 @@
+from unittest.mock import patch
+
+import ase
 import pytest
 from rdkit import Chem
-from unittest.mock import patch
-import ase
 
 import rdkit2ase
 
@@ -250,37 +251,43 @@ def test_ase2networkx_pbc_flag():
     """Test that pbc flag controls periodic boundary conditions in bond detection."""
     # Create a simple periodic system with atoms that would be bonded across PBC
     atoms = ase.Atoms(
-        symbols=['H', 'H'],
+        symbols=["H", "H"],
         positions=[[0.0, 0.0, 0.0], [2.9, 0.0, 0.0]],  # Close across PBC
         cell=[3.0, 3.0, 3.0],
-        pbc=True
+        pbc=True,
     )
-    
+
     # Remove any existing connectivity
     if "connectivity" in atoms.info:
         atoms.info.pop("connectivity")
-    
+
     # Test with pbc=True (should find bond across periodic boundary)
     graph_pbc_true = rdkit2ase.ase2networkx(atoms, pbc=True)
-    
+
     # Test with pbc=False (should not find bond across periodic boundary)
     graph_pbc_false = rdkit2ase.ase2networkx(atoms, pbc=False)
-    
+
     # With pbc=True, atoms should be bonded (distance is 0.1 across PBC)
     # With pbc=False, atoms should not be bonded (distance is 2.9 > typical H-H cutoff)
-    assert graph_pbc_true.has_edge(0, 1), "With pbc=True, should find bond across periodic boundary"
-    assert not graph_pbc_false.has_edge(0, 1), "With pbc=False, should not find bond across periodic boundary"
+    assert graph_pbc_true.has_edge(0, 1), (
+        "With pbc=True, should find bond across periodic boundary"
+    )
+    assert not graph_pbc_false.has_edge(0, 1), (
+        "With pbc=False, should not find bond across periodic boundary"
+    )
 
 
-@patch('rdkit2ase.ase2x.vesin', None)
+@patch("rdkit2ase.ase2x.vesin", None)
 def test_ase2networkx_vesin_none():
     """Test that ase2networkx works correctly when vesin is not available."""
     atoms = rdkit2ase.smiles2atoms("CC")  # Simple ethane molecule
-    atoms.info.pop("connectivity")  # Remove connectivity to force neighbor list calculation
-    
+    atoms.info.pop(
+        "connectivity"
+    )  # Remove connectivity to force neighbor list calculation
+
     # Should work without vesin and use ASE neighbor_list
     graph = rdkit2ase.ase2networkx(atoms)
-    
+
     # Should have the expected number of nodes and at least one edge (C-C bond)
     assert len(graph.nodes) == len(atoms)
     assert len(graph.edges) >= 1
@@ -290,13 +297,16 @@ def test_ase2networkx_vesin_available():
     """Test that vesin is available and can be used."""
     try:
         import vesin  # noqa: F401
+
         vesin_available = True
     except ImportError:
         vesin_available = False
-    
+
     atoms = rdkit2ase.smiles2atoms("CC")  # Simple ethane molecule
-    atoms.info.pop("connectivity")  # Remove connectivity to force neighbor list calculation
-    
+    atoms.info.pop(
+        "connectivity"
+    )  # Remove connectivity to force neighbor list calculation
+
     if vesin_available:
         # Should work with vesin installed
         graph = rdkit2ase.ase2networkx(atoms, pbc=True)

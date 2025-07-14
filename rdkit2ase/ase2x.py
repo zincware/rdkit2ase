@@ -1,13 +1,20 @@
 import ase
 import networkx as nx
 import numpy as np
-from ase.neighborlist import natural_cutoffs
+from ase.neighborlist import natural_cutoffs, neighbor_list
 from rdkit import Chem
 
 from rdkit2ase.bond_order import update_bond_order
 
+try:
+    import vesin
+except ImportError:
+    vesin = None
 
-def ase2networkx(atoms: ase.Atoms, suggestions: list[str] | None = None) -> nx.Graph:
+
+def ase2networkx(
+    atoms: ase.Atoms, suggestions: list[str] | None = None, pbc: bool = True
+) -> nx.Graph:
     """Convert an ASE Atoms object to a NetworkX graph with bonding information.
 
     Parameters
@@ -22,6 +29,10 @@ def ase2networkx(atoms: ase.Atoms, suggestions: list[str] | None = None) -> nx.G
         If SMILES patterns are provided, they will be used to
         suggest bond orders first, and then
         rdkit's bond order determination algorithm will be used.
+    pbc : bool, optional
+        Whether to consider periodic boundary conditions when calculating
+        distances (default is True). If False, only connections within
+        the unit cell are considered.
 
     Returns
     -------
@@ -91,14 +102,35 @@ def ase2networkx(atoms: ase.Atoms, suggestions: list[str] | None = None) -> nx.G
     atomic_numbers = atoms.get_atomic_numbers()
     excluded_mask = np.isin(atomic_numbers, list(non_bonding_atomic_numbers))
 
-    d_ij = atoms.get_all_distances(mic=True, vector=False)
+    atom_radii = np.array(natural_cutoffs(atoms, mult=1.2))
+    pairwise_cutoffs = atom_radii[:, None] + atom_radii[None, :]
+
+    max_cutoff = np.max(pairwise_cutoffs)
+    
+    if vesin is not None:
+        i, j, d, s = vesin.ase_neighbor_list(
+            "ijdS", atoms, cutoff=max_cutoff, self_interaction=False
+        )
+    else:
+        i, j, d, s = neighbor_list(
+            "ijdS", atoms, cutoff=max_cutoff, self_interaction=False
+        )
+    
+    # If pbc=False, filter out bonds that cross periodic boundaries
+    if not pbc:
+        # Keep only bonds where all shift vectors are zero (no periodic wrapping)
+        non_periodic_mask = np.all(s == 0, axis=1)
+        i = i[non_periodic_mask]
+        j = j[non_periodic_mask]
+        d = d[non_periodic_mask]
+    
+    d_ij = np.full((len(atoms), len(atoms)), np.inf)
+    d_ij[i, j] = d
+    np.fill_diagonal(d_ij, 0.0)
+    
     # mask out non-bonding atoms
     d_ij[excluded_mask, :] = np.inf
     d_ij[:, excluded_mask] = np.inf
-
-    atom_radii = np.array(natural_cutoffs(atoms, mult=1.2))
-
-    pairwise_cutoffs = atom_radii[:, None] + atom_radii[None, :]
 
     connectivity_matrix = np.zeros((len(atoms), len(atoms)), dtype=int)
 

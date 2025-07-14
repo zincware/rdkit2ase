@@ -289,7 +289,7 @@ def test_ase2networkx_vesin_none():
 def test_ase2networkx_vesin_available():
     """Test that vesin is available and can be used."""
     try:
-        import vesin
+        import vesin  # noqa: F401
         vesin_available = True
     except ImportError:
         vesin_available = False

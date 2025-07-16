@@ -73,6 +73,48 @@ def test_unwrap_structures(scale):
     for i, j in graph.edges():
         assert unwrapped_atoms.get_distance(i, j, mic=False) < 1.6
 
+
+@pytest.mark.parametrize("scale", [1.0, 0.5, 2.0])
+def test_unwrap_ring_molecules(scale):
+    # Create a single benzene conformer
+    benzene = rdkit2ase.smiles2conformers("c1ccccc1", numConfs=1)
+
+    # Pack a box with 10 benzene molecules
+    box = rdkit2ase.pack(
+        data=[benzene],
+        counts=[10],
+        density=800,
+        packmol="packmol.jl",
+    )
+
+    # Copy and shift box to break molecules across PBC
+    shifted_box = box.copy()
+    shifted_box.set_positions(
+        shifted_box.get_positions() + scale * shifted_box.get_cell().diagonal()
+    )
+    shifted_box.wrap()  # Wraps back into the periodic box
+    # NOTE: the wrap seems to break bonds already!
+    # and yes, packmol places 2 hydrogens across the PBC boundary!
+
+    # Verify that some bonds are broken (distances > 1.6 Å without MIC)
+    graph = rdkit2ase.ase2networkx(shifted_box)
+    assert len(list(nx.connected_components(graph))) == 10  # Sanity check
+    broken_bonds = 0
+    for i, j in graph.edges():
+        d = shifted_box.get_distance(i, j, mic=False)
+        if d > 1.6:
+            broken_bonds += 1
+    assert broken_bonds > 0
+
+    # Verify that unwrapping restores proper bonding geometry
+    unwrapped = unwrap_structures(shifted_box)
+    graph_unwrapped = rdkit2ase.ase2networkx(unwrapped)
+    assert len(list(nx.connected_components(graph_unwrapped))) == 10
+
+    for i, j in graph_unwrapped.edges():
+        d = unwrapped.get_distance(i, j, mic=False)
+        assert d < 1.6
+
 def make_molecule(shift=(0, 0, 0), cell=(10, 10, 10), pbc=True):
     """Simple diatomic molecule with optional shift and PBC wrapping."""
     pos = np.array([[0.0, 0.0, 0.0], [1.1, 0.0, 0.0]])  # bond length 1.1

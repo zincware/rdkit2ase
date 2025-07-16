@@ -13,7 +13,7 @@ except ImportError:
 
 
 def ase2networkx(
-    atoms: ase.Atoms, suggestions: list[str] | None = None, pbc: bool = True
+    atoms: ase.Atoms, suggestions: list[str] | None = None, pbc: bool = True, scale: float = 1.2
 ) -> nx.Graph:
     """Convert an ASE Atoms object to a NetworkX graph with bonding information.
 
@@ -33,6 +33,9 @@ def ase2networkx(
         Whether to consider periodic boundary conditions when calculating
         distances (default is True). If False, only connections within
         the unit cell are considered.
+    scale : float, optional
+        Scaling factor for the covalent radii when determining bond cutoffs
+        (default is 1.2).
 
     Returns
     -------
@@ -104,7 +107,7 @@ def ase2networkx(
     atomic_numbers = atoms.get_atomic_numbers()
     excluded_mask = np.isin(atomic_numbers, list(non_bonding_atomic_numbers))
 
-    atom_radii = np.array(natural_cutoffs(atoms, mult=1.2))
+    atom_radii = np.array(natural_cutoffs(atoms, mult=scale))
     pairwise_cutoffs = atom_radii[:, None] + atom_radii[None, :]
 
     max_cutoff = np.max(pairwise_cutoffs)

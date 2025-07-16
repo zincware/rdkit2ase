@@ -12,6 +12,84 @@ except ImportError:
     vesin = None
 
 
+def _create_graph_from_connectivity(
+    atoms: ase.Atoms, connectivity, charges
+) -> nx.Graph:
+    """Create NetworkX graph from explicit connectivity information."""
+    graph = nx.Graph()
+    graph.graph["pbc"] = atoms.pbc
+    graph.graph["cell"] = atoms.cell
+
+    for i, atom in enumerate(atoms):
+        graph.add_node(
+            i,
+            position=atom.position,
+            atomic_number=atom.number,
+            original_index=atom.index,
+            charge=charges[i],
+        )
+
+    for i, j, bond_order in connectivity:
+        graph.add_edge(i, j, bond_order=bond_order)
+    return graph
+
+
+def _compute_connectivity_matrix(atoms: ase.Atoms, scale: float, pbc: bool):
+    """Compute connectivity matrix from distance-based cutoffs."""
+    # non-bonding positive charged atoms / ions.
+    non_bonding_atomic_numbers = {3, 11, 19, 37, 55, 87}
+
+    atomic_numbers = atoms.get_atomic_numbers()
+    excluded_mask = np.isin(atomic_numbers, list(non_bonding_atomic_numbers))
+
+    atom_radii = np.array(natural_cutoffs(atoms, mult=scale))
+    pairwise_cutoffs = atom_radii[:, None] + atom_radii[None, :]
+    max_cutoff = np.max(pairwise_cutoffs)
+
+    if vesin is not None:
+        i, j, d, s = vesin.ase_neighbor_list(
+            "ijdS", atoms, cutoff=max_cutoff, self_interaction=False
+        )
+    else:
+        i, j, d, s = neighbor_list(
+            "ijdS", atoms, cutoff=max_cutoff, self_interaction=False
+        )
+
+    # If pbc=False, filter out bonds that cross periodic boundaries
+    if not pbc:
+        non_periodic_mask = np.all(s == 0, axis=1)
+        i = i[non_periodic_mask]
+        j = j[non_periodic_mask]
+        d = d[non_periodic_mask]
+
+    d_ij = np.full((len(atoms), len(atoms)), np.inf)
+    d_ij[i, j] = d
+    np.fill_diagonal(d_ij, 0.0)
+
+    # mask out non-bonding atoms
+    d_ij[excluded_mask, :] = np.inf
+    d_ij[:, excluded_mask] = np.inf
+
+    connectivity_matrix = np.zeros((len(atoms), len(atoms)), dtype=int)
+    np.fill_diagonal(d_ij, np.inf)
+    connectivity_matrix[d_ij <= pairwise_cutoffs] = 1
+
+    return connectivity_matrix, non_bonding_atomic_numbers
+
+
+def _add_node_properties(
+    graph: nx.Graph, atoms: ase.Atoms, charges, non_bonding_atomic_numbers
+):
+    """Add node properties to the graph."""
+    for i, atom in enumerate(atoms):
+        graph.nodes[i]["position"] = atom.position
+        graph.nodes[i]["atomic_number"] = atom.number
+        graph.nodes[i]["original_index"] = atom.index
+        graph.nodes[i]["charge"] = float(charges[i])
+        if atom.number in non_bonding_atomic_numbers:
+            graph.nodes[i]["charge"] = 1.0
+
+
 def ase2networkx(
     atoms: ase.Atoms,
     suggestions: list[str] | None = None,
@@ -78,85 +156,23 @@ def ase2networkx(
     """
     if len(atoms) == 0:
         return nx.Graph()
+
     charges = atoms.get_initial_charges()
 
     if "connectivity" in atoms.info:
-        connectivity = atoms.info["connectivity"]
-        graph = nx.Graph()
-
-        graph.graph["pbc"] = atoms.pbc
-        graph.graph["cell"] = atoms.cell
-
-        for i, atom in enumerate(atoms):
-            graph.add_node(
-                i,
-                position=atom.position,
-                atomic_number=atom.number,
-                original_index=atom.index,
-                charge=charges[i],
-            )
-
-        for i, j, bond_order in connectivity:
-            graph.add_edge(
-                i,
-                j,
-                bond_order=bond_order,
-            )
-        return graph
-
-    # non-bonding positive charged atoms / ions.
-    non_bonding_atomic_numbers = {3, 11, 19, 37, 55, 87}
-
-    atomic_numbers = atoms.get_atomic_numbers()
-    excluded_mask = np.isin(atomic_numbers, list(non_bonding_atomic_numbers))
-
-    atom_radii = np.array(natural_cutoffs(atoms, mult=scale))
-    pairwise_cutoffs = atom_radii[:, None] + atom_radii[None, :]
-
-    max_cutoff = np.max(pairwise_cutoffs)
-
-    if vesin is not None:
-        i, j, d, s = vesin.ase_neighbor_list(
-            "ijdS", atoms, cutoff=max_cutoff, self_interaction=False
-        )
-    else:
-        i, j, d, s = neighbor_list(
-            "ijdS", atoms, cutoff=max_cutoff, self_interaction=False
+        return _create_graph_from_connectivity(
+            atoms, atoms.info["connectivity"], charges
         )
 
-    # If pbc=False, filter out bonds that cross periodic boundaries
-    if not pbc:
-        # Keep only bonds where all shift vectors are zero (no periodic wrapping)
-        non_periodic_mask = np.all(s == 0, axis=1)
-        i = i[non_periodic_mask]
-        j = j[non_periodic_mask]
-        d = d[non_periodic_mask]
-
-    d_ij = np.full((len(atoms), len(atoms)), np.inf)
-    d_ij[i, j] = d
-    np.fill_diagonal(d_ij, 0.0)
-
-    # mask out non-bonding atoms
-    d_ij[excluded_mask, :] = np.inf
-    d_ij[:, excluded_mask] = np.inf
-
-    connectivity_matrix = np.zeros((len(atoms), len(atoms)), dtype=int)
-
-    np.fill_diagonal(d_ij, np.inf)
-
-    connectivity_matrix[d_ij <= pairwise_cutoffs] = 1
+    connectivity_matrix, non_bonding_atomic_numbers = _compute_connectivity_matrix(
+        atoms, scale, pbc
+    )
 
     graph = nx.from_numpy_array(connectivity_matrix, edge_attr=None)
     for u, v in graph.edges():
         graph.edges[u, v]["bond_order"] = None
 
-    for i, atom in enumerate(atoms):
-        graph.nodes[i]["position"] = atom.position
-        graph.nodes[i]["atomic_number"] = atom.number
-        graph.nodes[i]["original_index"] = atom.index
-        graph.nodes[i]["charge"] = float(charges[i])
-        if atom.number in non_bonding_atomic_numbers:
-            graph.nodes[i]["charge"] = 1.0
+    _add_node_properties(graph, atoms, charges, non_bonding_atomic_numbers)
 
     graph.graph["pbc"] = atoms.pbc
     graph.graph["cell"] = atoms.cell

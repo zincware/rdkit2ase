@@ -149,8 +149,8 @@ def unwrap_structures(atoms, scale=1.2) -> ase.Atoms:
 
     graph = ase2networkx(atoms, scale=scale)
     positions = atoms.get_positions()
-    # wrapped_positions = atoms.get_positions(wrap=True)
     cell = atoms.get_cell()
+
     for component in nx.connected_components(graph):
         if len(component) == 1:
             continue

@@ -3,6 +3,7 @@ import sys
 import numpy as np
 import pytest
 import rdkit.Chem
+import networkx as nx
 from ase import Atoms
 
 import rdkit2ase
@@ -35,6 +36,42 @@ def ec_emc_li_pf6():
         packmol="packmol.jl",
     )
 
+@pytest.mark.parametrize("scale", [1.0, 0.5, 2.0])
+def test_unwrap_structures(scale):
+    hexane = rdkit2ase.smiles2conformers("CCCCCC", numConfs=1)
+    box = rdkit2ase.pack(
+        data=[hexane],
+        counts=[10],
+        density=800,
+        packmol="packmol.jl",
+    )
+    shifted_box = box.copy()
+    shifted_box.set_positions(
+        shifted_box.get_positions() + scale * shifted_box.get_cell().diagonal()
+    )
+    shifted_box.wrap()  # Wrap back into PBC
+
+    # check that the movement broke some bonds
+    off = 0
+    graph = rdkit2ase.ase2networkx(shifted_box)
+    assert len(list(nx.connected_components(graph))) == 10
+    for i, j in graph.edges():
+        off += bool(shifted_box.get_distance(i, j, mic=False) > 1.6)
+    assert off > 0
+
+    # check the initial box has no broken bonds
+    off = 0
+    graph = rdkit2ase.ase2networkx(box)
+    assert len(list(nx.connected_components(graph))) == 10
+    for i, j in graph.edges():
+        off += bool(box.get_distance(i, j, mic=False) > 1.6)
+    assert off == 0
+
+    # Unwrap the structures and assert that bonds are restored
+    unwrapped_atoms = unwrap_structures(shifted_box)
+    graph = rdkit2ase.ase2networkx(unwrapped_atoms)
+    for i, j in graph.edges():
+        assert unwrapped_atoms.get_distance(i, j, mic=False) < 1.6
 
 def make_molecule(shift=(0, 0, 0), cell=(10, 10, 10), pbc=True):
     """Simple diatomic molecule with optional shift and PBC wrapping."""

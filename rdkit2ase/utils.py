@@ -12,6 +12,7 @@ from ase.neighborlist import NeighborList
 from rdkit import Chem
 
 
+
 def bond_type_from_order(order):
     if order == 1.0:
         return Chem.BondType.SINGLE
@@ -145,53 +146,26 @@ def unwrap_structures(atoms, scale=1.2) -> ase.Atoms:
     >>> # Unwrap the structures to get continuous molecules
     >>> unwrapped_atoms = unwrap_structures(wrapped_atoms)
     """
+    from rdkit2ase import ase2networkx
+    atoms = atoms.copy()  # Work on a copy to avoid modifying the original
 
-    # TODO: use ase2networkx to determine connectivity
-    # and then only compute the distances required for the edges
+    graph = ase2networkx(atoms, scale=scale)
     positions = atoms.get_positions()
+    # wrapped_positions = atoms.get_positions(wrap=True)
     cell = atoms.get_cell()
-    numbers = atoms.get_atomic_numbers()
-
-    # Cutoffs from covalent radii
-    radii = scale * covalent_radii[numbers]
-    cutoffs = radii
-
-    # Build PBC-aware neighbor list
-    nl = NeighborList(cutoffs=cutoffs, skin=0.3, self_interaction=False, bothways=True)
-    nl.update(atoms)
-
-    n_atoms = len(atoms)
-    visited = np.zeros(n_atoms, dtype=bool)
-    image_shifts = np.zeros(
-        (n_atoms, 3), dtype=int
-    )  # Tracks image shifts (integer multiples of cell)
-
-    def traverse_molecule(root):
-        """Traverse and unwrap molecule starting from root atom."""
-        stack = [root]
-        visited[root] = True
-        while stack:
-            i = stack.pop()
-            neighbors, offsets = nl.get_neighbors(i)
-            for j, offset in zip(neighbors, offsets):
-                if visited[j]:
-                    continue
-                image_shifts[j] = (
-                    image_shifts[i] + offset
-                )  # Accumulate total image shift
-                visited[j] = True
-                stack.append(j)
-
-    # Unwrap all disconnected fragments
-    for i in range(n_atoms):
-        if not visited[i]:
-            traverse_molecule(i)
-
-    # Apply accumulated image shifts to get true positions
-    shifts = np.dot(image_shifts, cell)
-    new_positions = positions + shifts
-    atoms.set_positions(new_positions)
-
+    for component in nx.connected_components(graph):
+        if len(component) == 1:
+            continue
+        # start at the atom closest to the center of the box
+        root = min(component, key=lambda i: np.linalg.norm(positions[i] - cell.diagonal() / 2))
+        # now do a bfs traversal to unwrap the molecule
+        for i, j in nx.dfs_tree(graph, source=root).edges():
+            # i has already been unwrapped
+            # j is the neighbor that needs to be unwrapped
+            offsets = cell.scaled_positions(positions[i] - positions[j])
+            offsets = offsets.round().astype(int)
+            positions[j] += offsets @ cell # Unwrap j to the same image as i
+    atoms.set_positions(positions)
     return atoms
 
 

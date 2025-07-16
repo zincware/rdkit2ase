@@ -1,7 +1,11 @@
 import networkx as nx
 from networkx.algorithms import isomorphism
 
-from rdkit2ase.utils import rdkit_determine_bonds, suggestions2networkx, unwrap_structures
+from rdkit2ase.utils import (
+    rdkit_determine_bonds,
+    suggestions2networkx,
+    unwrap_structures,
+)
 
 
 def sort_templates(graphs: list[nx.Graph]) -> list[nx.Graph]:

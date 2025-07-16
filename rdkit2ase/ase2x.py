@@ -13,7 +13,10 @@ except ImportError:
 
 
 def ase2networkx(
-    atoms: ase.Atoms, suggestions: list[str] | None = None, pbc: bool = True, scale: float = 1.2
+    atoms: ase.Atoms,
+    suggestions: list[str] | None = None,
+    pbc: bool = True,
+    scale: float = 1.2,
 ) -> nx.Graph:
     """Convert an ASE Atoms object to a NetworkX graph with bonding information.
 

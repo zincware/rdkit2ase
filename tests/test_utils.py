@@ -1,9 +1,9 @@
 import sys
 
+import networkx as nx
 import numpy as np
 import pytest
 import rdkit.Chem
-import networkx as nx
 from ase import Atoms
 
 import rdkit2ase
@@ -35,6 +35,7 @@ def ec_emc_li_pf6():
         density=1400,
         packmol="packmol.jl",
     )
+
 
 @pytest.mark.parametrize("scale", [1.0, 0.5, 2.0])
 def test_unwrap_structures(scale):
@@ -114,6 +115,7 @@ def test_unwrap_ring_molecules(scale):
     for i, j in graph_unwrapped.edges():
         d = unwrapped.get_distance(i, j, mic=False)
         assert d < 1.6
+
 
 def make_molecule(shift=(0, 0, 0), cell=(10, 10, 10), pbc=True):
     """Simple diatomic molecule with optional shift and PBC wrapping."""

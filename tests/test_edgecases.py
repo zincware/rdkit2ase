@@ -1,6 +1,6 @@
-import numpy.testing as npt
 import ase
 import networkx as nx
+import numpy.testing as npt
 from rdkit import Chem
 
 import rdkit2ase
@@ -26,6 +26,7 @@ def test_empty_atoms_ase2rdkit():
     mol = rdkit2ase.ase2rdkit(atoms)
     assert mol.GetNumAtoms() == 0
 
+
 def test_empty_atoms_ase2networkx():
     atoms = ase.Atoms()
 
@@ -33,12 +34,14 @@ def test_empty_atoms_ase2networkx():
     assert len(graph.nodes) == 0
     assert len(graph.edges) == 0
 
+
 def test_single_atom_ase2rdkit():
     atoms = ase.Atoms("C", positions=[[0, 0, 0]])
 
     mol = rdkit2ase.ase2rdkit(atoms)
     assert mol.GetNumAtoms() == 1
     assert mol.GetAtomWithIdx(0).GetSymbol() == "C"
+
 
 def test_single_atom_ase2networkx():
     atoms = ase.Atoms("C", positions=[[0, 0, 0]])
@@ -50,6 +53,7 @@ def test_single_atom_ase2networkx():
     npt.assert_array_equal(graph.nodes[0]["position"], [0, 0, 0])
     assert graph.nodes[0]["charge"] == 0.0
 
+
 def test_empty_graph_networkx2x():
     graph = nx.Graph()
 
@@ -58,6 +62,7 @@ def test_empty_graph_networkx2x():
 
     atoms = rdkit2ase.networkx2ase(graph)
     assert len(atoms) == 0
+
 
 def test_empty_mol_rdkit2x():
     mol = Chem.Mol()

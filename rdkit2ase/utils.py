@@ -145,6 +145,9 @@ def unwrap_structures(atoms, scale=1.2) -> ase.Atoms:
     >>> # Unwrap the structures to get continuous molecules
     >>> unwrapped_atoms = unwrap_structures(wrapped_atoms)
     """
+
+    # TODO: use ase2networkx to determine connectivity
+    # and then only compute the distances required for the edges
     positions = atoms.get_positions()
     cell = atoms.get_cell()
     numbers = atoms.get_atomic_numbers()

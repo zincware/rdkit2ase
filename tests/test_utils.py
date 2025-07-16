@@ -10,7 +10,7 @@ from rdkit2ase.utils import (
     find_connected_components,
     rdkit_determine_bonds,
     suggestions2networkx,
-    unwrap_molecule,
+    unwrap_structures,
 )
 
 
@@ -58,7 +58,7 @@ def test_unwrap_diatomic(shift, expected):
     """Ensure diatomics get unwrapped correctly across boundaries."""
     atoms = make_molecule(shift=shift)
     atoms_wrapped = atoms.copy()
-    atoms_unwrapped = unwrap_molecule(atoms_wrapped)
+    atoms_unwrapped = unwrap_structures(atoms_wrapped)
 
     dist = atoms_unwrapped.get_distance(0, 1, mic=True)
     assert np.isclose(dist, expected, atol=0.05)
@@ -72,7 +72,7 @@ def test_multiple_molecules():
     atoms.set_cell([10, 10, 10])
     atoms.set_pbc([True, True, True])
 
-    atoms_unwrapped = unwrap_molecule(atoms.copy())
+    atoms_unwrapped = unwrap_structures(atoms.copy())
 
     # Check both H-H distances are ~1.1
     d1 = atoms_unwrapped.get_distance(0, 1, mic=True)
@@ -91,7 +91,7 @@ def test_wrapping_corner_case():
 
     atoms = Atoms("H2", positions=[a1, a2], cell=[10, 10, 10], pbc=True)
 
-    atoms_unwrapped = unwrap_molecule(atoms.copy())
+    atoms_unwrapped = unwrap_structures(atoms.copy())
     dist = atoms_unwrapped.get_distance(0, 1, mic=True)
 
     assert np.isclose(dist, 1.1, atol=0.05)
@@ -102,7 +102,7 @@ def test_no_pbc():
     atoms = make_molecule()
     atoms.set_pbc(False)
 
-    atoms_unwrapped = unwrap_molecule(atoms.copy())
+    atoms_unwrapped = unwrap_structures(atoms.copy())
     dist = atoms_unwrapped.get_distance(0, 1)
 
     assert np.isclose(dist, 1.1, atol=0.05)
@@ -111,8 +111,8 @@ def test_no_pbc():
 def test_idempotent():
     """Calling unwrap on an already unwrapped structure should do nothing."""
     atoms = make_molecule(shift=(0, 0, 0))
-    unwrapped = unwrap_molecule(atoms.copy())
-    unwrapped2 = unwrap_molecule(unwrapped.copy())
+    unwrapped = unwrap_structures(atoms.copy())
+    unwrapped2 = unwrap_structures(unwrapped.copy())
 
     assert np.allclose(unwrapped.get_positions(), unwrapped2.get_positions())
 

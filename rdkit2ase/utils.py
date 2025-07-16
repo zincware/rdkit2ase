@@ -81,7 +81,7 @@ def calculate_box_dimensions(images: list[ase.Atoms], density: float) -> list[fl
     return [box_edge] * 3
 
 
-def unwrap_molecule(atoms, scale=1.2) -> ase.Atoms:
+def unwrap_structures(atoms, scale=1.2) -> ase.Atoms:
     """Robust unwrapping across PBC using root-referenced traversal."""
     positions = atoms.get_positions()
     cell = atoms.get_cell()

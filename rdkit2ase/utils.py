@@ -166,6 +166,7 @@ def unwrap_structures(atoms, scale=1.2) -> ase.Atoms:
             offsets = offsets.round().astype(int)
             positions[j] += offsets @ cell # Unwrap j to the same image as i
     atoms.set_positions(positions)
+    # TODO: include connectivity information
     return atoms
 
 

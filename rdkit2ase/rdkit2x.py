@@ -33,6 +33,9 @@ def rdkit2ase(mol: Chem.Mol, seed: int = 42) -> ase.Atoms:
     >>> len(atoms)
     9
     """
+    if mol.GetNumAtoms() == 0:
+        return ase.Atoms()
+    
     smiles = Chem.MolToSmiles(mol)
     mol = Chem.AddHs(mol)
     charges = [atom.GetFormalCharge() for atom in mol.GetAtoms()]

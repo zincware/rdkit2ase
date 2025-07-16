@@ -70,6 +70,8 @@ def ase2networkx(
     >>> len(graph.edges)
     2
     """
+    if len(atoms) == 0:
+        return nx.Graph()
     charges = atoms.get_initial_charges()
 
     if "connectivity" in atoms.info:
@@ -188,6 +190,9 @@ def ase2rdkit(atoms: ase.Atoms, suggestions: list[str] | None = None) -> Chem.Mo
     >>> mol.GetNumAtoms()
     4
     """
+    if len(atoms) == 0:
+        return Chem.Mol()
+
     from rdkit2ase import ase2networkx, networkx2rdkit
 
     graph = ase2networkx(atoms, suggestions=suggestions)

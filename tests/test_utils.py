@@ -74,6 +74,11 @@ def test_unwrap_structures(scale):
     for i, j in graph.edges():
         assert unwrapped_atoms.get_distance(i, j, mic=False) < 1.6
 
+    # assert edges stay the same / indices remain the same
+    graph_unwrapped = rdkit2ase.ase2networkx(unwrapped_atoms)
+    graph_box = rdkit2ase.ase2networkx(box)
+    assert nx.is_isomorphic(graph_unwrapped, graph_box)
+
 
 @pytest.mark.parametrize("scale", [1.0, 0.5, 2.0])
 def test_unwrap_ring_molecules(scale):

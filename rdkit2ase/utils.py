@@ -7,8 +7,6 @@ import networkx as nx
 import numpy as np
 import rdkit.Chem
 import rdkit.Chem.rdDetermineBonds
-from ase.data import covalent_radii
-from ase.neighborlist import NeighborList
 from rdkit import Chem
 
 
@@ -81,52 +79,94 @@ def calculate_box_dimensions(images: list[ase.Atoms], density: float) -> list[fl
     return [box_edge] * 3
 
 
-def unwrap_molecule(atoms, scale=1.2) -> ase.Atoms:
-    """Robust unwrapping across PBC using root-referenced traversal."""
+def unwrap_structures(atoms, scale=1.2) -> ase.Atoms:
+    """Unwrap molecular structures across periodic boundary conditions (PBC).
+
+    This function corrects atomic positions that have been wrapped across periodic
+    boundaries, ensuring that bonded atoms appear as continuous molecular structures.
+    It can handle multiple disconnected molecules within the same unit cell.
+
+    The algorithm works by:
+    1. Building a connectivity graph based on covalent radii
+    2. Traversing each connected component (molecule) using depth-first search
+    3. Accumulating periodic image shifts to maintain molecular connectivity
+    4. Applying the shifts to obtain unwrapped coordinates
+
+    Parameters
+    ----------
+    atoms : ase.Atoms
+        The ASE Atoms object containing wrapped atomic positions
+    scale : float, optional
+        Scale factor for covalent radii cutoffs used in bond detection.
+        Larger values include more distant neighbors as bonded.
+        Default is 1.2.
+
+    Returns
+    -------
+    ase.Atoms
+        A new ASE Atoms object with unwrapped atomic positions. The original
+        atoms object is not modified.
+
+    Notes
+    -----
+    - The function preserves the original atoms object and returns a copy
+    - Works with any periodic boundary conditions (1D, 2D, or 3D)
+    - Handles multiple disconnected molecules/fragments
+    - Uses covalent radii scaled by the `scale` parameter for bond detection
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from rdkit2ase import smiles2conformers, pack, unwrap_structures
+    >>>
+    >>> # Create a realistic molecular system
+    >>> water = smiles2conformers("O", numConfs=1)
+    >>> ethanol = smiles2conformers("CCO", numConfs=1)
+    >>>
+    >>> # Pack molecules into a periodic box
+    >>> packed_system = pack(
+    ...     data=[water, ethanol],
+    ...     counts=[10, 5],
+    ...     density=800
+    ... )
+    >>>
+    >>> # Simulate wrapped coordinates (as might occur in MD)
+    >>> cell = packed_system.get_cell()
+    >>> positions = packed_system.get_positions()
+    >>>
+    >>> # Artificially move the box and wrap it again
+    >>> positions += np.array([cell[0, 0] * 0.5, 0, 0])  # Shift by half box length
+    >>> wrapped_atoms = packed_system.copy()
+    >>> wrapped_atoms.set_positions(positions)
+    >>> wrapped_atoms.wrap()  # Wrap back into PBC
+    >>>
+    >>> # Unwrap the structures to get continuous molecules
+    >>> unwrapped_atoms = unwrap_structures(wrapped_atoms)
+    """
+    from rdkit2ase import ase2networkx
+
+    atoms = atoms.copy()  # Work on a copy to avoid modifying the original
+
+    graph = ase2networkx(atoms, scale=scale)
     positions = atoms.get_positions()
     cell = atoms.get_cell()
-    numbers = atoms.get_atomic_numbers()
 
-    # Cutoffs from covalent radii
-    radii = scale * covalent_radii[numbers]
-    cutoffs = radii
-
-    # Build PBC-aware neighbor list
-    nl = NeighborList(cutoffs=cutoffs, skin=0.3, self_interaction=False, bothways=True)
-    nl.update(atoms)
-
-    n_atoms = len(atoms)
-    visited = np.zeros(n_atoms, dtype=bool)
-    image_shifts = np.zeros(
-        (n_atoms, 3), dtype=int
-    )  # Tracks image shifts (integer multiples of cell)
-
-    def traverse_molecule(root):
-        """Traverse and unwrap molecule starting from root atom."""
-        stack = [root]
-        visited[root] = True
-        while stack:
-            i = stack.pop()
-            neighbors, offsets = nl.get_neighbors(i)
-            for j, offset in zip(neighbors, offsets):
-                if visited[j]:
-                    continue
-                image_shifts[j] = (
-                    image_shifts[i] + offset
-                )  # Accumulate total image shift
-                visited[j] = True
-                stack.append(j)
-
-    # Unwrap all disconnected fragments
-    for i in range(n_atoms):
-        if not visited[i]:
-            traverse_molecule(i)
-
-    # Apply accumulated image shifts to get true positions
-    shifts = np.dot(image_shifts, cell)
-    new_positions = positions + shifts
-    atoms.set_positions(new_positions)
-
+    for component in nx.connected_components(graph):
+        if len(component) == 1:
+            continue
+        # start at the atom closest to the center of the box
+        root = min(
+            component, key=lambda i: np.linalg.norm(positions[i] - cell.diagonal() / 2)
+        )
+        # now do a bfs traversal to unwrap the molecule
+        for i, j in nx.dfs_tree(graph, source=root).edges():
+            # i has already been unwrapped
+            # j is the neighbor that needs to be unwrapped
+            offsets = cell.scaled_positions(positions[i] - positions[j])
+            offsets = offsets.round().astype(int)
+            positions[j] += offsets @ cell  # Unwrap j to the same image as i
+    atoms.set_positions(positions)
+    # TODO: include connectivity information
     return atoms
 
 

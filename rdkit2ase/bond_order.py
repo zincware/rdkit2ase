@@ -1,7 +1,11 @@
 import networkx as nx
 from networkx.algorithms import isomorphism
 
-from rdkit2ase.utils import rdkit_determine_bonds, suggestions2networkx, unwrap_molecule
+from rdkit2ase.utils import (
+    rdkit_determine_bonds,
+    suggestions2networkx,
+    unwrap_structures,
+)
 
 
 def sort_templates(graphs: list[nx.Graph]) -> list[nx.Graph]:
@@ -99,7 +103,7 @@ def update_bond_order_determine(graph: nx.Graph) -> None:
         if missing > 0:
             # Unwrapping could be made nicer, by utilizing the connectivity
             atoms = networkx2ase(subgraph)
-            atoms = unwrap_molecule(atoms)
+            atoms = unwrap_structures(atoms)
             rdkit_mol = rdkit_determine_bonds(atoms)
             rdkit_graph = rdkit2networkx(rdkit_mol)
             # update the bond order in the original graph

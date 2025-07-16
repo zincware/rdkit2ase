@@ -43,6 +43,9 @@ def networkx2ase(graph: nx.Graph) -> ase.Atoms:
     >>> len(atoms)
     2
     """
+    # Create mapping from original node indices to new sequential indices
+    node_mapping = {node: i for i, node in enumerate(graph.nodes)}
+
     positions = np.array([graph.nodes[n]["position"] for n in graph.nodes])
     numbers = np.array([graph.nodes[n]["atomic_number"] for n in graph.nodes])
     charges = np.array([graph.nodes[n]["charge"] for n in graph.nodes])
@@ -58,7 +61,10 @@ def networkx2ase(graph: nx.Graph) -> ase.Atoms:
     connectivity = []
     for u, v, data in graph.edges(data=True):
         bond_order = data["bond_order"]
-        connectivity.append((u, v, bond_order))
+        # Map original node indices to new sequential indices
+        new_u = node_mapping[u]
+        new_v = node_mapping[v]
+        connectivity.append((new_u, new_v, bond_order))
 
     atoms.info["connectivity"] = connectivity
 

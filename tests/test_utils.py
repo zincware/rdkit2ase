@@ -1,5 +1,6 @@
 import sys
 
+import networkx as nx
 import numpy as np
 import pytest
 import rdkit.Chem
@@ -10,7 +11,7 @@ from rdkit2ase.utils import (
     find_connected_components,
     rdkit_determine_bonds,
     suggestions2networkx,
-    unwrap_molecule,
+    unwrap_structures,
 )
 
 
@@ -36,6 +37,91 @@ def ec_emc_li_pf6():
     )
 
 
+@pytest.mark.parametrize("scale", [1.0, 0.5, 2.0])
+def test_unwrap_structures(scale):
+    hexane = rdkit2ase.smiles2conformers("CCCCCC", numConfs=1)
+    box = rdkit2ase.pack(
+        data=[hexane],
+        counts=[10],
+        density=800,
+        packmol="packmol.jl",
+    )
+    shifted_box = box.copy()
+    shifted_box.set_positions(
+        shifted_box.get_positions() + scale * shifted_box.get_cell().diagonal()
+    )
+    shifted_box.wrap()  # Wrap back into PBC
+
+    # check that the movement broke some bonds
+    off = 0
+    graph = rdkit2ase.ase2networkx(shifted_box)
+    assert len(list(nx.connected_components(graph))) == 10
+    for i, j in graph.edges():
+        off += bool(shifted_box.get_distance(i, j, mic=False) > 1.6)
+    assert off > 0
+
+    # check the initial box has no broken bonds
+    off = 0
+    graph = rdkit2ase.ase2networkx(box)
+    assert len(list(nx.connected_components(graph))) == 10
+    for i, j in graph.edges():
+        off += bool(box.get_distance(i, j, mic=False) > 1.6)
+    assert off == 0
+
+    # Unwrap the structures and assert that bonds are restored
+    unwrapped_atoms = unwrap_structures(shifted_box)
+    graph = rdkit2ase.ase2networkx(unwrapped_atoms)
+    for i, j in graph.edges():
+        assert unwrapped_atoms.get_distance(i, j, mic=False) < 1.6
+
+    # assert edges stay the same / indices remain the same
+    graph_unwrapped = rdkit2ase.ase2networkx(unwrapped_atoms)
+    graph_box = rdkit2ase.ase2networkx(box)
+    assert nx.is_isomorphic(graph_unwrapped, graph_box)
+
+
+@pytest.mark.parametrize("scale", [1.0, 0.5, 2.0])
+def test_unwrap_ring_molecules(scale):
+    # Create a single benzene conformer
+    benzene = rdkit2ase.smiles2conformers("c1ccccc1", numConfs=1)
+
+    # Pack a box with 10 benzene molecules
+    box = rdkit2ase.pack(
+        data=[benzene],
+        counts=[10],
+        density=800,
+        packmol="packmol.jl",
+    )
+
+    # Copy and shift box to break molecules across PBC
+    shifted_box = box.copy()
+    shifted_box.set_positions(
+        shifted_box.get_positions() + scale * shifted_box.get_cell().diagonal()
+    )
+    shifted_box.wrap()  # Wraps back into the periodic box
+    # NOTE: the wrap seems to break bonds already!
+    # and yes, packmol places 2 hydrogens across the PBC boundary!
+
+    # Verify that some bonds are broken (distances > 1.6 Å without MIC)
+    graph = rdkit2ase.ase2networkx(shifted_box)
+    assert len(list(nx.connected_components(graph))) == 10  # Sanity check
+    broken_bonds = 0
+    for i, j in graph.edges():
+        d = shifted_box.get_distance(i, j, mic=False)
+        if d > 1.6:
+            broken_bonds += 1
+    assert broken_bonds > 0
+
+    # Verify that unwrapping restores proper bonding geometry
+    unwrapped = unwrap_structures(shifted_box)
+    graph_unwrapped = rdkit2ase.ase2networkx(unwrapped)
+    assert len(list(nx.connected_components(graph_unwrapped))) == 10
+
+    for i, j in graph_unwrapped.edges():
+        d = unwrapped.get_distance(i, j, mic=False)
+        assert d < 1.6
+
+
 def make_molecule(shift=(0, 0, 0), cell=(10, 10, 10), pbc=True):
     """Simple diatomic molecule with optional shift and PBC wrapping."""
     pos = np.array([[0.0, 0.0, 0.0], [1.1, 0.0, 0.0]])  # bond length 1.1
@@ -44,65 +130,12 @@ def make_molecule(shift=(0, 0, 0), cell=(10, 10, 10), pbc=True):
     return atoms
 
 
-@pytest.mark.parametrize(
-    "shift,expected",
-    [
-        ((0, 0, 0), 1.1),  # Normal
-        ((9.5, 0, 0), 1.1),  # Cross x boundary
-        ((0, 9.5, 0), 1.1),  # Cross y boundary
-        ((0, 0, 9.5), 1.1),  # Cross z boundary
-        ((9.5, 9.5, 9.5), 1.1),  # Cross all boundaries
-    ],
-)
-def test_unwrap_diatomic(shift, expected):
-    """Ensure diatomics get unwrapped correctly across boundaries."""
-    atoms = make_molecule(shift=shift)
-    atoms_wrapped = atoms.copy()
-    atoms_unwrapped = unwrap_molecule(atoms_wrapped)
-
-    dist = atoms_unwrapped.get_distance(0, 1, mic=True)
-    assert np.isclose(dist, expected, atol=0.05)
-
-
-def test_multiple_molecules():
-    """Test two molecules, one crossing a boundary, one inside."""
-    mol1 = make_molecule(shift=(9.5, 0, 0))  # Wrapped
-    mol2 = make_molecule(shift=(5, 5, 5))  # Inside
-    atoms = mol1 + mol2
-    atoms.set_cell([10, 10, 10])
-    atoms.set_pbc([True, True, True])
-
-    atoms_unwrapped = unwrap_molecule(atoms.copy())
-
-    # Check both H-H distances are ~1.1
-    d1 = atoms_unwrapped.get_distance(0, 1, mic=True)
-    d2 = atoms_unwrapped.get_distance(2, 3, mic=True)
-
-    assert np.isclose(d1, 1.1, atol=0.05)
-    assert np.isclose(d2, 1.1, atol=0.05)
-
-
-def test_wrapping_corner_case():
-    """Molecule across 3D corner (x, y, z all wrapped)."""
-    # Place one atom near box corner, the other offset by 1.1 Å along the diagonal
-    a1 = np.array([9.9, 9.9, 9.9])
-    bond_length = 1.1 / np.sqrt(3)
-    a2 = (a1 + np.array([bond_length] * 3)) % 10.0  # wrapped across corner
-
-    atoms = Atoms("H2", positions=[a1, a2], cell=[10, 10, 10], pbc=True)
-
-    atoms_unwrapped = unwrap_molecule(atoms.copy())
-    dist = atoms_unwrapped.get_distance(0, 1, mic=True)
-
-    assert np.isclose(dist, 1.1, atol=0.05)
-
-
 def test_no_pbc():
     """Ensure no changes when system has no PBC."""
     atoms = make_molecule()
     atoms.set_pbc(False)
 
-    atoms_unwrapped = unwrap_molecule(atoms.copy())
+    atoms_unwrapped = unwrap_structures(atoms.copy())
     dist = atoms_unwrapped.get_distance(0, 1)
 
     assert np.isclose(dist, 1.1, atol=0.05)
@@ -111,8 +144,8 @@ def test_no_pbc():
 def test_idempotent():
     """Calling unwrap on an already unwrapped structure should do nothing."""
     atoms = make_molecule(shift=(0, 0, 0))
-    unwrapped = unwrap_molecule(atoms.copy())
-    unwrapped2 = unwrap_molecule(unwrapped.copy())
+    unwrapped = unwrap_structures(atoms.copy())
+    unwrapped2 = unwrap_structures(unwrapped.copy())
 
     assert np.allclose(unwrapped.get_positions(), unwrapped2.get_positions())
 

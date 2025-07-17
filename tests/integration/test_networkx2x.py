@@ -151,3 +151,39 @@ def test_networkx2rdkit_ec_emc_li_pf6(ec_emc_li_pf6):
         bond = mol.GetBondBetweenAtoms(i, j)
         assert bond is not None
         assert bond.GetBondTypeAsDouble() == bond_order
+
+
+def test_networkx2ase_subgraph_index_mapping():
+    """Test that networkx2ase correctly maps node indices when working with subgraphs.
+
+    This test ensures that when a subgraph is created with non-sequential node indices,
+    the resulting ASE atoms object has correctly mapped connectivity information.
+    """
+    # Create a simple molecule and convert to graph
+    atoms = rdkit2ase.smiles2atoms("CCO")  # Ethanol
+    graph = rdkit2ase.ase2networkx(atoms)
+
+    # Create a subgraph with non-sequential node indices
+    # This simulates the scenario that caused the original bug
+    subgraph_nodes = [1, 2, 4]  # Non-sequential indices
+    subgraph = graph.subgraph(subgraph_nodes).copy()
+
+    # Convert back to ASE atoms
+    subgraph_atoms = rdkit2ase.networkx2ase(subgraph)
+
+    # Check that the atoms object has the correct number of atoms
+    assert len(subgraph_atoms) == len(subgraph_nodes)
+
+    # Check connectivity information
+    connectivity = subgraph_atoms.info["connectivity"]
+
+    # All indices in connectivity should be valid for the atoms object
+    for i, j, bond_order in connectivity:
+        assert 0 <= i < len(subgraph_atoms)
+        assert 0 <= j < len(subgraph_atoms)
+        assert isinstance(bond_order, float)
+
+    # Test that unwrap_structures works correctly with this subgraph
+    # (This was the original failing case)
+    unwrapped = rdkit2ase.unwrap_structures(subgraph_atoms)
+    assert len(unwrapped) == len(subgraph_atoms)

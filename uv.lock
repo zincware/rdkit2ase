@@ -1471,12 +1471,17 @@ wheels = [
 
 [[package]]
 name = "rdkit2ase"
-version = "0.1.9"
+version = "0.1.11"
 source = { editable = "." }
 dependencies = [
     { name = "ase" },
     { name = "networkx" },
     { name = "rdkit" },
+]
+
+[package.optional-dependencies]
+vesin = [
+    { name = "vesin" },
 ]
 
 [package.dev-dependencies]
@@ -1499,7 +1504,9 @@ requires-dist = [
     { name = "ase", specifier = ">=3.25.0" },
     { name = "networkx", specifier = ">=3.4.2" },
     { name = "rdkit", specifier = ">=2024" },
+    { name = "vesin", marker = "extra == 'vesin'", specifier = ">=0.3.7" },
 ]
+provides-extras = ["vesin"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -1966,6 +1973,22 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/15/22/9ee70a2574a4f4599c47dd506532914ce044817c7752a79b6a51286319bc/urllib3-2.5.0.tar.gz", hash = "sha256:3fc47733c7e419d4bc3f6b3dc2b4f890bb743906a30d56ba4a5bfa4bbff92760", size = 393185, upload-time = "2025-06-18T14:07:41.644Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a7/c2/fe1e52489ae3122415c51f387e221dd0773709bad6c6cdaa599e8a2c5185/urllib3-2.5.0-py3-none-any.whl", hash = "sha256:e6b01673c0fa6a13e374b50871808eb3bf7046c4b125b216f6bf1cc604cff0dc", size = 129795, upload-time = "2025-06-18T14:07:40.39Z" },
+]
+
+[[package]]
+name = "vesin"
+version = "0.3.7"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/73/24/39c98cd0911a170fb94f1077f26a043d4f47df48eecb3eccd1cb11c9e991/vesin-0.3.7.tar.gz", hash = "sha256:52c11ac0ba775c228f06779877cf8641854edab7ea59036093ef5e8447379de0", size = 31534, upload-time = "2025-05-14T15:50:04.371Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8d/cf/a8be6255d45a1434b6027ea5675ffdea55da1851a4b0f7607be12d38b336/vesin-0.3.7-py3-none-macosx_10_13_x86_64.whl", hash = "sha256:d9ad3fe9c040764d9329925cb560e40770c7b7167ac72096c5a1f6981ecea44f", size = 25929, upload-time = "2025-05-14T15:49:57.411Z" },
+    { url = "https://files.pythonhosted.org/packages/0e/69/f37c3922a0040fd5baa22516d1c82b455ea94c9f4c18c71f4a669904a434/vesin-0.3.7-py3-none-macosx_11_0_arm64.whl", hash = "sha256:1678347adb71070dca7130fe45c28b5f0cc3daa7a5461bd87ee1d93d62c9a57a", size = 26042, upload-time = "2025-05-14T15:49:58.743Z" },
+    { url = "https://files.pythonhosted.org/packages/7e/42/8a8db8d202403306a51045e85eb28e7d2a1fb4d9f3ca2cde5a139b5e007f/vesin-0.3.7-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:7c85dde76427eb7e03a5bde915b8bdca2cfb64a0a82f0334231174a21ced4ab9", size = 54619, upload-time = "2025-05-14T15:50:00.481Z" },
+    { url = "https://files.pythonhosted.org/packages/6a/a4/aa108860fc8b563668046df37347c6ed36854981505ac36d78ea2845b33f/vesin-0.3.7-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e41dc2eb5598bb9dc759f6eb88df5e3076698a30465cf496e0ab35dc230820dc", size = 55954, upload-time = "2025-05-14T15:50:01.352Z" },
+    { url = "https://files.pythonhosted.org/packages/e6/74/ff7810aa15d7c2d0562472be7dda16188e05a1bdc392ae17dbe37c5bc0b4/vesin-0.3.7-py3-none-win_amd64.whl", hash = "sha256:69e55daff9f8ffc516708bee233c258c9fabdd2a8d6683c5044479b2d38ba577", size = 58173, upload-time = "2025-05-14T15:50:02.323Z" },
 ]
 
 [[package]]

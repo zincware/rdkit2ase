@@ -10,6 +10,8 @@ def test_com_isolated():
     com = rdkit2ase.get_center_of_mass(ethanol)
     npt.assert_allclose(com.get_center_of_mass(), ethanol.get_center_of_mass(), atol=1e-6)
     npt.assert_allclose(com.get_positions()[0], ethanol.get_center_of_mass(), atol=1e-6)
+    npt.assert_allclose(ethanol.cell, com.get_cell(), atol=1e-6)
+    npt.assert_allclose(ethanol.pbc, com.pbc, atol=1e-6)
 
 def test_com_box():
     ethanol = rdkit2ase.smiles2atoms("CCO")
@@ -24,6 +26,8 @@ def test_com_box():
         box += ethanol_copy
     box_com = rdkit2ase.get_center_of_mass(box)
     npt.assert_allclose(box_com.get_positions(), [ethanol_com + shift for shift in shifts], atol=1e-6)
+    npt.assert_allclose(box.cell, box_com.get_cell(), atol=1e-6)
+    npt.assert_allclose(box.pbc, box_com.pbc, atol=1e-6)
 
 
 def test_com_explicitly_wrapped_molecule():

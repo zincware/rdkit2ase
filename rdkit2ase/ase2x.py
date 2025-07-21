@@ -160,9 +160,14 @@ def ase2networkx(
     charges = atoms.get_initial_charges()
 
     if "connectivity" in atoms.info:
-        return _create_graph_from_connectivity(
-            atoms, atoms.info["connectivity"], charges
-        )
+        connectivity = atoms.info["connectivity"]
+        # ensure connectivity is list[tuple[int, int, float|None]] and
+        # does not contain np.generic
+        connectivity = [
+            (int(i), int(j), float(bond_order) if bond_order is not None else None)
+            for i, j, bond_order in connectivity
+        ]
+        return _create_graph_from_connectivity(atoms, connectivity, charges)
 
     connectivity_matrix, non_bonding_atomic_numbers = _compute_connectivity_matrix(
         atoms, scale, pbc

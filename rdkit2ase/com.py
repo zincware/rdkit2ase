@@ -19,6 +19,9 @@ def get_centers_of_mass(atoms: ase.Atoms, unwrap: bool = True, **kwargs) -> ase.
     ase.Atoms
         An ASE Atoms object containing the centers of mass of each molecule,
         with the masses of the molecules as the `masses` attribute.
+        The species will start at 1 and increment
+        for each unique molecule type.
+
 
     Example
     -------
@@ -38,12 +41,35 @@ def get_centers_of_mass(atoms: ase.Atoms, unwrap: bool = True, **kwargs) -> ase.
 
     centers = []
     masses = []
+
+    counts = {}
+
     for component in nx.connected_components(graph):
         subgraph = graph.subgraph(component)
         molecule = networkx2ase(subgraph)
         center_of_mass = molecule.get_center_of_mass()
         centers.append(center_of_mass)
         masses.append(molecule.get_masses().sum())
+
+        for key in counts:
+            g = counts[key]["graph"]
+            if nx.is_isomorphic(subgraph, g):
+                counts[key]["count"] += 1
+                break
+        else:
+            counts[len(counts)] = {
+                "graph": subgraph,
+                "count": 1,
+            }
+
+    numbers = []
+    for i, (key, value) in enumerate(counts.items()):
+        numbers.extend([i + 1] * value["count"])
+
     return ase.Atoms(
-        positions=centers, masses=masses, cell=atoms.get_cell(), pbc=atoms.pbc
+        positions=centers,
+        masses=masses,
+        cell=atoms.get_cell(),
+        pbc=atoms.pbc,
+        numbers=numbers,
     )

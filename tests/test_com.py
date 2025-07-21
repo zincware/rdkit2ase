@@ -127,3 +127,28 @@ def test_com_with_packed_system(shift):
     expected_masses = sorted([water_mass] * num_water + [ethanol_mass] * num_ethanol)
 
     npt.assert_allclose(sorted(calculated_masses), expected_masses, atol=1e-6)
+
+    assert sum(com_atoms.get_atomic_numbers() == 1) == num_water
+    assert sum(com_atoms.get_atomic_numbers() == 2) == num_ethanol
+
+
+def test_get_centers_of_mass_species():
+    a = rdkit2ase.smiles2conformers("CO", numConfs=10)
+    b = rdkit2ase.smiles2conformers("CCO", numConfs=10)
+    c = rdkit2ase.smiles2conformers("CCCO", numConfs=10)
+    d = rdkit2ase.smiles2conformers("CCCCO", numConfs=10)
+
+    box = rdkit2ase.pack(
+        [a, b, c, d],
+        [1, 2, 3, 4],
+        density=786,
+        packmol="packmol.jl",
+    )
+
+    com = rdkit2ase.get_centers_of_mass(box)
+
+    assert sum(com.get_atomic_numbers() == 1) == 1
+    assert sum(com.get_atomic_numbers() == 2) == 2
+    assert sum(com.get_atomic_numbers() == 3) == 3
+    assert sum(com.get_atomic_numbers() == 4) == 4
+    assert set(com.get_atomic_numbers()) == {1, 2, 3, 4}

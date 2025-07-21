@@ -1,5 +1,6 @@
 import pytest
 from rdkit.Chem import AddHs, MolFromSmiles, MolToSmiles
+import numpy as np
 
 import rdkit2ase
 
@@ -58,3 +59,10 @@ def test_networkx2ase():
     assert (
         new_atoms.get_initial_charges().tolist() == atoms.get_initial_charges().tolist()
     )
+
+
+def test_networkx2ase_numpy_types():
+    atoms = rdkit2ase.smiles2atoms("CO")
+    atoms.info["connectivity"] = np.array(atoms.info["connectivity"], dtype=float)
+    # this did raise an error before the fix
+    rdkit2ase.unwrap_structures(atoms)

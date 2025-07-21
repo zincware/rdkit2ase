@@ -168,7 +168,7 @@ def ase2networkx(
             for i, j, bond_order in connectivity
         ]
         return _create_graph_from_connectivity(
-            atoms, atoms.info["connectivity"], charges
+            atoms, connectivity, charges
         )
 
     connectivity_matrix, non_bonding_atomic_numbers = _compute_connectivity_matrix(

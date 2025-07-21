@@ -1,6 +1,6 @@
 [project]
 name = "rdkit2ase"
-version = "0.1.11"
+version = "0.1.12"
 description = "Interface between rdkit and ASE"
 readme = "README.md"
 license = "Apache-2.0"
@@ -12,7 +12,6 @@ dependencies = [
     "ase>=3.25.0",
     "networkx>=3.4.2",
     "rdkit>=2024",
-
 ]
 
 [dependency-groups]

@@ -79,7 +79,7 @@ def calculate_box_dimensions(images: list[ase.Atoms], density: float) -> list[fl
     return [box_edge] * 3
 
 
-def unwrap_structures(atoms, scale=1.2) -> ase.Atoms:
+def unwrap_structures(atoms, scale=1.2, **kwargs) -> ase.Atoms:
     """Unwrap molecular structures across periodic boundary conditions (PBC).
 
     This function corrects atomic positions that have been wrapped across periodic
@@ -100,6 +100,8 @@ def unwrap_structures(atoms, scale=1.2) -> ase.Atoms:
         Scale factor for covalent radii cutoffs used in bond detection.
         Larger values include more distant neighbors as bonded.
         Default is 1.2.
+    **kwargs : dict
+        Additional keyword arguments to pass to the `ase2networkx` function.
 
     Returns
     -------
@@ -147,7 +149,7 @@ def unwrap_structures(atoms, scale=1.2) -> ase.Atoms:
 
     atoms = atoms.copy()  # Work on a copy to avoid modifying the original
 
-    graph = ase2networkx(atoms, scale=scale)
+    graph = ase2networkx(atoms, scale=scale, **kwargs)
     positions = atoms.get_positions()
     cell = atoms.get_cell()
 

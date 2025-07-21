@@ -161,7 +161,7 @@ def ase2networkx(
 
     if "connectivity" in atoms.info:
         connectivity = atoms.info["connectivity"]
-        # ensure connectivity is list[tuple[int, int, float|None]] and 
+        # ensure connectivity is list[tuple[int, int, float|None]] and
         # does not contain np.generic
         connectivity = [
             (int(i), int(j), float(bond_order) if bond_order is not None else None)

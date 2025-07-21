@@ -9,7 +9,7 @@ import rdkit2ase
 def test_com_isolated():
     ethanol = rdkit2ase.smiles2atoms("CCO")
     ethanol.positions += np.array([1.0, 0.0, 0.0])  # Shift to ensure non-zero COM
-    com = rdkit2ase.get_center_of_mass(ethanol)
+    com = rdkit2ase.get_centers_of_mass(ethanol)
     npt.assert_allclose(
         com.get_center_of_mass(), ethanol.get_center_of_mass(), atol=1e-6
     )
@@ -31,7 +31,7 @@ def test_com_box():
         ethanol_copy = ethanol.copy()
         ethanol_copy.positions += shift
         box += ethanol_copy
-    box_com = rdkit2ase.get_center_of_mass(box)
+    box_com = rdkit2ase.get_centers_of_mass(box)
     npt.assert_allclose(
         box_com.get_positions(), [ethanol_com + shift for shift in shifts], atol=1e-6
     )
@@ -73,7 +73,7 @@ def test_com_explicitly_wrapped_molecule():
     box.wrap()
 
     # 5. Calculate COMs using the function under test
-    com_atoms = rdkit2ase.get_center_of_mass(box)
+    com_atoms = rdkit2ase.get_centers_of_mass(box)
     calculated_coms = com_atoms.get_positions()
 
     # 6. Compare results. The order is not guaranteed, so we sort by a stable
@@ -113,7 +113,7 @@ def test_com_with_packed_system(shift):
     packed_system.wrap()
     packed_system.info.pop("connectivity", None)
 
-    com_atoms = rdkit2ase.get_center_of_mass(packed_system)
+    com_atoms = rdkit2ase.get_centers_of_mass(packed_system)
     calculated_masses = com_atoms.get_masses()
 
     expected_molecule_count = num_water + num_ethanol

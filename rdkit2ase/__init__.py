@@ -1,5 +1,5 @@
 from rdkit2ase.ase2x import ase2networkx, ase2rdkit
-from rdkit2ase.com import get_center_of_mass
+from rdkit2ase.com import get_centers_of_mass
 from rdkit2ase.compress import compress
 from rdkit2ase.networkx2x import networkx2ase, networkx2rdkit
 from rdkit2ase.pack import pack
@@ -27,5 +27,5 @@ __all__ = [
     "networkx2rdkit",
     "networkx2ase",
     #
-    "get_center_of_mass",
+    "get_centers_of_mass",
 ]

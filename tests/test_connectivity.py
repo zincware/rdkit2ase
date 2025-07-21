@@ -1,6 +1,6 @@
+import numpy as np
 import pytest
 from rdkit.Chem import AddHs, MolFromSmiles, MolToSmiles
-import numpy as np
 
 import rdkit2ase
 

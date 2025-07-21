@@ -6,6 +6,7 @@ from rdkit2ase.rdkit2x import rdkit2ase, rdkit2networkx
 from rdkit2ase.smiles2x import smiles2atoms, smiles2conformers
 from rdkit2ase.substructure import get_substructures, iter_fragments, match_substructure
 from rdkit2ase.utils import unwrap_structures
+from rdkit2ase.com import get_center_of_mass
 
 __all__ = [
     "ase2rdkit",
@@ -25,4 +26,6 @@ __all__ = [
     #
     "networkx2rdkit",
     "networkx2ase",
+    #
+    "get_center_of_mass",
 ]

@@ -124,6 +124,135 @@ def iter_fragments(atoms: ase.Atoms) -> list[ase.Atoms]:
             yield molecule
 
 
+
+
+def select_atoms_grouped(
+    mol: Chem.Mol,
+    smarts_or_smiles: str,
+    hydrogens: tp.Literal["include", "exclude", "isolated"] = "exclude",
+) -> list[list[int]]:
+    """Selects atom indices using SMARTS or SMILES, grouped by disconnected fragments.
+
+    This function identifies all substructure matches and returns a list of atom index
+    lists. Each inner list corresponds to a unique, disconnected molecular fragment
+    that contained at least one match.
+
+    If the pattern contains atom maps (e.g., "[C:1]"), only the mapped atoms are returned.
+    Otherwise, all atoms in the matched substructures are returned.
+
+    Parameters
+    ----------
+    mol : rdchem.Mol
+        RDKit molecule, which can contain multiple disconnected fragments and explicit hydrogens.
+    smarts_or_smiles : str
+        SMARTS pattern (e.g., "[F]") or SMILES with atom maps (e.g., "C1[C:1]OC(=[O:1])O1").
+    hydrogens : {'include', 'exclude', 'isolated'}, default='exclude'
+        How to handle hydrogens in the final returned list for each group:
+        - 'include': Add hydrogens bonded to selected heavy atoms.
+        - 'exclude': Remove all hydrogens from the selection.
+        - 'isolated': Return only the hydrogens that are bonded to selected heavy atoms.
+
+    Returns
+    -------
+    list[list[int]]
+        A list of sorted integer lists. Each inner list contains the unique atom indices
+        for a matched, disconnected fragment. Fragments with no matches are omitted from the output.
+
+    Raises
+    ------
+    ValueError
+        If the provided SMARTS/SMILES pattern is invalid.
+
+    Examples
+    --------
+    >>> # Molecule with two disconnected fragments: ethanol and fluoromethane
+    >>> mol = Chem.MolFromSmiles("CCO.CF") # Indices: C(0)C(1)O(2) . C(3)F(4)
+    >>>
+    >>> # Select all carbon atoms
+    >>> select_atoms_grouped(mol, "[C]")
+    [[0, 1], [3]]
+    >>>
+    >>> # Select fluorine and its bonded carbon using 'include'
+    >>> select_atoms_grouped(mol, "[F]", hydrogens="include")
+    [[3, 4]]
+    """
+    patt = Chem.MolFromSmarts(smarts_or_smiles)
+    if not patt:
+        raise ValueError(f"Invalid SMARTS/SMILES: {smarts_or_smiles}")
+
+    # Get mapped indices from the pattern, if any
+    mapped_pattern_indices = [
+        atom.GetIdx() for atom in patt.GetAtoms() if atom.GetAtomMapNum() > 0
+    ]
+
+    # Find all matches in the entire molecule just once for efficiency
+    all_matches = mol.GetSubstructMatches(patt)
+    if not all_matches:
+        return []
+
+    # Get the indices of atoms in each disconnected fragment
+    fragment_sets = [set(frag) for frag in Chem.GetMolFrags(mol, asMols=False)]
+
+    grouped_indices = []
+    for fragment_atom_indices in fragment_sets:
+        # Filter matches to include only those fully contained within the current fragment
+        fragment_matches = [
+            match for match in all_matches if set(match).issubset(fragment_atom_indices)
+        ]
+
+        if not fragment_matches:
+            continue
+
+        # 1. Get the core set of atoms for this fragment. If the pattern is mapped,
+        #    use only the indices corresponding to mapped atoms. Otherwise, use all.
+        core_atom_indices = set()
+        if mapped_pattern_indices:
+            for match_tuple in fragment_matches:
+                for pattern_idx in mapped_pattern_indices:
+                    core_atom_indices.add(match_tuple[pattern_idx])
+        else:
+            core_atom_indices = set(idx for match_tuple in fragment_matches for idx in match_tuple)
+
+        if not core_atom_indices:
+            continue
+
+        # 2. Handle the `hydrogens` parameter for this fragment's core atoms
+        final_indices_for_fragment = set()
+        if hydrogens == "include":
+            final_indices_for_fragment = set(core_atom_indices)
+            for idx in core_atom_indices:
+                atom = mol.GetAtomWithIdx(idx)
+                if atom.GetAtomicNum() != 1:  # is a heavy atom
+                    for neighbor in atom.GetNeighbors():
+                        if neighbor.GetAtomicNum() == 1:
+                            final_indices_for_fragment.add(neighbor.GetIdx())
+
+        elif hydrogens == "exclude":
+            final_indices_for_fragment = {
+                idx for idx in core_atom_indices if mol.GetAtomWithIdx(idx).GetAtomicNum() != 1
+            }
+
+        elif hydrogens == "isolated":
+            isolated_hydrogens = set()
+            heavy_core_atoms = {
+                idx for idx in core_atom_indices if mol.GetAtomWithIdx(idx).GetAtomicNum() != 1
+            }
+            for idx in heavy_core_atoms:
+                atom = mol.GetAtomWithIdx(idx)
+                for neighbor in atom.GetNeighbors():
+                    if neighbor.GetAtomicNum() == 1:
+                        isolated_hydrogens.add(neighbor.GetIdx())
+            final_indices_for_fragment = isolated_hydrogens
+        
+        else: # Default case if hydrogens parameter is somehow invalid, or just to return core atoms
+            final_indices_for_fragment = core_atom_indices
+
+        # Only add the group if it contains any atoms after processing
+        if final_indices_for_fragment:
+            grouped_indices.append(sorted(list(final_indices_for_fragment)))
+
+    return grouped_indices
+
 def select_atoms_flat_unique(
     mol: Chem.Mol,
     smarts_or_smiles: str,
@@ -156,64 +285,16 @@ def select_atoms_flat_unique(
     ValueError
         If the SMARTS/SMILES pattern is invalid.
     """
-    patt = Chem.MolFromSmarts(smarts_or_smiles)
+    grouped_indices = select_atoms_grouped(mol, smarts_or_smiles, hydrogens=hydrogens)
+    if not grouped_indices:
+        return []
 
-    if not patt:
-        raise ValueError(f"Invalid SMARTS/SMILES: {smarts_or_smiles}")
+    # Flatten the list of lists and remove duplicates
+    unique_indices = set()
+    for group in grouped_indices:
+        unique_indices.update(group)
 
-    # Check if the pattern has any mapped atoms.
-    mapped_pattern_indices = [
-        atom.GetIdx() for atom in patt.GetAtoms() if atom.GetAtomMapNum() > 0
-    ]
-
-    matches = mol.GetSubstructMatches(patt)
-
-    # 1. Get the core set of atoms. If the pattern is mapped, only use the
-    #    indices corresponding to the mapped atoms. Otherwise, use all atoms.
-    core_atom_indices = set()
-    if mapped_pattern_indices:
-        # Only collect indices from the molecule that correspond to a mapped atom in the pattern.
-        for match_tuple in matches:
-            for pattern_idx in mapped_pattern_indices:
-                core_atom_indices.add(match_tuple[pattern_idx])
-    else:
-        # Original behavior: get all atoms from all matches if no maps are present.
-        core_atom_indices = set(idx for match_tuple in matches for idx in match_tuple)
-
-    # 2. Handle the `hydrogens` parameter based on this core set of atoms.
-    if hydrogens == "include":
-        final_indices = set(core_atom_indices)
-        for idx in core_atom_indices:
-            atom = mol.GetAtomWithIdx(idx)
-            if atom.GetAtomicNum() != 1:
-                for neighbor in atom.GetNeighbors():
-                    if neighbor.GetAtomicNum() == 1:
-                        final_indices.add(neighbor.GetIdx())
-        return sorted(list(final_indices))
-
-    elif hydrogens == "exclude":
-        heavy_only = {
-            idx
-            for idx in core_atom_indices
-            if mol.GetAtomWithIdx(idx).GetAtomicNum() != 1
-        }
-        return sorted(list(heavy_only))
-
-    elif hydrogens == "isolated":
-        isolated_hydrogens = set()
-        heavy_core_atoms = {
-            idx
-            for idx in core_atom_indices
-            if mol.GetAtomWithIdx(idx).GetAtomicNum() != 1
-        }
-        for idx in heavy_core_atoms:
-            atom = mol.GetAtomWithIdx(idx)
-            for neighbor in atom.GetNeighbors():
-                if neighbor.GetAtomicNum() == 1:
-                    isolated_hydrogens.add(neighbor.GetIdx())
-        return sorted(list(isolated_hydrogens))
-
-    return sorted(list(core_atom_indices))
+    return sorted(unique_indices)
 
 
 def visualize_selected_molecules(mol: Chem.Mol, a: list[int], b: list[int]):

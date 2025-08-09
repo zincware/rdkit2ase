@@ -222,7 +222,9 @@ def test_hydrogens_included(ethanol_mol):
 def test_hydrogens_isolated(ethanol_mol):
     """Test the 'isolated' option for hydrogens."""
     # Select ONLY the hydrogens from the C-O match
-    indices = rdkit2ase.select_atoms_flat_unique(ethanol_mol, "CO", hydrogens="isolated")
+    indices = rdkit2ase.select_atoms_flat_unique(
+        ethanol_mol, "CO", hydrogens="isolated"
+    )
     # Expected: H(6), H(7), H(8)
     assert sorted(indices) == [6, 7, 8]
 
@@ -230,12 +232,16 @@ def test_hydrogens_isolated(ethanol_mol):
 def test_smarts_with_explicit_hydrogens(ethanol_mol):
     """Test a SMARTS pattern that explicitly includes hydrogens."""
     # Find all hydrogens attached to an oxygen
-    indices = rdkit2ase.select_atoms_flat_unique(ethanol_mol, "[#8]-[H]", hydrogens="include")
+    indices = rdkit2ase.select_atoms_flat_unique(
+        ethanol_mol, "[#8]-[H]", hydrogens="include"
+    )
     # Expected: O(2), H(8)
     assert sorted(indices) == [2, 8]
 
     # Now isolate only the hydrogen from that match
-    h_indices = rdkit2ase.select_atoms_flat_unique(ethanol_mol, "[#8]-[H]", hydrogens="isolated")
+    h_indices = rdkit2ase.select_atoms_flat_unique(
+        ethanol_mol, "[#8]-[H]", hydrogens="isolated"
+    )
     assert sorted(h_indices) == [8]
 
 
@@ -295,8 +301,8 @@ def test_visualize_selected_molecules_basic(ethanol_mol):
     """Test basic visualization functionality."""
     # Select some atoms to highlight
     a = [0, 1]  # Carbons
-    b = [2]     # Oxygen
-    
+    b = [2]  # Oxygen
+
     img = rdkit2ase.visualize_selected_molecules(ethanol_mol, a, b)
     assert img is not None
 
@@ -310,7 +316,7 @@ def test_visualize_selected_molecules_empty_selections(ethanol_mol):
 def test_visualize_selected_molecules_overlapping_selections(ethanol_mol):
     """Test visualization with overlapping selections (b takes precedence)."""
     a = [0, 1, 2]  # All heavy atoms
-    b = [2]        # Oxygen (should be blue, not pink)
-    
+    b = [2]  # Oxygen (should be blue, not pink)
+
     img = rdkit2ase.visualize_selected_molecules(ethanol_mol, a, b)
     assert img is not None

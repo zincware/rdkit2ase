@@ -124,8 +124,6 @@ def iter_fragments(atoms: ase.Atoms) -> list[ase.Atoms]:
             yield molecule
 
 
-
-
 def select_atoms_grouped(
     mol: Chem.Mol,
     smarts_or_smiles: str,
@@ -211,7 +209,9 @@ def select_atoms_grouped(
                 for pattern_idx in mapped_pattern_indices:
                     core_atom_indices.add(match_tuple[pattern_idx])
         else:
-            core_atom_indices = set(idx for match_tuple in fragment_matches for idx in match_tuple)
+            core_atom_indices = set(
+                idx for match_tuple in fragment_matches for idx in match_tuple
+            )
 
         if not core_atom_indices:
             continue
@@ -229,13 +229,17 @@ def select_atoms_grouped(
 
         elif hydrogens == "exclude":
             final_indices_for_fragment = {
-                idx for idx in core_atom_indices if mol.GetAtomWithIdx(idx).GetAtomicNum() != 1
+                idx
+                for idx in core_atom_indices
+                if mol.GetAtomWithIdx(idx).GetAtomicNum() != 1
             }
 
         elif hydrogens == "isolated":
             isolated_hydrogens = set()
             heavy_core_atoms = {
-                idx for idx in core_atom_indices if mol.GetAtomWithIdx(idx).GetAtomicNum() != 1
+                idx
+                for idx in core_atom_indices
+                if mol.GetAtomWithIdx(idx).GetAtomicNum() != 1
             }
             for idx in heavy_core_atoms:
                 atom = mol.GetAtomWithIdx(idx)
@@ -243,8 +247,8 @@ def select_atoms_grouped(
                     if neighbor.GetAtomicNum() == 1:
                         isolated_hydrogens.add(neighbor.GetIdx())
             final_indices_for_fragment = isolated_hydrogens
-        
-        else: # Default case if hydrogens parameter is somehow invalid, or just to return core atoms
+
+        else:  # Default case if hydrogens parameter is somehow invalid, or just to return core atoms
             final_indices_for_fragment = core_atom_indices
 
         # Only add the group if it contains any atoms after processing
@@ -252,6 +256,7 @@ def select_atoms_grouped(
             grouped_indices.append(sorted(list(final_indices_for_fragment)))
 
     return grouped_indices
+
 
 def select_atoms_flat_unique(
     mol: Chem.Mol,

@@ -1,5 +1,7 @@
 import pytest
+
 import rdkit2ase
+
 
 @pytest.fixture(scope="session")
 def ethanol_water():

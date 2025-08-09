@@ -10,8 +10,8 @@ from rdkit2ase.substructure import (
     iter_fragments,
     match_substructure,
     select_atoms_flat_unique,
-    visualize_selected_molecules,
     select_atoms_grouped,
+    visualize_selected_molecules,
 )
 from rdkit2ase.utils import unwrap_structures
 

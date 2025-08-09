@@ -250,7 +250,8 @@ def test_smarts_with_explicit_hydrogens(ethanol_mol):
 
 def test_mapped_smiles(ethanol_mol):
     """Test selecting only mapped atoms using a mapped SMILES pattern."""
-    # The pattern "[C:1][C:2]O" matches atoms 0, 1, and 2, but only C:1 and C:2 are mapped.
+    # The pattern "[C:1][C:2]O" matches atoms 0, 1, and 2,
+    # but only C:1 and C:2 are mapped.
     # The function should now return only the indices of the mapped atoms.
     indices = rdkit2ase.select_atoms_flat_unique(ethanol_mol, "[C:1][C:2]O")
     # FIX: The test's expectation is updated to only expect the mapped carbons [0, 1].
@@ -323,7 +324,7 @@ def test_visualize_selected_molecules_overlapping_selections(ethanol_mol):
 
 
 def test_select_atoms_grouped(ethanol_water):
-    """Test selecting atoms from disconnected fragments using the ethanol_water fixture."""
+    """Test selecting atoms from disconnected fragments."""
     # ethanol_water is an ase.Atoms object with 2 ethanol and 2 water molecules.
     # We need to convert it to an RDKit Mol object first.
     mol = rdkit2ase.ase2rdkit(ethanol_water)

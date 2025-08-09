@@ -124,7 +124,7 @@ def iter_fragments(atoms: ase.Atoms) -> list[ase.Atoms]:
             yield molecule
 
 
-def select_atoms_grouped(
+def select_atoms_grouped(  # noqa: C901
     mol: Chem.Mol,
     smarts_or_smiles: str,
     hydrogens: tp.Literal["include", "exclude", "isolated"] = "exclude",
@@ -135,15 +135,17 @@ def select_atoms_grouped(
     lists. Each inner list corresponds to a unique, disconnected molecular fragment
     that contained at least one match.
 
-    If the pattern contains atom maps (e.g., "[C:1]"), only the mapped atoms are returned.
-    Otherwise, all atoms in the matched substructures are returned.
+    If the pattern contains atom maps (e.g., "[C:1]"), only the mapped atoms
+    are returned. Otherwise, all atoms in the matched substructures are returned.
 
     Parameters
     ----------
     mol : rdchem.Mol
-        RDKit molecule, which can contain multiple disconnected fragments and explicit hydrogens.
+        RDKit molecule, which can contain multiple disconnected fragments and
+        explicit hydrogens.
     smarts_or_smiles : str
-        SMARTS pattern (e.g., "[F]") or SMILES with atom maps (e.g., "C1[C:1]OC(=[O:1])O1").
+        SMARTS pattern (e.g., "[F]") or SMILES with atom maps
+        (e.g., "C1[C:1]OC(=[O:1])O1").
     hydrogens : {'include', 'exclude', 'isolated'}, default='exclude'
         How to handle hydrogens in the final returned list for each group:
         - 'include': Add hydrogens bonded to selected heavy atoms.
@@ -154,7 +156,8 @@ def select_atoms_grouped(
     -------
     list[list[int]]
         A list of sorted integer lists. Each inner list contains the unique atom indices
-        for a matched, disconnected fragment. Fragments with no matches are omitted from the output.
+        for a matched, disconnected fragment. Fragments with no matches
+        are omitted from the output.
 
     Raises
     ------
@@ -195,7 +198,7 @@ def select_atoms_grouped(
 
     grouped_indices = []
     for fragment_atom_indices in fragment_sets:
-        # Filter matches to include only those fully contained within the current fragment
+        # Filter matches to include only those fully contained within the fragment
         fragment_matches = [
             match for match in all_matches if set(match).issubset(fragment_atom_indices)
         ]
@@ -211,9 +214,9 @@ def select_atoms_grouped(
                 for pattern_idx in mapped_pattern_indices:
                     core_atom_indices.add(match_tuple[pattern_idx])
         else:
-            core_atom_indices = set(
+            core_atom_indices = {
                 idx for match_tuple in fragment_matches for idx in match_tuple
-            )
+            }
 
         if not core_atom_indices:
             continue
@@ -257,7 +260,7 @@ def select_atoms_grouped(
 
         # Only add the group if it contains any atoms after processing
         if final_indices_for_fragment:
-            grouped_indices.append(sorted(list(final_indices_for_fragment)))
+            grouped_indices.append(sorted(final_indices_for_fragment))
 
     return grouped_indices
 
@@ -306,7 +309,7 @@ def select_atoms_flat_unique(
     return sorted(unique_indices)
 
 
-def visualize_selected_molecules(mol: Chem.Mol, a: list[int], b: list[int]):
+def visualize_selected_molecules(mol: Chem.Mol, a: list[int], b: list[int]):  # noqa: C901
     """
     Visualizes molecules that contain selected atoms, highlighting the selections.
     Duplicate molecular structures will only be plotted once.

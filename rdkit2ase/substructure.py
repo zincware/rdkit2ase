@@ -175,9 +175,11 @@ def select_atoms_grouped(
     [[3, 4]]
     """
     patt = Chem.MolFromSmarts(smarts_or_smiles)
-    if not patt:
+    if patt is None:
+        # Support mapped SMILES patterns too
+        patt = Chem.MolFromSmiles(smarts_or_smiles)
+    if patt is None:
         raise ValueError(f"Invalid SMARTS/SMILES: {smarts_or_smiles}")
-
     # Get mapped indices from the pattern, if any
     mapped_pattern_indices = [
         atom.GetIdx() for atom in patt.GetAtoms() if atom.GetAtomMapNum() > 0

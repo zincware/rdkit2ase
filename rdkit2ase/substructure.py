@@ -217,6 +217,11 @@ def select_atoms_grouped(
             continue
 
         # 2. Handle the `hydrogens` parameter for this fragment's core atoms
+        if hydrogens not in ("include", "exclude", "isolated"):
+            raise ValueError(
+                f"Invalid value for `hydrogens`: {hydrogens!r}. "
+                "Expected one of 'include', 'exclude', 'isolated'."
+            )
         final_indices_for_fragment = set()
         if hydrogens == "include":
             final_indices_for_fragment = set(core_atom_indices)
@@ -247,9 +252,6 @@ def select_atoms_grouped(
                     if neighbor.GetAtomicNum() == 1:
                         isolated_hydrogens.add(neighbor.GetIdx())
             final_indices_for_fragment = isolated_hydrogens
-
-        else:  # Default case if hydrogens parameter is somehow invalid, or just to return core atoms
-            final_indices_for_fragment = core_atom_indices
 
         # Only add the group if it contains any atoms after processing
         if final_indices_for_fragment:

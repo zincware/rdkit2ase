@@ -11,6 +11,7 @@ from rdkit2ase.substructure import (
     match_substructure,
     select_atoms_flat_unique,
     visualize_selected_molecules,
+    select_atoms_grouped,
 )
 from rdkit2ase.utils import unwrap_structures
 
@@ -26,6 +27,7 @@ __all__ = [
     "select_atoms_flat_unique",
     "visualize_selected_molecules",
     "unwrap_structures",
+    "select_atoms_grouped",
     #
     "ase2networkx",
     #

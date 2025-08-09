@@ -320,3 +320,40 @@ def test_visualize_selected_molecules_overlapping_selections(ethanol_mol):
 
     img = rdkit2ase.visualize_selected_molecules(ethanol_mol, a, b)
     assert img is not None
+
+
+def test_select_atoms_grouped(ethanol_water):
+    """Test selecting atoms from disconnected fragments using the ethanol_water fixture."""
+    # ethanol_water is an ase.Atoms object with 2 ethanol and 2 water molecules.
+    # We need to convert it to an RDKit Mol object first.
+    mol = rdkit2ase.ase2rdkit(ethanol_water)
+
+    # Test 1: Select all carbon atoms.
+    # Should find 2 groups (the two ethanol molecules), each with 2 carbons.
+    indices_carbons = rdkit2ase.select_atoms_grouped(mol, "[#6]")
+    assert indices_carbons == [[0, 1], [9, 10]]
+    # Verify they are indeed carbons
+    for group in indices_carbons:
+        for idx in group:
+            assert mol.GetAtomWithIdx(idx).GetAtomicNum() == 6
+
+    # Test 2: Select all oxygen atoms.
+    # Should find 4 groups (2 ethanol, 2 water), each with 1 oxygen.
+    indices_oxygens = rdkit2ase.select_atoms_grouped(mol, "[#8]")
+    assert indices_oxygens == [[2], [11], [18], [21]]
+    # Verify they are indeed oxygens
+    for group in indices_oxygens:
+        for idx in group:
+            assert mol.GetAtomWithIdx(idx).GetAtomicNum() == 8
+
+    # Test 3: Select a non-existent atom.
+    indices_fluorine = rdkit2ase.select_atoms_grouped(mol, "[F]")
+    assert indices_fluorine == []
+
+    # Test 4: Select hydroxyl group in ethanol, including hydrogens.
+    indices_hydroxyl = rdkit2ase.select_atoms_grouped(mol, "[OH]", hydrogens="include")
+    assert indices_hydroxyl == [[2, 8], [11, 17]]
+    for group in indices_hydroxyl:
+        symbols = [mol.GetAtomWithIdx(idx).GetSymbol() for idx in group]
+        assert "O" in symbols
+        assert "H" in symbols

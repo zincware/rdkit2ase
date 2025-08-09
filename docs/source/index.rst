@@ -52,6 +52,7 @@ Documentation
    rdkit_tools
    packmol_tools
    networkx_tools
+   atom_selection
    modules
 
 

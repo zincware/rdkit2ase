@@ -322,22 +322,21 @@ def test_ase2networkx_mixed_pbc_fallback(ethanol_water):
         import vesin  # noqa: F401
     except ImportError:
         raise pytest.skip("vesin not available in this environment")
-        
+
     # Use ethanol_water fixture but modify PBC to trigger vesin failure
     atoms = ethanol_water.copy()
     # Set PBC to False for one dimension to trigger the issue
     atoms.pbc = [True, False, True]  # Mixed PBC that can cause vesin to fail
-    
+
     # Remove connectivity to force neighbor list calculation
     atoms.info.pop("connectivity", None)
-    
+
     # This should work even if vesin fails, thanks to the fallback
     graph = rdkit2ase.ase2networkx(atoms, pbc=True)
     assert len(graph.nodes) == len(atoms)
     # Should have some edges from the molecules
     assert len(graph.edges) > 0
-    
+
     # Verify the graph properties
     assert graph.graph["pbc"] is not None
     assert graph.graph["cell"] is not None
-

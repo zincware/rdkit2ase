@@ -309,7 +309,7 @@ def test_visualize_selected_molecules_basic(ethanol_mol):
 
 
 def test_visualize_selected_molecules_empty_selections(ethanol_mol):
-    """Test visualization with empty selections - should show molecule without highlights."""
+    """Test visualization with empty selections - shows molecule without highlights."""
     img = rdkit2ase.visualize_selected_molecules(ethanol_mol)
     assert img is not None
 

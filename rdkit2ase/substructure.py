@@ -151,7 +151,8 @@ def select_atoms_grouped(  # noqa: C901
         map numbers must be unique.
     hydrogens : {'include', 'exclude', 'isolated'}, default='exclude'
         How to handle hydrogens in the final returned list for each group:
-        - 'include': Add hydrogens bonded to selected heavy atoms after each mapped atom.
+        - 'include': Add hydrogens bonded to selected heavy atoms after each
+          mapped atom.
         - 'exclude': Remove all hydrogens from the selection.
         - 'isolated': Return only the hydrogens that are bonded to selected heavy atoms.
 
@@ -349,56 +350,11 @@ def select_atoms_flat_unique(
     return sorted(unique_indices)
 
 
-def visualize_selected_molecules(
-    mol: Chem.Mol,
-    *args,
-    molsPerRow: int = 4,
-    subImgSize: tuple[int, int] = (200, 200),
-    legends: list[str] | None = None,
-    alpha: float = 0.5,
-):  # noqa: C901
-    """
-    Visualizes molecules with optional atom highlighting.
-    If no atom selections are provided, displays the molecule without highlights.
-    Duplicate molecular structures will only be plotted once.
-
-    Parameters
-    ----------
-    mol : Chem.Mol
-        The RDKit molecule object, which may contain multiple fragments.
-    *args : list[int]
-        Variable number of lists containing atom indices to be highlighted.
-        Each list will be assigned a different color from matplotlib's tab10 colormap.
-        If no arguments provided, displays the molecule without highlights.
-    molsPerRow : int, default 4
-        Number of molecules per row in the grid.
-    subImgSize : tuple[int, int], default (200, 200)
-        Size of each molecule image.
-    legends : list[str] | None, default None
-        Custom legends for each molecule. If None, default legends will be used.
-    alpha : float, default 0.5
-        Transparency level for the highlighted atoms (0.0 = fully transparent, 1.0 = opaque).
-
-    Returns
-    -------
-    PIL.Image
-        A PIL image object of the grid.
-    """
-    # Handle empty args case - display molecule without highlights
-    if not args:
-        img = Draw.MolsToGridImage(
-            [mol],
-            molsPerRow=molsPerRow,
-            subImgSize=subImgSize,
-            legends=legends if legends is not None else ["Molecule 0"],
-        )
-        return img
-
-    # Get separate molecule fragments from the main mol object
+def _collect_highlighted_fragments(mol, args, alpha):
+    """Helper function to collect and process fragment highlights."""
     frags = Chem.GetMolFrags(mol, asMols=True)
     frag_indices = Chem.GetMolFrags(mol, asMols=False)
 
-    # --- Step 1: Collect all candidate molecules and their highlight data ---
     candidate_mols = []
     candidate_highlights = []
     candidate_colors = []
@@ -441,11 +397,11 @@ def visualize_selected_molecules(
             candidate_highlights.append(current_highlights)
             candidate_colors.append(current_colors)
 
-    if not candidate_mols:
-        print("No molecules to draw with the given selections.")
-        return None
+    return candidate_mols, candidate_highlights, candidate_colors
 
-    # --- Step 2: Filter for unique molecules using canonical SMILES ---
+
+def _filter_unique_molecules(candidate_mols, candidate_highlights, candidate_colors):
+    """Helper function to filter for unique molecular structures."""
     mols_to_draw = []
     highlight_lists = []
     highlight_colors = []
@@ -462,6 +418,69 @@ def visualize_selected_molecules(
             highlight_lists.append(candidate_highlights[i])
             highlight_colors.append(candidate_colors[i])
 
+    return mols_to_draw, highlight_lists, highlight_colors
+
+
+def visualize_selected_molecules(
+    mol: Chem.Mol,
+    *args,
+    mols_per_row: int = 4,
+    sub_img_size: tuple[int, int] = (200, 200),
+    legends: list[str] | None = None,
+    alpha: float = 0.5,
+):
+    """
+    Visualizes molecules with optional atom highlighting.
+    If no atom selections are provided, displays the molecule without highlights.
+    Duplicate molecular structures will only be plotted once.
+
+    Parameters
+    ----------
+    mol : Chem.Mol
+        The RDKit molecule object, which may contain multiple fragments.
+    *args : list[int]
+        Variable number of lists containing atom indices to be highlighted.
+        Each list will be assigned a different color from matplotlib's tab10 colormap.
+        If no arguments provided, displays the molecule without highlights.
+    mols_per_row : int, default 4
+        Number of molecules per row in the grid.
+    sub_img_size : tuple[int, int], default (200, 200)
+        Size of each molecule image.
+    legends : list[str] | None, default None
+        Custom legends for each molecule. If None, default legends will be used.
+    alpha : float, default 0.5
+        Transparency level for the highlighted atoms (0.0 = fully transparent,
+        1.0 = opaque).
+
+    Returns
+    -------
+    PIL.Image
+        A PIL image object of the grid.
+    """
+    # Handle empty args case - display molecule without highlights
+    if not args:
+        img = Draw.MolsToGridImage(
+            [mol],
+            molsPerRow=mols_per_row,
+            subImgSize=sub_img_size,
+            legends=legends if legends is not None else ["Molecule 0"],
+        )
+        return img
+
+    # Collect highlighted fragments
+    candidate_mols, candidate_highlights, candidate_colors = (
+        _collect_highlighted_fragments(mol, args, alpha)
+    )
+
+    if not candidate_mols:
+        print("No molecules to draw with the given selections.")
+        return None
+
+    # Filter for unique molecules
+    mols_to_draw, highlight_lists, highlight_colors = _filter_unique_molecules(
+        candidate_mols, candidate_highlights, candidate_colors
+    )
+
     # Draw the grid
     final_legends = (
         legends
@@ -471,8 +490,8 @@ def visualize_selected_molecules(
 
     img = Draw.MolsToGridImage(
         mols_to_draw,
-        molsPerRow=molsPerRow,
-        subImgSize=subImgSize,
+        molsPerRow=mols_per_row,
+        subImgSize=sub_img_size,
         legends=final_legends,
         highlightAtomLists=highlight_lists,
         highlightAtomColors=highlight_colors,

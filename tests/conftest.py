@@ -1,5 +1,5 @@
-import pytest
 import ase
+import pytest
 
 import rdkit2ase
 
@@ -25,6 +25,9 @@ def alanine_dipeptide() -> ase.Atoms:
 def alanine_dipeptide_box(alanine_dipeptide) -> ase.Atoms:
     """Box of alanine dipeptide molecules using rdkit2ase.pack with packmol='packmol.jl'."""
     box = rdkit2ase.pack(
-        [alanine_dipeptide], counts=[3], density=500, packmol="packmol.jl"
+        [alanine_dipeptide], 
+        counts=[3], 
+        density=500, 
+        packmol="packmol.jl"
     )
     return box.copy()

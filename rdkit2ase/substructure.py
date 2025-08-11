@@ -1,6 +1,7 @@
 import typing as tp
 
 import ase
+import matplotlib.pyplot as plt
 from ase.build import separate
 from rdkit import Chem
 from rdkit.Chem import Draw
@@ -135,8 +136,9 @@ def select_atoms_grouped(  # noqa: C901
     lists. Each inner list corresponds to a unique, disconnected molecular fragment
     that contained at least one match.
 
-    If the pattern contains atom maps (e.g., "[C:1]"), only the mapped atoms
-    are returned. Otherwise, all atoms in the matched substructures are returned.
+    If the pattern contains atom maps (e.g., "[C:1]", "[C:2]"), only the mapped atoms
+    are returned, ordered by their map numbers. Map numbers must be unique within
+    the pattern. Otherwise, all atoms in the matched substructures are returned.
 
     Parameters
     ----------
@@ -145,24 +147,27 @@ def select_atoms_grouped(  # noqa: C901
         explicit hydrogens.
     smarts_or_smiles : str
         SMARTS pattern (e.g., "[F]") or SMILES with atom maps
-        (e.g., "C1[C:1]OC(=[O:1])O1").
+        (e.g., "CC(=O)N[C:1]([C:2])[C:3](=O)[N:4]C"). When using mapped atoms,
+        map numbers must be unique.
     hydrogens : {'include', 'exclude', 'isolated'}, default='exclude'
         How to handle hydrogens in the final returned list for each group:
-        - 'include': Add hydrogens bonded to selected heavy atoms.
+        - 'include': Add hydrogens bonded to selected heavy atoms after each
+          mapped atom.
         - 'exclude': Remove all hydrogens from the selection.
         - 'isolated': Return only the hydrogens that are bonded to selected heavy atoms.
 
     Returns
     -------
     list[list[int]]
-        A list of sorted integer lists. Each inner list contains the unique atom indices
-        for a matched, disconnected fragment. Fragments with no matches
-        are omitted from the output.
+        A list of integer lists. Each inner list contains the atom indices
+        for a matched, disconnected fragment. For mapped patterns, atoms are ordered
+        by their map numbers. Fragments with no matches are omitted from the output.
 
     Raises
     ------
     ValueError
-        If the provided SMARTS/SMILES pattern is invalid.
+        If the provided SMARTS/SMILES pattern is invalid or if atom map labels
+        are used multiple times within the same pattern.
 
     Examples
     --------
@@ -183,10 +188,28 @@ def select_atoms_grouped(  # noqa: C901
         patt = Chem.MolFromSmiles(smarts_or_smiles)
     if patt is None:
         raise ValueError(f"Invalid SMARTS/SMILES: {smarts_or_smiles}")
-    # Get mapped indices from the pattern, if any
-    mapped_pattern_indices = [
-        atom.GetIdx() for atom in patt.GetAtoms() if atom.GetAtomMapNum() > 0
-    ]
+
+    # Get mapped indices from the pattern, if any, and validate uniqueness
+    mapped_pattern_indices = []
+    atom_map_numbers = []
+    for atom in patt.GetAtoms():
+        if atom.GetAtomMapNum() > 0:
+            map_num = atom.GetAtomMapNum()
+            if map_num in atom_map_numbers:
+                raise ValueError(f"Label '{map_num}' is used multiple times")
+            atom_map_numbers.append(map_num)
+            mapped_pattern_indices.append(atom.GetIdx())
+
+    # If we have mapped atoms, we need to sort them by their
+    #  map numbers to preserve order
+    if mapped_pattern_indices:
+        # Create pairs of (map_number, pattern_index) and sort by map_number
+        map_index_pairs = [
+            (patt.GetAtomWithIdx(idx).GetAtomMapNum(), idx)
+            for idx in mapped_pattern_indices
+        ]
+        map_index_pairs.sort(key=lambda x: x[0])  # Sort by map number
+        mapped_pattern_indices = [idx for _, idx in map_index_pairs]
 
     # Find all matches in the entire molecule just once for efficiency
     all_matches = mol.GetSubstructMatches(patt)
@@ -208,15 +231,26 @@ def select_atoms_grouped(  # noqa: C901
 
         # 1. Get the core set of atoms for this fragment. If the pattern is mapped,
         #    use only the indices corresponding to mapped atoms. Otherwise, use all.
-        core_atom_indices = set()
         if mapped_pattern_indices:
+            # For mapped patterns, preserve the order of atoms based
+            # on their map numbers
+            core_atom_indices_ordered = []
             for match_tuple in fragment_matches:
-                for pattern_idx in mapped_pattern_indices:
-                    core_atom_indices.add(match_tuple[pattern_idx])
+                match_atoms = [
+                    match_tuple[pattern_idx] for pattern_idx in mapped_pattern_indices
+                ]
+                core_atom_indices_ordered.extend(match_atoms)
+            # Remove duplicates while preserving order
+            seen = set()
+            core_atom_indices_ordered = [
+                x for x in core_atom_indices_ordered if not (x in seen or seen.add(x))
+            ]
+            core_atom_indices = set(core_atom_indices_ordered)
         else:
             core_atom_indices = {
                 idx for match_tuple in fragment_matches for idx in match_tuple
             }
+            core_atom_indices_ordered = sorted(core_atom_indices)
 
         if not core_atom_indices:
             continue
@@ -227,40 +261,47 @@ def select_atoms_grouped(  # noqa: C901
                 f"Invalid value for `hydrogens`: {hydrogens!r}. "
                 "Expected one of 'include', 'exclude', 'isolated'."
             )
-        final_indices_for_fragment = set()
+
         if hydrogens == "include":
-            final_indices_for_fragment = set(core_atom_indices)
-            for idx in core_atom_indices:
+            # Include both core atoms and their hydrogens, maintaining order
+            final_indices_ordered = []
+            for idx in core_atom_indices_ordered:
+                # Add the core atom first
+                final_indices_ordered.append(idx)
+                # Then add its hydrogens
                 atom = mol.GetAtomWithIdx(idx)
                 if atom.GetAtomicNum() != 1:  # is a heavy atom
-                    for neighbor in atom.GetNeighbors():
-                        if neighbor.GetAtomicNum() == 1:
-                            final_indices_for_fragment.add(neighbor.GetIdx())
+                    hydrogen_indices = [
+                        neighbor.GetIdx()
+                        for neighbor in atom.GetNeighbors()
+                        if neighbor.GetAtomicNum() == 1
+                    ]
+                    final_indices_ordered.extend(sorted(hydrogen_indices))
 
         elif hydrogens == "exclude":
-            final_indices_for_fragment = {
+            # Only heavy atoms from core selection
+            final_indices_ordered = [
                 idx
-                for idx in core_atom_indices
+                for idx in core_atom_indices_ordered
                 if mol.GetAtomWithIdx(idx).GetAtomicNum() != 1
-            }
+            ]
 
         elif hydrogens == "isolated":
-            isolated_hydrogens = set()
-            heavy_core_atoms = {
-                idx
-                for idx in core_atom_indices
-                if mol.GetAtomWithIdx(idx).GetAtomicNum() != 1
-            }
-            for idx in heavy_core_atoms:
+            # Only hydrogens bonded to core heavy atoms, maintaining order
+            final_indices_ordered = []
+            for idx in core_atom_indices_ordered:
                 atom = mol.GetAtomWithIdx(idx)
-                for neighbor in atom.GetNeighbors():
-                    if neighbor.GetAtomicNum() == 1:
-                        isolated_hydrogens.add(neighbor.GetIdx())
-            final_indices_for_fragment = isolated_hydrogens
+                if atom.GetAtomicNum() != 1:  # is a heavy atom
+                    hydrogen_indices = [
+                        neighbor.GetIdx()
+                        for neighbor in atom.GetNeighbors()
+                        if neighbor.GetAtomicNum() == 1
+                    ]
+                    final_indices_ordered.extend(sorted(hydrogen_indices))
 
         # Only add the group if it contains any atoms after processing
-        if final_indices_for_fragment:
-            grouped_indices.append(sorted(final_indices_for_fragment))
+        if final_indices_ordered:
+            grouped_indices.append(final_indices_ordered)
 
     return grouped_indices
 
@@ -309,39 +350,23 @@ def select_atoms_flat_unique(
     return sorted(unique_indices)
 
 
-def visualize_selected_molecules(mol: Chem.Mol, a: list[int], b: list[int]):  # noqa: C901
-    """
-    Visualizes molecules that contain selected atoms, highlighting the selections.
-    Duplicate molecular structures will only be plotted once.
-
-    Parameters
-    ----------
-    mol : Chem.Mol
-        The RDKit molecule object, which may contain multiple fragments.
-    a : list[int]
-        A list of atom indices to be highlighted in the first color (e.g., pink).
-    b : list[int]
-        A list of atom indices to be highlighted in the second color (e.g., light blue).
-
-    Returns
-    -------
-    PIL.Image or None
-        A PIL image object of the grid, or None if no molecules to draw.
-    """
-    # Get separate molecule fragments from the main mol object
+def _collect_highlighted_fragments(mol, args, alpha):
+    """Helper function to collect and process fragment highlights."""
     frags = Chem.GetMolFrags(mol, asMols=True)
     frag_indices = Chem.GetMolFrags(mol, asMols=False)
 
-    # --- Step 1: Collect all candidate molecules and their highlight data ---
     candidate_mols = []
     candidate_highlights = []
     candidate_colors = []
 
-    all_selected_indices = set(a + b)
+    # Collect all selected indices from all argument lists
+    all_selected_indices = set()
+    for atom_list in args:
+        all_selected_indices.update(atom_list)
 
-    # Define colors for highlighting
-    color_a = (1.0, 0.7, 0.7)  # Pink
-    color_b = (0.7, 0.7, 1.0)  # Light Blue
+    # Get colors from matplotlib's tab10 colormap and add alpha
+    colors = plt.cm.tab10.colors
+    highlight_colors = [colors[i % len(colors)] + (alpha,) for i in range(len(args))]
 
     for i, frag in enumerate(frags):
         original_indices_in_frag = set(frag_indices[i])
@@ -358,27 +383,25 @@ def visualize_selected_molecules(mol: Chem.Mol, a: list[int], b: list[int]):  # 
             current_highlights = []
             current_colors = {}
 
-            for idx in a:
-                if idx in original_to_frag_map:
-                    frag_idx = original_to_frag_map[idx]
-                    current_highlights.append(frag_idx)
-                    current_colors[frag_idx] = color_a
-
-            for idx in b:
-                if idx in original_to_frag_map:
-                    frag_idx = original_to_frag_map[idx]
-                    if frag_idx not in current_highlights:
-                        current_highlights.append(frag_idx)
-                    current_colors[frag_idx] = color_b  # Color b takes precedence
+            # Process each argument list with its corresponding color
+            for arg_idx, atom_list in enumerate(args):
+                color = highlight_colors[arg_idx]
+                for idx in atom_list:
+                    if idx in original_to_frag_map:
+                        frag_idx = original_to_frag_map[idx]
+                        if frag_idx not in current_highlights:
+                            current_highlights.append(frag_idx)
+                        # Later argument lists take precedence for coloring
+                        current_colors[frag_idx] = color
 
             candidate_highlights.append(current_highlights)
             candidate_colors.append(current_colors)
 
-    if not candidate_mols:
-        print("No molecules to draw with the given selections.")
-        return None
+    return candidate_mols, candidate_highlights, candidate_colors
 
-    # --- Step 2: Filter for unique molecules using canonical SMILES ---
+
+def _filter_unique_molecules(candidate_mols, candidate_highlights, candidate_colors):
+    """Helper function to filter for unique molecular structures."""
     mols_to_draw = []
     highlight_lists = []
     highlight_colors = []
@@ -395,12 +418,81 @@ def visualize_selected_molecules(mol: Chem.Mol, a: list[int], b: list[int]):  # 
             highlight_lists.append(candidate_highlights[i])
             highlight_colors.append(candidate_colors[i])
 
+    return mols_to_draw, highlight_lists, highlight_colors
+
+
+def visualize_selected_molecules(
+    mol: Chem.Mol,
+    *args,
+    mols_per_row: int = 4,
+    sub_img_size: tuple[int, int] = (200, 200),
+    legends: list[str] | None = None,
+    alpha: float = 0.5,
+):
+    """
+    Visualizes molecules with optional atom highlighting.
+    If no atom selections are provided, displays the molecule without highlights.
+    Duplicate molecular structures will only be plotted once.
+
+    Parameters
+    ----------
+    mol : Chem.Mol
+        The RDKit molecule object, which may contain multiple fragments.
+    *args : list[int]
+        Variable number of lists containing atom indices to be highlighted.
+        Each list will be assigned a different color from matplotlib's tab10 colormap.
+        If no arguments provided, displays the molecule without highlights.
+    mols_per_row : int, default 4
+        Number of molecules per row in the grid.
+    sub_img_size : tuple[int, int], default (200, 200)
+        Size of each molecule image.
+    legends : list[str] | None, default None
+        Custom legends for each molecule. If None, default legends will be used.
+    alpha : float, default 0.5
+        Transparency level for the highlighted atoms (0.0 = fully transparent,
+        1.0 = opaque).
+
+    Returns
+    -------
+    PIL.Image
+        A PIL image object of the grid.
+    """
+    # Handle empty args case - display molecule without highlights
+    if not args:
+        img = Draw.MolsToGridImage(
+            [mol],
+            molsPerRow=mols_per_row,
+            subImgSize=sub_img_size,
+            legends=legends if legends is not None else ["Molecule 0"],
+        )
+        return img
+
+    # Collect highlighted fragments
+    candidate_mols, candidate_highlights, candidate_colors = (
+        _collect_highlighted_fragments(mol, args, alpha)
+    )
+
+    if not candidate_mols:
+        print("No molecules to draw with the given selections.")
+        return None
+
+    # Filter for unique molecules
+    mols_to_draw, highlight_lists, highlight_colors = _filter_unique_molecules(
+        candidate_mols, candidate_highlights, candidate_colors
+    )
+
     # Draw the grid
+    final_legends = (
+        legends
+        if legends is not None
+        else [f"Molecule {i}" for i in range(len(mols_to_draw))]
+    )
+
     img = Draw.MolsToGridImage(
         mols_to_draw,
-        molsPerRow=4,
-        subImgSize=(200, 200),
-        legends=[f"Molecule {i}" for i in range(len(mols_to_draw))],
+        molsPerRow=mols_per_row,
+        subImgSize=sub_img_size,
+        legends=final_legends,
         highlightAtomLists=highlight_lists,
         highlightAtomColors=highlight_colors,
     )

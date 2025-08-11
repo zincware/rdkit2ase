@@ -47,9 +47,15 @@ def _compute_connectivity_matrix(atoms: ase.Atoms, scale: float, pbc: bool):
     max_cutoff = np.max(pairwise_cutoffs)
 
     if vesin is not None:
-        i, j, d, s = vesin.ase_neighbor_list(
-            "ijdS", atoms, cutoff=max_cutoff, self_interaction=False
-        )
+        try:
+            i, j, d, s = vesin.ase_neighbor_list(
+                "ijdS", atoms, cutoff=max_cutoff, self_interaction=False
+            )
+        except Exception as e:
+            print(f"vesin failed with {e}, trying native ASE implementation")
+            i, j, d, s = neighbor_list(
+                "ijdS", atoms, cutoff=max_cutoff, self_interaction=False
+            )
     else:
         i, j, d, s = neighbor_list(
             "ijdS", atoms, cutoff=max_cutoff, self_interaction=False

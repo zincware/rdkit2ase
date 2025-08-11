@@ -334,7 +334,7 @@ def test_visualize_selected_molecules_single_selection(ethanol_mol):
 def test_visualize_selected_molecules_multiple_selections(ethanol_mol):
     """Test visualization with multiple selections."""
     a = [0]  # First carbon
-    b = [1]  # Second carbon  
+    b = [1]  # Second carbon
     c = [2]  # Oxygen
 
     img = rdkit2ase.visualize_selected_molecules(ethanol_mol, a, b, c)
@@ -347,9 +347,11 @@ def test_visualize_selected_molecules_with_alpha(ethanol_mol):
     b = [2]  # Oxygen
 
     # Test with different alpha values
-    img_transparent = rdkit2ase.visualize_selected_molecules(ethanol_mol, a, b, alpha=0.2)
+    img_transparent = rdkit2ase.visualize_selected_molecules(
+        ethanol_mol, a, b, alpha=0.2
+    )
     assert img_transparent is not None
-    
+
     img_opaque = rdkit2ase.visualize_selected_molecules(ethanol_mol, a, b, alpha=1.0)
     assert img_opaque is not None
 

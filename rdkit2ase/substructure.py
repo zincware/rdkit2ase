@@ -350,12 +350,12 @@ def select_atoms_flat_unique(
 
 
 def visualize_selected_molecules(
-    mol: Chem.Mol, 
+    mol: Chem.Mol,
     *args,
     molsPerRow: int = 4,
     subImgSize: tuple[int, int] = (200, 200),
     legends: list[str] | None = None,
-    alpha: float = 0.5
+    alpha: float = 0.5,
 ):  # noqa: C901
     """
     Visualizes molecules with optional atom highlighting.
@@ -393,7 +393,7 @@ def visualize_selected_molecules(
             legends=legends if legends is not None else ["Molecule 0"],
         )
         return img
-    
+
     # Get separate molecule fragments from the main mol object
     frags = Chem.GetMolFrags(mol, asMols=True)
     frag_indices = Chem.GetMolFrags(mol, asMols=False)
@@ -464,10 +464,11 @@ def visualize_selected_molecules(
 
     # Draw the grid
     final_legends = (
-        legends if legends is not None 
+        legends
+        if legends is not None
         else [f"Molecule {i}" for i in range(len(mols_to_draw))]
     )
-    
+
     img = Draw.MolsToGridImage(
         mols_to_draw,
         molsPerRow=molsPerRow,

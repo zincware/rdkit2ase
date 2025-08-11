@@ -183,7 +183,7 @@ def select_atoms_grouped(  # noqa: C901
         patt = Chem.MolFromSmiles(smarts_or_smiles)
     if patt is None:
         raise ValueError(f"Invalid SMARTS/SMILES: {smarts_or_smiles}")
-    
+
     # Get mapped indices from the pattern, if any, and validate uniqueness
     mapped_pattern_indices = []
     atom_map_numbers = []
@@ -194,12 +194,15 @@ def select_atoms_grouped(  # noqa: C901
                 raise ValueError(f"Label '{map_num}' is used multiple times")
             atom_map_numbers.append(map_num)
             mapped_pattern_indices.append(atom.GetIdx())
-    
-    # If we have mapped atoms, we need to sort them by their map numbers to preserve order
+
+    # If we have mapped atoms, we need to sort them by their
+    #  map numbers to preserve order
     if mapped_pattern_indices:
         # Create pairs of (map_number, pattern_index) and sort by map_number
-        map_index_pairs = [(patt.GetAtomWithIdx(idx).GetAtomMapNum(), idx) 
-                          for idx in mapped_pattern_indices]
+        map_index_pairs = [
+            (patt.GetAtomWithIdx(idx).GetAtomMapNum(), idx)
+            for idx in mapped_pattern_indices
+        ]
         map_index_pairs.sort(key=lambda x: x[0])  # Sort by map number
         mapped_pattern_indices = [idx for _, idx in map_index_pairs]
 
@@ -224,16 +227,18 @@ def select_atoms_grouped(  # noqa: C901
         # 1. Get the core set of atoms for this fragment. If the pattern is mapped,
         #    use only the indices corresponding to mapped atoms. Otherwise, use all.
         if mapped_pattern_indices:
-            # For mapped patterns, preserve the order of atoms based on their map numbers
+            # For mapped patterns, preserve the order of atoms based
+            # on their map numbers
             core_atom_indices_ordered = []
             for match_tuple in fragment_matches:
-                match_atoms = [match_tuple[pattern_idx] for pattern_idx in mapped_pattern_indices]
+                match_atoms = [
+                    match_tuple[pattern_idx] for pattern_idx in mapped_pattern_indices
+                ]
                 core_atom_indices_ordered.extend(match_atoms)
             # Remove duplicates while preserving order
             seen = set()
             core_atom_indices_ordered = [
-                x for x in core_atom_indices_ordered 
-                if not (x in seen or seen.add(x))
+                x for x in core_atom_indices_ordered if not (x in seen or seen.add(x))
             ]
             core_atom_indices = set(core_atom_indices_ordered)
         else:
@@ -251,7 +256,7 @@ def select_atoms_grouped(  # noqa: C901
                 f"Invalid value for `hydrogens`: {hydrogens!r}. "
                 "Expected one of 'include', 'exclude', 'isolated'."
             )
-            
+
         if hydrogens == "include":
             # Include both core atoms and their hydrogens, maintaining order
             final_indices_ordered = []
@@ -261,14 +266,18 @@ def select_atoms_grouped(  # noqa: C901
                 # Then add its hydrogens
                 atom = mol.GetAtomWithIdx(idx)
                 if atom.GetAtomicNum() != 1:  # is a heavy atom
-                    hydrogen_indices = [neighbor.GetIdx() for neighbor in atom.GetNeighbors() 
-                                     if neighbor.GetAtomicNum() == 1]
+                    hydrogen_indices = [
+                        neighbor.GetIdx()
+                        for neighbor in atom.GetNeighbors()
+                        if neighbor.GetAtomicNum() == 1
+                    ]
                     final_indices_ordered.extend(sorted(hydrogen_indices))
 
         elif hydrogens == "exclude":
             # Only heavy atoms from core selection
             final_indices_ordered = [
-                idx for idx in core_atom_indices_ordered
+                idx
+                for idx in core_atom_indices_ordered
                 if mol.GetAtomWithIdx(idx).GetAtomicNum() != 1
             ]
 
@@ -278,8 +287,11 @@ def select_atoms_grouped(  # noqa: C901
             for idx in core_atom_indices_ordered:
                 atom = mol.GetAtomWithIdx(idx)
                 if atom.GetAtomicNum() != 1:  # is a heavy atom
-                    hydrogen_indices = [neighbor.GetIdx() for neighbor in atom.GetNeighbors() 
-                                     if neighbor.GetAtomicNum() == 1]
+                    hydrogen_indices = [
+                        neighbor.GetIdx()
+                        for neighbor in atom.GetNeighbors()
+                        if neighbor.GetAtomicNum() == 1
+                    ]
                     final_indices_ordered.extend(sorted(hydrogen_indices))
 
         # Only add the group if it contains any atoms after processing

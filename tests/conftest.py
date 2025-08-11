@@ -20,14 +20,10 @@ def alanine_dipeptide() -> ase.Atoms:
     return rdkit2ase.smiles2atoms("CC(=O)NC(C)C(=O)NC")
 
 
-
 @pytest.fixture(scope="session")
 def alanine_dipeptide_box(alanine_dipeptide) -> ase.Atoms:
-    """Box of alanine dipeptide molecules using rdkit2ase.pack with packmol='packmol.jl'."""
+    """Box of alanine dipeptide molecules using rdkit2ase.pack"""
     box = rdkit2ase.pack(
-        [alanine_dipeptide], 
-        counts=[3], 
-        density=500, 
-        packmol="packmol.jl"
+        [[alanine_dipeptide]], counts=[3], density=500, packmol="packmol.jl"
     )
     return box.copy()

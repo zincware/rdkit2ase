@@ -47,9 +47,15 @@ def _compute_connectivity_matrix(atoms: ase.Atoms, scale: float, pbc: bool):
     max_cutoff = np.max(pairwise_cutoffs)
 
     if vesin is not None:
-        i, j, d, s = vesin.ase_neighbor_list(
-            "ijdS", atoms, cutoff=max_cutoff, self_interaction=False
-        )
+        try:
+            i, j, d, s = vesin.ase_neighbor_list(
+                "ijdS", atoms, cutoff=max_cutoff, self_interaction=False
+            )
+        except Exception as e:
+            print(f"vesin failed with {e}, trying native ASE implementation")
+            i, j, d, s = neighbor_list(
+                "ijdS", atoms, cutoff=max_cutoff, self_interaction=False
+            )
     else:
         i, j, d, s = neighbor_list(
             "ijdS", atoms, cutoff=max_cutoff, self_interaction=False
@@ -160,9 +166,14 @@ def ase2networkx(
     charges = atoms.get_initial_charges()
 
     if "connectivity" in atoms.info:
-        return _create_graph_from_connectivity(
-            atoms, atoms.info["connectivity"], charges
-        )
+        connectivity = atoms.info["connectivity"]
+        # ensure connectivity is list[tuple[int, int, float|None]] and
+        # does not contain np.generic
+        connectivity = [
+            (int(i), int(j), float(bond_order) if bond_order is not None else None)
+            for i, j, bond_order in connectivity
+        ]
+        return _create_graph_from_connectivity(atoms, connectivity, charges)
 
     connectivity_matrix, non_bonding_atomic_numbers = _compute_connectivity_matrix(
         atoms, scale, pbc

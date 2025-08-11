@@ -10,6 +10,7 @@ authors = [
 ]
 dependencies = [
     "ase>=3.25.0",
+    "matplotlib>=3.10.1",
     "networkx>=3.4.2",
     "rdkit>=2024",
 ]

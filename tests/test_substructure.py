@@ -309,18 +309,49 @@ def test_visualize_selected_molecules_basic(ethanol_mol):
 
 
 def test_visualize_selected_molecules_empty_selections(ethanol_mol):
-    """Test visualization with empty selections."""
-    img = rdkit2ase.visualize_selected_molecules(ethanol_mol, [], [])
-    assert img is None
+    """Test visualization with empty selections - should show molecule without highlights."""
+    img = rdkit2ase.visualize_selected_molecules(ethanol_mol)
+    assert img is not None
 
 
 def test_visualize_selected_molecules_overlapping_selections(ethanol_mol):
-    """Test visualization with overlapping selections (b takes precedence)."""
+    """Test visualization with overlapping selections (later args take precedence)."""
     a = [0, 1, 2]  # All heavy atoms
-    b = [2]  # Oxygen (should be blue, not pink)
+    b = [2]  # Oxygen (should get color from b, not a)
 
     img = rdkit2ase.visualize_selected_molecules(ethanol_mol, a, b)
     assert img is not None
+
+
+def test_visualize_selected_molecules_single_selection(ethanol_mol):
+    """Test visualization with a single selection."""
+    a = [0, 1]  # Carbons
+
+    img = rdkit2ase.visualize_selected_molecules(ethanol_mol, a)
+    assert img is not None
+
+
+def test_visualize_selected_molecules_multiple_selections(ethanol_mol):
+    """Test visualization with multiple selections."""
+    a = [0]  # First carbon
+    b = [1]  # Second carbon  
+    c = [2]  # Oxygen
+
+    img = rdkit2ase.visualize_selected_molecules(ethanol_mol, a, b, c)
+    assert img is not None
+
+
+def test_visualize_selected_molecules_with_alpha(ethanol_mol):
+    """Test visualization with custom alpha value."""
+    a = [0, 1]  # Carbons
+    b = [2]  # Oxygen
+
+    # Test with different alpha values
+    img_transparent = rdkit2ase.visualize_selected_molecules(ethanol_mol, a, b, alpha=0.2)
+    assert img_transparent is not None
+    
+    img_opaque = rdkit2ase.visualize_selected_molecules(ethanol_mol, a, b, alpha=1.0)
+    assert img_opaque is not None
 
 
 def test_select_atoms_grouped(ethanol_water):

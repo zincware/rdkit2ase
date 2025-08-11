@@ -358,3 +358,49 @@ def test_select_atoms_grouped(ethanol_water):
         symbols = [mol.GetAtomWithIdx(idx).GetSymbol() for idx in group]
         assert "O" in symbols
         assert "H" in symbols
+
+
+def test_use_label_multiple_times(alanine_dipeptide):
+    """Test selecting atoms using the same label multiple times."""
+    mol = rdkit2ase.ase2rdkit(alanine_dipeptide)
+    with pytest.raises(ValueError, match="Label '1' is used multiple times"):
+        # we do not allow the same label to be used multiple for selection, need to be unique
+        rdkit2ase.select_atoms_grouped(mol, smarts_or_smiles="CC(=O)N[C:1]([C:1])C(=O)NC")
+
+def test_select_atoms_grouped_order(alanine_dipeptide):
+    mol = rdkit2ase.ase2rdkit(alanine_dipeptide)
+    indices = rdkit2ase.select_atoms_grouped(mol, smarts_or_smiles="CC(=O)N[C:1](C)C(=O)NC")
+    assert indices == [[4]]
+
+    indices = rdkit2ase.select_atoms_grouped(mol, smarts_or_smiles="CC(=O)NC([C:1])C(=O)NC")
+    assert indices == [[5]]
+
+    indices = rdkit2ase.select_atoms_grouped(mol, smarts_or_smiles="CC(=O)NC(C)[C:1](=O)NC")
+    assert indices == [[6]]
+
+    indices = rdkit2ase.select_atoms_grouped(mol, smarts_or_smiles="CC(=O)NC(C)C(=O)[N:1]C")
+    assert indices == [[8]]
+
+    # now all of them
+    indices = rdkit2ase.select_atoms_grouped(mol, smarts_or_smiles="CC(=O)N[C:1]([C:2])[C:3](=O)[N:4]C")
+    assert indices == [[4, 5, 6, 8]]
+    # now in a different order
+    indices = rdkit2ase.select_atoms_grouped(mol, smarts_or_smiles="CC(=O)N[C:4]([C:3])[C:2](=O)[N:1]C")
+    assert indices == [[8, 6, 5, 4]]
+    
+    # now with hydrogens which are in order 1, hydrogens of 1, 2 hydrogens of 2, and so on
+    indices = rdkit2ase.select_atoms_grouped(mol, smarts_or_smiles="CC(=O)N[C:1](C)C(=O)NC", hydrogens="include")
+    assert indices == [[4, 14]]
+
+    indices = rdkit2ase.select_atoms_grouped(mol, smarts_or_smiles="CC(=O)N[C:1]([C:2])C(=O)NC", hydrogens="include")
+    assert indices == [[4, 14, 5, 15, 16, 17]]
+
+    # now inverse order
+    indices = rdkit2ase.select_atoms_grouped(mol, smarts_or_smiles="CC(=O)N[C:2]([C:1])C(=O)NC", hydrogens="include")
+    assert indices == [[5, 15, 16, 17, 4, 14]]
+
+    # now with hydrogens isolated
+    indices = rdkit2ase.select_atoms_grouped(mol, smarts_or_smiles="CC(=O)N[C:1]([C:2])C(=O)NC", hydrogens="isolated")
+    assert indices == [[14, 15, 16, 17]]
+    indices = rdkit2ase.select_atoms_grouped(mol, smarts_or_smiles="CC(=O)N[C:2]([C:1])C(=O)NC", hydrogens="isolated")
+    assert indices == [[15, 16, 17, 14]]

@@ -3,6 +3,7 @@
 [![PyPI version](https://badge.fury.io/py/rdkit2ase.svg)](https://badge.fury.io/py/rdkit2ase)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15423477.svg)](https://doi.org/10.5281/zenodo.15423477)
 [![Docs](https://github.com/zincware/rdkit2ase/actions/workflows/pages.yaml/badge.svg)](https://zincware.github.io/rdkit2ase/)
+[![status](https://joss.theoj.org/papers/4c1ec2a0b66ed6baaf3fe93066696d5f/status.svg)](https://joss.theoj.org/papers/4c1ec2a0b66ed6baaf3fe93066696d5f)
 
 # rdkit2ase - Interface between the rdkit and ASE package.
 

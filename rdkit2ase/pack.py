@@ -57,6 +57,24 @@ end structure
     return packmol_input
 
 
+def _get_packmol_julia_version(verbose: bool = False) -> str:
+    """Get the Packmol version when using Julia."""
+    try:
+        result = subprocess.run(
+            ["julia", "-e", "import Pkg; Pkg.status(\"Packmol\")"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        if verbose:
+            print(f"Packmol Julia version info: {result.stdout}")
+        return result.stdout.strip()
+    except subprocess.CalledProcessError as e:
+        if verbose:
+            print(f"Warning: Could not determine Packmol version: {e}")
+        return "Unknown"
+
+
 def _run_packmol(
     packmol_executable: str,
     input_file: pathlib.Path,
@@ -65,6 +83,10 @@ def _run_packmol(
 ) -> None:
     """Executes the PACKMOL program."""
     if packmol_executable == "packmol.jl":
+        if verbose:
+            version_info = _get_packmol_julia_version(verbose)
+            print(f"Using Packmol Julia version: {version_info}")
+        
         with open(tmpdir / "pack.jl", "w") as f:
             f.write("using Packmol \n")
             f.write(f'run_packmol("{input_file.name}") \n')
@@ -211,7 +233,19 @@ def pack(
             print(f"{packmol} < ")
             print(packmol_input)
         _run_packmol(packmol, tmpdir / "pack.inp", tmpdir, verbose)
-        packed_atoms: ase.Atoms = ase.io.read(tmpdir / f"mixture.{output_format}")
+        
+        # Try to read the output file with better error handling
+        output_file = tmpdir / f"mixture.{output_format}"
+        try:
+            packed_atoms: ase.Atoms = ase.io.read(output_file)
+        except FileNotFoundError:
+            available_files = list(tmpdir.glob("*"))
+            raise FileNotFoundError(
+                f"PACKMOL did not generate the expected output file '{output_file.name}'. "
+                f"This usually indicates that PACKMOL failed to pack the molecules successfully. "
+                f"Available files in temporary directory: {[f.name for f in available_files]}. "
+                f"Try reducing the density or increasing the tolerance parameter."
+            ) from None
 
     packed_atoms.cell = cell
     packed_atoms.pbc = True

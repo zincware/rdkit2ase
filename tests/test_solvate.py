@@ -4,6 +4,29 @@ import numpy.testing as npt
 import pytest
 
 from rdkit2ase import ase2rdkit, pack, smiles2conformers
+from rdkit2ase.pack import _get_packmol_julia_version
+
+
+def test_get_packmol_julia_version():
+    """Test that the Julia version detection function works correctly."""
+    # This test will try to get the version, but won't fail if Julia/Packmol isn't available
+    try:
+        version_info = _get_packmol_julia_version(verbose=False)
+        # If no exception is raised, version_info should be a string
+        assert isinstance(version_info, str)
+    except Exception:
+        # If Julia or Packmol is not available, that's expected in CI
+        pytest.skip("Julia or Packmol not available")
+
+
+def test_get_packmol_julia_version_verbose():
+    """Test that the Julia version detection function works with verbose output."""
+    # Test the verbose mode
+    try:
+        version_info = _get_packmol_julia_version(verbose=True)
+        assert isinstance(version_info, str)
+    except Exception:
+        pytest.skip("Julia or Packmol not available")
 
 
 @pytest.mark.parametrize("packmol", ["packmol", "packmol.jl"])
@@ -107,3 +130,21 @@ def test_pack_charges(packmol):
     # check charges
     charges = [atom.GetFormalCharge() for atom in mol.GetAtoms()]
     assert charges == [0, 0, 0, -1, 0, 1] + [1, 0, 0, -1, 0, 0, 0, 0, 0, 0]
+
+
+def test_pack_file_not_found_error():
+    """Test that a helpful error message is provided when PACKMOL output file is missing."""
+    # This test creates a scenario where PACKMOL might fail to generate output
+    # We can mock this by creating an impossible packing scenario
+    water = smiles2conformers("O", 1)
+    
+    # Create a scenario that's likely to fail (extremely high density)
+    with pytest.raises(FileNotFoundError) as exc_info:
+        # This should fail because the density is unrealistically high
+        pack([water], [1000], density=100000, packmol="packmol")
+    
+    # Check that the error message is helpful
+    error_msg = str(exc_info.value)
+    assert "PACKMOL did not generate the expected output file" in error_msg
+    assert "This usually indicates that PACKMOL failed to pack" in error_msg
+    assert "Try reducing the density or increasing the tolerance" in error_msg

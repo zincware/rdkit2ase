@@ -7,9 +7,11 @@
 
 # rdkit2ase - Interface between the rdkit and ASE package.
 
-Installation via `pip install rdkit2ase`.
+Installation via `pip install rdkit2ase`. For more information please visit the
+[documentation](https://zincware.github.io/rdkit2ase/).
 
 ```py
+import ase
 from rdkit2ase import rdkit2ase, ase2rdkit
 
 atoms: ase.Atoms = rdkit2ase(mol)
@@ -17,6 +19,7 @@ mol = ase2rdkit(atoms)
 ```
 
 ```py
+import ase
 from rdkit2ase import smiles2atoms
 
 atoms: ase.Atoms = smiles2atoms("O")

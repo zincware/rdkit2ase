@@ -12,8 +12,10 @@ Installation via `pip install rdkit2ase`. For more information please visit the
 
 ```py
 import ase
+from rdkit import Chem
 from rdkit2ase import rdkit2ase, ase2rdkit
 
+mol = Chem.MolFromSmiles("O")
 atoms: ase.Atoms = rdkit2ase(mol)
 mol = ase2rdkit(atoms)
 ```

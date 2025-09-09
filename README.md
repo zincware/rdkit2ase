@@ -38,7 +38,7 @@ print(atoms)
 
 ## Packmol Interface
 
-Give the molecular units, you can build periodic boxes with a given density
+Given the molecular units, you can build periodic boxes with a given density
 using the `rdkit2ase.pack` function.
 
 If you have [packmol](https://github.com/m3g/packmol) (at least `v20.15.0`) you

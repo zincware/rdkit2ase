@@ -9,10 +9,10 @@ from ase import Atoms
 import rdkit2ase
 from rdkit2ase.utils import (
     find_connected_components,
+    get_packmol_julia_version,
     rdkit_determine_bonds,
     suggestions2networkx,
     unwrap_structures,
-    get_packmol_julia_version,
 )
 
 

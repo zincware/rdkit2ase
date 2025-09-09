@@ -1,8 +1,8 @@
+import logging
 import pathlib
 import subprocess
 import tempfile
 import typing as t
-import logging
 
 import ase.io
 import numpy as np

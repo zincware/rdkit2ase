@@ -1,4 +1,5 @@
 import io
+import subprocess
 from collections import defaultdict
 
 import ase.io
@@ -220,3 +221,35 @@ def suggestions2networkx(smiles: list[str]) -> list[nx.Graph]:
         mol = Chem.AddHs(mol)
         mols.append(mol)
     return [rdkit2networkx(mol) for mol in mols]
+
+
+def get_packmol_julia_version() -> str:
+    """Get the Packmol version when using Julia.
+
+    Raises
+    ------
+    RuntimeError
+        If the Packmol version cannot be retrieved.
+    """
+    try:
+        result = subprocess.run(
+            ["julia", "-e", 'import Pkg; Pkg.status("Packmol")'],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        for line in result.stdout.splitlines():
+            if "Packmol" in line:
+                parts = line.split()
+                if len(parts) >= 3:
+                    return parts[2]
+        raise RuntimeError(
+            "Failed to get Packmol version via Julia. Please verify that you can"
+            ' import packmol via `julia -e "import Pkg; Pkg.status("Packmol")"`'
+        )
+
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(
+            "Failed to get Packmol version via Julia. Please verify that you can"
+            ' import packmol via `julia -e "import Pkg; Pkg.status("Packmol")"`'
+        ) from e

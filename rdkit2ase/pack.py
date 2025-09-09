@@ -1,3 +1,4 @@
+import logging
 import pathlib
 import subprocess
 import tempfile
@@ -8,7 +9,9 @@ import numpy as np
 from ase.io.proteindatabank import write_proteindatabank
 from rdkit import Chem
 
-from rdkit2ase.utils import calculate_box_dimensions
+from rdkit2ase.utils import calculate_box_dimensions, get_packmol_julia_version
+
+log = logging.getLogger(__name__)
 
 OBJ_OR_STR = t.Union[str, Chem.rdchem.Mol, ase.Atoms]
 OBJ_OR_STR_OR_LIST = t.Union[OBJ_OR_STR, t.List[t.Tuple[OBJ_OR_STR, float]]]
@@ -65,6 +68,9 @@ def _run_packmol(
 ) -> None:
     """Executes the PACKMOL program."""
     if packmol_executable == "packmol.jl":
+        version = get_packmol_julia_version()
+        if verbose:
+            print(f"Using Packmol version {version} via Julia")
         with open(tmpdir / "pack.jl", "w") as f:
             f.write("using Packmol \n")
             f.write(f'run_packmol("{input_file.name}") \n')
@@ -211,7 +217,23 @@ def pack(
             print(f"{packmol} < ")
             print(packmol_input)
         _run_packmol(packmol, tmpdir / "pack.inp", tmpdir, verbose)
-        packed_atoms: ase.Atoms = ase.io.read(tmpdir / f"mixture.{output_format}")
+        try:
+            packed_atoms: ase.Atoms = ase.io.read(tmpdir / f"mixture.{output_format}")
+        except FileNotFoundError as e:
+            log.error("Packmol Input:\n%s", packmol_input)
+            if packmol == "packmol.jl":
+                try:
+                    version = get_packmol_julia_version()
+                    log.error("Using Packmol via Julia with version: %s", version)
+                except Exception:
+                    log.warning("Could not determine Packmol.jl version", exc_info=True)
+            else:
+                log.error("Using Packmol executable at: %s", packmol)
+            log.exception("Packmol did not produce mixture.%s", output_format)
+            raise FileNotFoundError(
+                f"Packmol did not produce 'mixture.{output_format}'."
+                " Please check the input parameters."
+            ) from e
 
     packed_atoms.cell = cell
     packed_atoms.pbc = True

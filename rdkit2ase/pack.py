@@ -76,12 +76,22 @@ def _run_packmol(
             f.write(f'run_packmol("{input_file.name}") \n')
 
     if packmol_executable == "packmol.jl":
-            subprocess.run(["julia", str(tmpdir / "pack.jl")], cwd=tmpdir, check=True, capture_output=not verbose)
+        subprocess.run(
+            ["julia", str(tmpdir / "pack.jl")],
+            cwd=tmpdir,
+            check=True,
+            capture_output=not verbose,
+        )
     else:
         # e.g., run packmol with stdin to avoid shell redirection
         with open(input_file, "rb") as fin:
-            subprocess.run([packmol_executable], cwd=tmpdir, check=True, capture_output=not verbose, stdin=fin)
-
+            subprocess.run(
+                [packmol_executable],
+                cwd=tmpdir,
+                check=True,
+                capture_output=not verbose,
+                stdin=fin,
+            )
 
 
 def _write_molecule_files(

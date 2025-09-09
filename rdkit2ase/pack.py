@@ -220,14 +220,18 @@ def pack(
         try:
             packed_atoms: ase.Atoms = ase.io.read(tmpdir / f"mixture.{output_format}")
         except FileNotFoundError as e:
-            log.error(f"Packmol Input:\n{packmol_input}")
+            log.error("Packmol Input:\n%s", packmol_input)
             if packmol == "packmol.jl":
-                version = get_packmol_julia_version()
-                log.error(f"Using Packmol version {version} via Julia")
+                try:
+                    version = get_packmol_julia_version()
+                    log.error("Using Packmol via Julia with version: %s", version)
+                except Exception:
+                    log.warning("Could not determine Packmol.jl version", exc_info=True)
             else:
-                log.error(f"Using Packmol executable at: {packmol}")
-            raise FileExistsError(
-                "Packmol did not produce an output file."
+                log.error("Using Packmol executable at: %s", packmol)
+            log.exception("Packmol did not produce mixture.%s", output_format)
+            raise FileNotFoundError(
+                f"Packmol did not produce 'mixture.{output_format}'."
                 " Please check the input parameters."
             ) from e
 

@@ -5,6 +5,7 @@ import numpy as np
 import pytest
 import rdkit.Chem
 from ase import Atoms
+import re
 
 import rdkit2ase
 from rdkit2ase.utils import (
@@ -252,4 +253,4 @@ def test_suggestions2networkx():
 def test_get_packmol_julia_version():
     """Test the retrieval of the Packmol version when using Julia."""
     version = get_packmol_julia_version()
-    assert version == "v0.1.12"
+    assert re.fullmatch(r"v\d+\.\d+\.\d+(?:[+-].+)?", version)

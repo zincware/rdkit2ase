@@ -2,6 +2,7 @@ import pathlib
 import subprocess
 import tempfile
 import typing as t
+import logging
 
 import ase.io
 import numpy as np
@@ -9,6 +10,8 @@ from ase.io.proteindatabank import write_proteindatabank
 from rdkit import Chem
 
 from rdkit2ase.utils import calculate_box_dimensions, get_packmol_julia_version
+
+log = logging.getLogger(__name__)
 
 OBJ_OR_STR = t.Union[str, Chem.rdchem.Mol, ase.Atoms]
 OBJ_OR_STR_OR_LIST = t.Union[OBJ_OR_STR, t.List[t.Tuple[OBJ_OR_STR, float]]]
@@ -214,7 +217,19 @@ def pack(
             print(f"{packmol} < ")
             print(packmol_input)
         _run_packmol(packmol, tmpdir / "pack.inp", tmpdir, verbose)
-        packed_atoms: ase.Atoms = ase.io.read(tmpdir / f"mixture.{output_format}")
+        try:
+            packed_atoms: ase.Atoms = ase.io.read(tmpdir / f"mixture.{output_format}")
+        except FileNotFoundError as e:
+            log.error(f"Packmol Input:\n{packmol_input}")
+            if packmol == "packmol.jl":
+                version = get_packmol_julia_version()
+                log.error(f"Using Packmol version {version} via Julia")
+            else:
+                log.error(f"Using Packmol executable at: {packmol}")
+            raise FileExistsError(
+                "Packmol did not produce an output file."
+                " Please check the input parameters."
+            ) from e
 
     packed_atoms.cell = cell
     packed_atoms.pbc = True

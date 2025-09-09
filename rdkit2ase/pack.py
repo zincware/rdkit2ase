@@ -74,17 +74,14 @@ def _run_packmol(
         with open(tmpdir / "pack.jl", "w") as f:
             f.write("using Packmol \n")
             f.write(f'run_packmol("{input_file.name}") \n')
-        command = f"julia {tmpdir / 'pack.jl'}"
-    else:
-        command = f"{packmol_executable} < {input_file.name}"
 
-    subprocess.run(
-        command,
-        cwd=tmpdir,
-        shell=True,
-        check=True,
-        capture_output=not verbose,
-    )
+    if packmol_executable == "packmol.jl":
+            subprocess.run(["julia", str(tmpdir / "pack.jl")], cwd=tmpdir, check=True, capture_output=not verbose)
+    else:
+        # e.g., run packmol with stdin to avoid shell redirection
+        with open(input_file, "rb") as fin:
+            subprocess.run([packmol_executable], cwd=tmpdir, check=True, capture_output=not verbose, stdin=fin)
+
 
 
 def _write_molecule_files(
@@ -180,7 +177,7 @@ def pack(
         If True, enables logging of the packing process, by default False.
     packmol : str, optional
         The path to the packmol executable, by default "packmol".
-        When installing packmol via jula, use "packmol.jl".
+        When installing Packmol via Julia, use "packmol.jl".
     pbc : bool, optional
         Ensure tolerance across periodic boundaries, by default True.
     output_format : str, optional

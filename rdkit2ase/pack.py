@@ -74,17 +74,23 @@ def _run_packmol(
         with open(tmpdir / "pack.jl", "w") as f:
             f.write("using Packmol \n")
             f.write(f'run_packmol("{input_file.name}") \n')
-        command = f"julia {tmpdir / 'pack.jl'}"
-    else:
-        command = f"{packmol_executable} < {input_file.name}"
 
-    subprocess.run(
-        command,
-        cwd=tmpdir,
-        shell=True,
-        check=True,
-        capture_output=not verbose,
-    )
+    if packmol_executable == "packmol.jl":
+        subprocess.run(
+            ["julia", str(tmpdir / "pack.jl")],
+            cwd=tmpdir,
+            check=True,
+            capture_output=not verbose,
+        )
+    else:
+        with open(input_file, "rb") as fin:
+            subprocess.run(
+                [packmol_executable],
+                cwd=tmpdir,
+                check=True,
+                capture_output=not verbose,
+                stdin=fin,
+            )
 
 
 def _write_molecule_files(
@@ -159,6 +165,7 @@ def pack(
     packmol: str = "packmol",
     pbc: bool = True,
     output_format: FORMAT = "pdb",
+    ratio: tuple[float, float, float] = (1.0, 1.0, 1.0),
 ) -> ase.Atoms:
     """
     Packs the given molecules into a box with the specified density using PACKMOL.
@@ -179,13 +186,16 @@ def pack(
         If True, enables logging of the packing process, by default False.
     packmol : str, optional
         The path to the packmol executable, by default "packmol".
-        When installing packmol via jula, use "packmol.jl".
+        When installing Packmol via Julia, use "packmol.jl".
     pbc : bool, optional
         Ensure tolerance across periodic boundaries, by default True.
     output_format : str, optional
         The file format used for communication with packmol, by default "pdb".
         WARNING: Do not use "xyz". This might cause issues and
         is only implemented for debugging purposes.
+    ratio : tuple[float, float, float], optional
+        Box aspect ratio (a:b:c). Must be three positive, finite numbers.
+        Defaults to (1.0, 1.0, 1.0) for a cubic box.
 
     Returns
     -------
@@ -204,6 +214,13 @@ def pack(
     """
     selected_images = _select_conformers(data, counts, seed)
     cell = calculate_box_dimensions(images=selected_images, density=density)
+
+    # Adjust cell dimensions according to ratio while keeping volume unchanged
+    original_volume = np.prod(cell)
+    ratio_product = np.prod(ratio)
+    scale = original_volume ** (1 / 3) / (ratio_product ** (1 / 3))
+    cell = [float(scale * r) for r in ratio]
+
     packmol_input = _generate_packmol_input(
         selected_images, cell, tolerance, seed, output_format, pbc
     )
@@ -219,6 +236,11 @@ def pack(
         _run_packmol(packmol, tmpdir / "pack.inp", tmpdir, verbose)
         try:
             packed_atoms: ase.Atoms = ase.io.read(tmpdir / f"mixture.{output_format}")
+            packed_atoms.arrays.pop("atomtypes", None)
+            packed_atoms.arrays.pop("bfactor", None)
+            packed_atoms.arrays.pop("occupancy", None)
+            packed_atoms.arrays.pop("residuenames", None)
+            packed_atoms.arrays.pop("residuenumbers", None)
         except FileNotFoundError as e:
             log.error("Packmol Input:\n%s", packmol_input)
             if packmol == "packmol.jl":

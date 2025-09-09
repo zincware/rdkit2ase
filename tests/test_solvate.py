@@ -7,6 +7,18 @@ from rdkit2ase import ase2rdkit, pack, smiles2conformers
 
 
 @pytest.mark.parametrize("packmol", ["packmol", "packmol.jl"])
+def test_pack_clean_info_arrays(packmol):
+    water = smiles2conformers("O", 1)
+    atoms = pack([water], [10], 997, 42, tolerance=1.5, packmol=packmol)
+    # we don't want to have unused info in the atoms object.
+    assert "atomtypes" not in atoms.arrays
+    assert "bfactor" not in atoms.arrays
+    assert "occupancy" not in atoms.arrays
+    assert "residuenames" not in atoms.arrays
+    assert "residuenumbers" not in atoms.arrays
+
+
+@pytest.mark.parametrize("packmol", ["packmol", "packmol.jl"])
 def test_pack_pbc(packmol):
     water = smiles2conformers("O", 1)
     mol_dist = water[0].get_all_distances()
@@ -107,3 +119,21 @@ def test_pack_charges(packmol):
     # check charges
     charges = [atom.GetFormalCharge() for atom in mol.GetAtoms()]
     assert charges == [0, 0, 0, -1, 0, 1] + [1, 0, 0, -1, 0, 0, 0, 0, 0, 0]
+
+
+@pytest.mark.parametrize("packmol", ["packmol", "packmol.jl"])
+def test_pack_ratio(packmol):
+    water = smiles2conformers("O", 1)
+    # pack a cubic box
+    box = pack([water], [10], 1000, 42, tolerance=1.5, packmol=packmol)
+    assert box.cell[0, 0] == pytest.approx(box.cell[1, 1])
+    assert box.cell[1, 1] == pytest.approx(box.cell[2, 2])
+    assert box.get_volume() == pytest.approx(300, rel=1e-2)
+    # npt.assert_allclose(box.get_positions(), box.get_positions(wrap=True))
+
+    # pack a rectangular box
+    box = pack([water], [10], 997, 42, ratio=(1, 2, 3), tolerance=1.5, packmol=packmol)
+    assert box.cell[0, 0] * 2 == pytest.approx(box.cell[1, 1])
+    assert box.cell[0, 0] * 3 == pytest.approx(box.cell[2, 2])
+    assert box.get_volume() == pytest.approx(300, rel=1e-2)
+    # npt.assert_allclose(box.get_positions(), box.get_positions(wrap=True))

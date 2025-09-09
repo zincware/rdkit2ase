@@ -41,6 +41,7 @@ def match_substructure(
     -------
     tuple of tuple of int
         A tuple of atom index tuples, each corresponding to one match of the pattern.
+
     """
     pattern = None
     if smiles is not None:
@@ -151,10 +152,12 @@ def select_atoms_grouped(  # noqa: C901
         map numbers must be unique.
     hydrogens : {'include', 'exclude', 'isolated'}, default='exclude'
         How to handle hydrogens in the final returned list for each group:
-        - 'include': Add hydrogens bonded to selected heavy atoms after each
-          mapped atom.
-        - 'exclude': Remove all hydrogens from the selection.
-        - 'isolated': Return only the hydrogens that are bonded to selected heavy atoms.
+            - 'include': Add hydrogens bonded to selected heavy atoms after each
+            mapped atom.
+            - 'exclude': Remove all hydrogens from the selection.
+            - 'isolated': Returns only the hydrogens that are bonded
+            to selected heavy atoms.
+
 
     Returns
     -------
@@ -172,7 +175,7 @@ def select_atoms_grouped(  # noqa: C901
     Examples
     --------
     >>> # Molecule with two disconnected fragments: ethanol and fluoromethane
-    >>> mol = Chem.MolFromSmiles("CCO.CF") # Indices: C(0)C(1)O(2) . C(3)F(4)
+    >>> mol = Chem.MolFromSmiles("CCO.CF")  # Indices: C(0)C(1)O(2) . C(3)F(4)
     >>>
     >>> # Select all carbon atoms
     >>> select_atoms_grouped(mol, "[C]")
@@ -181,6 +184,7 @@ def select_atoms_grouped(  # noqa: C901
     >>> # Select fluorine and its bonded carbon using 'include'
     >>> select_atoms_grouped(mol, "[F]", hydrogens="include")
     [[3, 4]]
+
     """
     patt = Chem.MolFromSmarts(smarts_or_smiles)
     if patt is None:

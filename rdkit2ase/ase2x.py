@@ -24,7 +24,7 @@ def _create_graph_from_connectivity(
         graph.add_node(
             i,
             position=atom.position,
-            atomic_number=atom.number,
+            atomic_number=int(atom.number),
             original_index=atom.index,
             charge=charges[i],
         )
@@ -89,7 +89,7 @@ def _add_node_properties(
     """Add node properties to the graph."""
     for i, atom in enumerate(atoms):
         graph.nodes[i]["position"] = atom.position
-        graph.nodes[i]["atomic_number"] = atom.number
+        graph.nodes[i]["atomic_number"] = int(atom.number)
         graph.nodes[i]["original_index"] = atom.index
         graph.nodes[i]["charge"] = float(charges[i])
         if atom.number in non_bonding_atomic_numbers:
@@ -162,7 +162,6 @@ def ase2networkx(
     """
     if len(atoms) == 0:
         return nx.Graph()
-
     charges = atoms.get_initial_charges()
 
     if "connectivity" in atoms.info:

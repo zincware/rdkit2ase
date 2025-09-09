@@ -83,7 +83,6 @@ def _run_packmol(
             capture_output=not verbose,
         )
     else:
-        # e.g., run packmol with stdin to avoid shell redirection
         with open(input_file, "rb") as fin:
             subprocess.run(
                 [packmol_executable],

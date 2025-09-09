@@ -129,8 +129,11 @@ def test_pack_ratio(packmol):
     assert box.cell[0, 0] == pytest.approx(box.cell[1, 1])
     assert box.cell[1, 1] == pytest.approx(box.cell[2, 2])
     assert box.get_volume() == pytest.approx(300, rel=1e-2)
+    # npt.assert_allclose(box.get_positions(), box.get_positions(wrap=True))
+
     # pack a rectangular box
     box = pack([water], [10], 997, 42, ratio=(1, 2, 3), tolerance=1.5, packmol=packmol)
     assert box.cell[0, 0] * 2 == pytest.approx(box.cell[1, 1])
     assert box.cell[0, 0] * 3 == pytest.approx(box.cell[2, 2])
     assert box.get_volume() == pytest.approx(300, rel=1e-2)
+    # npt.assert_allclose(box.get_positions(), box.get_positions(wrap=True))

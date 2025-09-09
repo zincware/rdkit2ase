@@ -1,3 +1,4 @@
+import re
 import sys
 
 import networkx as nx
@@ -5,7 +6,6 @@ import numpy as np
 import pytest
 import rdkit.Chem
 from ase import Atoms
-import re
 
 import rdkit2ase
 from rdkit2ase.utils import (

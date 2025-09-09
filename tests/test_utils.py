@@ -12,6 +12,7 @@ from rdkit2ase.utils import (
     rdkit_determine_bonds,
     suggestions2networkx,
     unwrap_structures,
+    get_packmol_julia_version,
 )
 
 
@@ -246,3 +247,9 @@ def test_suggestions2networkx():
 
     assert graphs[1].number_of_nodes() == 4  # pbc and cell
     assert graphs[1].number_of_edges() == 3
+
+
+def test_get_packmol_julia_version():
+    """Test the retrieval of the Packmol version when using Julia."""
+    version = get_packmol_julia_version()
+    assert version == "v0.1.12"

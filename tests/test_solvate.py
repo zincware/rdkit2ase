@@ -17,6 +17,7 @@ def test_pack_clean_info_arrays(packmol):
     assert "residuenames" not in atoms.arrays
     assert "residuenumbers" not in atoms.arrays
 
+
 @pytest.mark.parametrize("packmol", ["packmol", "packmol.jl"])
 def test_pack_pbc(packmol):
     water = smiles2conformers("O", 1)

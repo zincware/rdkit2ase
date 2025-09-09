@@ -208,7 +208,7 @@ def pack(
     # Adjust cell dimensions according to ratio while keeping volume unchanged
     original_volume = np.prod(cell)
     ratio_product = np.prod(ratio)
-    scale = original_volume ** (1/3) / (ratio_product ** (1/3))
+    scale = original_volume ** (1 / 3) / (ratio_product ** (1 / 3))
     cell = [scale * r for r in ratio]
 
     with tempfile.TemporaryDirectory() as tmpdir_str:

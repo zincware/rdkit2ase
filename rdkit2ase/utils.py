@@ -1,6 +1,6 @@
 import io
+import subprocess
 from collections import defaultdict
-from unittest import result
 
 import ase.io
 import ase.units
@@ -9,7 +9,7 @@ import numpy as np
 import rdkit.Chem
 import rdkit.Chem.rdDetermineBonds
 from rdkit import Chem
-import subprocess
+
 
 def bond_type_from_order(order):
     if order == 1.0:
@@ -225,7 +225,7 @@ def suggestions2networkx(smiles: list[str]) -> list[nx.Graph]:
 
 def get_packmol_julia_version() -> str:
     """Get the Packmol version when using Julia.
-    
+
     Raises
     ------
     RuntimeError
@@ -233,7 +233,7 @@ def get_packmol_julia_version() -> str:
     """
     try:
         result = subprocess.run(
-            ["julia", "-e", "import Pkg; Pkg.status(\"Packmol\")"],
+            ["julia", "-e", 'import Pkg; Pkg.status("Packmol")'],
             capture_output=True,
             text=True,
             check=True,
@@ -243,7 +243,13 @@ def get_packmol_julia_version() -> str:
                 parts = line.split()
                 if len(parts) >= 3:
                     return parts[2]
-        raise RuntimeError("Failed to get Packmol version via Julia")
-        
+        raise RuntimeError(
+            "Failed to get Packmol version via Julia. Please verify that you can"
+            ' import packmol via `julia -e "import Pkg; Pkg.status("Packmol")"`'
+        )
+
     except subprocess.CalledProcessError as e:
-        raise RuntimeError("Failed to get Packmol version via Julia") from e
+        raise RuntimeError(
+            "Failed to get Packmol version via Julia. Please verify that you can"
+            ' import packmol via `julia -e "import Pkg; Pkg.status("Packmol")"`'
+        ) from e

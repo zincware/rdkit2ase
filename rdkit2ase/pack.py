@@ -8,7 +8,7 @@ import numpy as np
 from ase.io.proteindatabank import write_proteindatabank
 from rdkit import Chem
 
-from rdkit2ase.utils import calculate_box_dimensions
+from rdkit2ase.utils import calculate_box_dimensions, get_packmol_julia_version
 
 OBJ_OR_STR = t.Union[str, Chem.rdchem.Mol, ase.Atoms]
 OBJ_OR_STR_OR_LIST = t.Union[OBJ_OR_STR, t.List[t.Tuple[OBJ_OR_STR, float]]]
@@ -65,6 +65,9 @@ def _run_packmol(
 ) -> None:
     """Executes the PACKMOL program."""
     if packmol_executable == "packmol.jl":
+        version = get_packmol_julia_version()
+        if verbose:
+            print(f"Using Packmol version {version} via Julia")
         with open(tmpdir / "pack.jl", "w") as f:
             f.write("using Packmol \n")
             f.write(f'run_packmol("{input_file.name}") \n')

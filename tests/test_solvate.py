@@ -7,6 +7,17 @@ from rdkit2ase import ase2rdkit, pack, smiles2conformers
 
 
 @pytest.mark.parametrize("packmol", ["packmol", "packmol.jl"])
+def test_pack_clean_info_arrays(packmol):
+    water = smiles2conformers("O", 1)
+    atoms = pack([water], [10], 997, 42, tolerance=1.5, packmol=packmol)
+    # we don't want to have unused info in the atoms object.
+    assert "atomtypes" not in atoms.arrays
+    assert "bfactor" not in atoms.arrays
+    assert "occupancy" not in atoms.arrays
+    assert "residuenames" not in atoms.arrays
+    assert "residuenumbers" not in atoms.arrays
+
+@pytest.mark.parametrize("packmol", ["packmol", "packmol.jl"])
 def test_pack_pbc(packmol):
     water = smiles2conformers("O", 1)
     mol_dist = water[0].get_all_distances()

@@ -212,6 +212,11 @@ def pack(
             print(packmol_input)
         _run_packmol(packmol, tmpdir / "pack.inp", tmpdir, verbose)
         packed_atoms: ase.Atoms = ase.io.read(tmpdir / f"mixture.{output_format}")
+        packed_atoms.arrays.pop("atomtypes", None)
+        packed_atoms.arrays.pop("bfactor", None)
+        packed_atoms.arrays.pop("occupancy", None)
+        packed_atoms.arrays.pop("residuenames", None)
+        packed_atoms.arrays.pop("residuenumbers", None)
 
     packed_atoms.cell = cell
     packed_atoms.pbc = True

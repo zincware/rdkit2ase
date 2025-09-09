@@ -153,6 +153,7 @@ def pack(
     packmol: str = "packmol",
     pbc: bool = True,
     output_format: FORMAT = "pdb",
+    ratio: tuple[float, float, float] = (1.0, 1.0, 1.0),
 ) -> ase.Atoms:
     """
     Packs the given molecules into a box with the specified density using PACKMOL.
@@ -180,6 +181,9 @@ def pack(
         The file format used for communication with packmol, by default "pdb".
         WARNING: Do not use "xyz". This might cause issues and
         is only implemented for debugging purposes.
+    ratio : tuple[float, float, float], optional
+        The aspect ratio of the simulation box,
+        by default (1.0, 1.0, 1.0) for a cubic box.
 
     Returns
     -------
@@ -201,6 +205,11 @@ def pack(
     packmol_input = _generate_packmol_input(
         selected_images, cell, tolerance, seed, output_format, pbc
     )
+    # Adjust cell dimensions according to ratio while keeping volume unchanged
+    original_volume = np.prod(cell)
+    ratio_product = np.prod(ratio)
+    scale = original_volume ** (1/3) / (ratio_product ** (1/3))
+    cell = [scale * r for r in ratio]
 
     with tempfile.TemporaryDirectory() as tmpdir_str:
         tmpdir = pathlib.Path(tmpdir_str)

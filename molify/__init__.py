@@ -1,3 +1,5 @@
+import importlib.metadata
+
 from molify.ase2x import ase2networkx, ase2rdkit
 from molify.com import get_centers_of_mass
 from molify.compress import compress
@@ -14,8 +16,6 @@ from molify.substructure import (
     visualize_selected_molecules,
 )
 from molify.utils import unwrap_structures
-import importlib.metadata
-
 
 __version__ = importlib.metadata.version("molify")
 

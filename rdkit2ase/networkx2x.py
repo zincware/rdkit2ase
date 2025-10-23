@@ -71,8 +71,10 @@ def networkx2ase(graph: nx.Graph) -> ase.Atoms:
     return atoms
 
 
-def networkx2rdkit(graph: nx.Graph) -> Chem.Mol:
+def networkx2rdkit(graph: nx.Graph, suggestions: list[str] | None = None) -> Chem.Mol:
     """Convert a NetworkX graph to an RDKit molecule.
+
+    Automatically determines bond orders for edges with bond_order=None.
 
     Parameters
     ----------
@@ -84,7 +86,12 @@ def networkx2rdkit(graph: nx.Graph) -> Chem.Mol:
             * charge (float, optional): Formal charge
 
         Edge attributes:
-            * bond_order (float): Bond order
+            * bond_order (float or None): Bond order. If None, will be determined
+              automatically.
+
+    suggestions : list[str], optional
+        Optional SMILES/SMARTS patterns to help determine bond orders.
+        Used when edges have bond_order=None.
 
     Returns
     -------
@@ -92,13 +99,14 @@ def networkx2rdkit(graph: nx.Graph) -> Chem.Mol:
         The resulting RDKit molecule with:
             * Atoms and bonds from the graph
             * Formal charges if specified
+            * All bond orders determined
             * Sanitized molecular structure
 
     Raises
     ------
-    ValueError:
-        If nodes are missing atomic_number attribute,
-        or if edges are missing bond_order attribute
+    ValueError
+        If nodes are missing atomic_number attribute, or if bond order
+        determination fails for any edge.
 
     Examples
     --------
@@ -111,7 +119,42 @@ def networkx2rdkit(graph: nx.Graph) -> Chem.Mol:
     >>> mol = networkx2rdkit(graph)
     >>> mol.GetNumAtoms()
     2
+
+    >>> # With automatic bond order determination
+    >>> graph2 = nx.Graph()
+    >>> graph2.add_node(0, atomic_number=6, charge=0, position=[0, 0, 0])
+    >>> graph2.add_node(1, atomic_number=8, charge=0, position=[1.2, 0, 0])
+    >>> graph2.add_edge(0, 1, bond_order=None)  # Will be determined
+    >>> mol2 = networkx2rdkit(graph2)
     """
+    from rdkit2ase.bond_order import update_bond_order
+
+    # Check if any edges have bond_order=None and determine them if needed
+    has_none_bond_orders = any(
+        data.get("bond_order") is None for u, v, data in graph.edges(data=True)
+    )
+
+    if has_none_bond_orders:
+        # Make a copy to avoid modifying the input graph
+        graph = graph.copy()
+        update_bond_order(graph, suggestions)
+
+        # Verify all bond orders are now determined
+        for u, v, data in graph.edges(data=True):
+            bond_order = data.get("bond_order")
+            if bond_order is None:
+                raise ValueError(
+                    f"Failed to determine bond order for edge ({u}, {v}).\n"
+                    f"This can happen with:\n"
+                    f"  - Unusual bonding situations\n"
+                    f"  - Disconnected atoms\n"
+                    f"  - Invalid atomic coordinates\n\n"
+                    f"Try:\n"
+                    f"  1. Check atom positions are reasonable\n"
+                    f"  2. Provide SMILES suggestions for complex molecules\n"
+                    f"  3. Manually set connectivity with bond orders"
+                )
+
     mol = Chem.RWMol()
     nx_to_rdkit_atom_map = {}
 

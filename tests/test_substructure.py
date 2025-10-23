@@ -532,3 +532,45 @@ def test_select_atoms_grouped_order_box(alanine_dipeptide_box):
         mol, smarts_or_smiles="CC(=O)N[C:2]([C:1])C(=O)NC", hydrogens="isolated"
     )
     assert indices == [[15, 16, 17, 14], [37, 38, 39, 36], [59, 60, 61, 58]]
+
+
+@pytest.mark.parametrize("packmol", ["packmol.jl"])
+def test_select_atoms_grouped_ions_with_none_bond_orders(packmol):
+    """Test that ase2rdkit automatically handles None bond orders.
+
+    This reproduces the exact error scenario from hillclimber where
+    connectivity exists but has None bond orders, causing:
+    ValueError: Edge (0, 1) is missing 'bond_order' attribute.
+
+    The fix: ase2rdkit now automatically detects and handles this.
+    """
+    # Create a system with water and ions (reproduces user's scenario)
+    water = rdkit2ase.smiles2conformers("O", numConfs=1)
+    na_ion = rdkit2ase.smiles2conformers("[Na+]", numConfs=1)
+    cl_ion = rdkit2ase.smiles2conformers("[Cl-]", numConfs=1)
+
+    # Pack them together
+    box = rdkit2ase.pack(
+        [water, na_ion, cl_ion],
+        counts=[16, 1, 1],
+        density=1000,
+        packmol=packmol,
+        tolerance=2.0,
+    )
+
+    # Simulate corrupted connectivity with None bond orders
+    # This causes the exact error the user reported
+    box.info["connectivity"] = [(i, j, None) for i, j, _ in box.info["connectivity"]]
+
+    # ase2rdkit should NOW automatically handle this (after our fix)
+    mol = rdkit2ase.ase2rdkit(box)
+
+    # Verify select_atoms_grouped works
+    na_indices = rdkit2ase.select_atoms_grouped(mol, "[Na+]")
+    assert len(na_indices) == 1
+
+    cl_indices = rdkit2ase.select_atoms_grouped(mol, "[Cl-]")
+    assert len(cl_indices) == 1
+
+    water_indices = rdkit2ase.select_atoms_grouped(mol, "[OH2]")
+    assert len(water_indices) == 16

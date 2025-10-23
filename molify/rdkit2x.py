@@ -27,7 +27,7 @@ def rdkit2ase(mol: Chem.Mol, seed: int = 42) -> ase.Atoms:
     Examples
     --------
     >>> from rdkit import Chem
-    >>> from rdkit2ase import rdkit2ase
+    >>> from molify import rdkit2ase
     >>> mol = Chem.MolFromSmiles('CCO')
     >>> atoms = rdkit2ase(mol)
     >>> len(atoms)
@@ -89,7 +89,7 @@ def rdkit2networkx(mol: Chem.Mol) -> nx.Graph:
     Examples
     --------
     >>> from rdkit import Chem
-    >>> from rdkit2ase import rdkit2networkx
+    >>> from molify import rdkit2networkx
     >>> mol = Chem.MolFromSmiles('C=O')
     >>> graph = rdkit2networkx(mol)
     >>> len(graph.nodes)

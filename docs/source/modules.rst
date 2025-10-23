@@ -2,7 +2,7 @@ API Reference
 =============
 
 
-.. automodule:: rdkit2ase
+.. automodule:: molify
    :members:
    :undoc-members:
    :show-inheritance:

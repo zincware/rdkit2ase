@@ -52,7 +52,7 @@ def smiles2atoms(smiles: str, seed: int = 42) -> ase.Atoms:
 
     Examples
     --------
-    >>> from rdkit2ase import smiles2atoms
+    >>> from molify import smiles2atoms
     >>> import ase
     >>> atoms = smiles2atoms("CCO")
     >>> isinstance(atoms, ase.Atoms)
@@ -99,7 +99,7 @@ def smiles2conformers(
 
     Examples
     --------
-    >>> from rdkit2ase import smiles2conformers
+    >>> from molify import smiles2conformers
     >>> import ase
     >>> frames = smiles2conformers("CCO", numConfs=3)
     >>> len(frames)

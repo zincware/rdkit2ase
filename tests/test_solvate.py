@@ -1,9 +1,9 @@
-# from rdkit2ase import pack
+# from molify import pack
 import numpy as np
 import numpy.testing as npt
 import pytest
 
-from rdkit2ase import ase2rdkit, pack, smiles2conformers
+from molify import ase2rdkit, pack, smiles2conformers
 
 
 @pytest.mark.parametrize("packmol", ["packmol", "packmol.jl"])

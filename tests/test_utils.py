@@ -7,8 +7,8 @@ import pytest
 import rdkit.Chem
 from ase import Atoms
 
-import rdkit2ase
-from rdkit2ase.utils import (
+import molify
+from molify.utils import (
     find_connected_components,
     get_packmol_julia_version,
     rdkit_determine_bonds,
@@ -26,12 +26,12 @@ class SMILES:
 
 @pytest.fixture
 def ec_emc_li_pf6():
-    atoms_pf6 = rdkit2ase.smiles2conformers(SMILES.PF6, numConfs=10)
-    atoms_li = rdkit2ase.smiles2conformers(SMILES.Li, numConfs=10)
-    atoms_ec = rdkit2ase.smiles2conformers(SMILES.EC, numConfs=10)
-    atoms_emc = rdkit2ase.smiles2conformers(SMILES.EMC, numConfs=10)
+    atoms_pf6 = molify.smiles2conformers(SMILES.PF6, numConfs=10)
+    atoms_li = molify.smiles2conformers(SMILES.Li, numConfs=10)
+    atoms_ec = molify.smiles2conformers(SMILES.EC, numConfs=10)
+    atoms_emc = molify.smiles2conformers(SMILES.EMC, numConfs=10)
 
-    return rdkit2ase.pack(
+    return molify.pack(
         data=[atoms_pf6, atoms_li, atoms_ec, atoms_emc],
         counts=[3, 3, 8, 12],
         density=1400,
@@ -41,8 +41,8 @@ def ec_emc_li_pf6():
 
 @pytest.mark.parametrize("scale", [1.0, 0.5, 2.0])
 def test_unwrap_structures(scale):
-    hexane = rdkit2ase.smiles2conformers("CCCCCC", numConfs=1)
-    box = rdkit2ase.pack(
+    hexane = molify.smiles2conformers("CCCCCC", numConfs=1)
+    box = molify.pack(
         data=[hexane],
         counts=[10],
         density=800,
@@ -56,7 +56,7 @@ def test_unwrap_structures(scale):
 
     # check that the movement broke some bonds
     off = 0
-    graph = rdkit2ase.ase2networkx(shifted_box)
+    graph = molify.ase2networkx(shifted_box)
     assert len(list(nx.connected_components(graph))) == 10
     for i, j in graph.edges():
         off += bool(shifted_box.get_distance(i, j, mic=False) > 1.6)
@@ -64,7 +64,7 @@ def test_unwrap_structures(scale):
 
     # check the initial box has no broken bonds
     off = 0
-    graph = rdkit2ase.ase2networkx(box)
+    graph = molify.ase2networkx(box)
     assert len(list(nx.connected_components(graph))) == 10
     for i, j in graph.edges():
         off += bool(box.get_distance(i, j, mic=False) > 1.6)
@@ -72,23 +72,23 @@ def test_unwrap_structures(scale):
 
     # Unwrap the structures and assert that bonds are restored
     unwrapped_atoms = unwrap_structures(shifted_box)
-    graph = rdkit2ase.ase2networkx(unwrapped_atoms)
+    graph = molify.ase2networkx(unwrapped_atoms)
     for i, j in graph.edges():
         assert unwrapped_atoms.get_distance(i, j, mic=False) < 1.6
 
     # assert edges stay the same / indices remain the same
-    graph_unwrapped = rdkit2ase.ase2networkx(unwrapped_atoms)
-    graph_box = rdkit2ase.ase2networkx(box)
+    graph_unwrapped = molify.ase2networkx(unwrapped_atoms)
+    graph_box = molify.ase2networkx(box)
     assert nx.is_isomorphic(graph_unwrapped, graph_box)
 
 
 @pytest.mark.parametrize("scale", [1.0, 0.5, 2.0])
 def test_unwrap_ring_molecules(scale):
     # Create a single benzene conformer
-    benzene = rdkit2ase.smiles2conformers("c1ccccc1", numConfs=1)
+    benzene = molify.smiles2conformers("c1ccccc1", numConfs=1)
 
     # Pack a box with 10 benzene molecules
-    box = rdkit2ase.pack(
+    box = molify.pack(
         data=[benzene],
         counts=[10],
         density=800,
@@ -105,7 +105,7 @@ def test_unwrap_ring_molecules(scale):
     # and yes, packmol places 2 hydrogens across the PBC boundary!
 
     # Verify that some bonds are broken (distances > 1.6 Å without MIC)
-    graph = rdkit2ase.ase2networkx(shifted_box)
+    graph = molify.ase2networkx(shifted_box)
     assert len(list(nx.connected_components(graph))) == 10  # Sanity check
     broken_bonds = 0
     for i, j in graph.edges():
@@ -116,7 +116,7 @@ def test_unwrap_ring_molecules(scale):
 
     # Verify that unwrapping restores proper bonding geometry
     unwrapped = unwrap_structures(shifted_box)
-    graph_unwrapped = rdkit2ase.ase2networkx(unwrapped)
+    graph_unwrapped = molify.ase2networkx(unwrapped)
     assert len(list(nx.connected_components(graph_unwrapped))) == 10
 
     for i, j in graph_unwrapped.edges():
@@ -227,7 +227,7 @@ def test_find_connected_components_networkx(monkeypatch, networkx):
     ],
 )
 def test_rdkit_determine_bonds(smiles: str):
-    atoms = rdkit2ase.smiles2atoms(smiles)
+    atoms = molify.smiles2atoms(smiles)
     del atoms.info["connectivity"]
     del atoms.info["smiles"]
     mol = rdkit_determine_bonds(atoms)

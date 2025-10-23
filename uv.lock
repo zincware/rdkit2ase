@@ -947,6 +947,62 @@ wheels = [
 ]
 
 [[package]]
+name = "molify"
+version = "0.0.1a0"
+source = { editable = "." }
+dependencies = [
+    { name = "ase" },
+    { name = "matplotlib" },
+    { name = "networkx" },
+    { name = "rdkit" },
+]
+
+[package.optional-dependencies]
+vesin = [
+    { name = "vesin" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "ipykernel" },
+    { name = "networkx" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "ruff" },
+]
+docs = [
+    { name = "furo" },
+    { name = "nbsphinx" },
+    { name = "sphinx" },
+    { name = "sphinx-copybutton" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "ase", specifier = ">=3.25.0" },
+    { name = "matplotlib", specifier = ">=3.10.1" },
+    { name = "networkx", specifier = ">=3.4.2" },
+    { name = "rdkit", specifier = ">=2024" },
+    { name = "vesin", marker = "extra == 'vesin'", specifier = ">=0.3.7" },
+]
+provides-extras = ["vesin"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "ipykernel", specifier = ">=6.29.5" },
+    { name = "networkx", specifier = ">=3.4.2" },
+    { name = "pytest", specifier = ">=8.3.5" },
+    { name = "pytest-cov", specifier = ">=6.1.1" },
+    { name = "ruff", specifier = ">=0.11.8" },
+]
+docs = [
+    { name = "furo", specifier = ">=2024.8.6" },
+    { name = "nbsphinx", specifier = ">=0.9.7" },
+    { name = "sphinx", specifier = ">=8.1.3" },
+    { name = "sphinx-copybutton", specifier = ">=0.5.2" },
+]
+
+[[package]]
 name = "nbclient"
 version = "0.10.2"
 source = { registry = "https://pypi.org/simple" }
@@ -1467,62 +1523,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/41/ee/9758cbcde26bacb820579ecbfbd3069ab8bd10b55e08f6731c208ce2eb3f/rdkit-2024.9.6-cp313-cp313-manylinux_2_28_aarch64.whl", hash = "sha256:4fbf4d680a1070a15f6d9c7cf93218bed87c7110e4e7a467d1b449e430e20ff5", size = 33413200, upload-time = "2025-03-12T10:35:56.306Z" },
     { url = "https://files.pythonhosted.org/packages/d9/f9/6e5b8f6445450a3b01e28915f749f9d644a8b855f6e7b26c09f193b1978d/rdkit-2024.9.6-cp313-cp313-manylinux_2_28_x86_64.whl", hash = "sha256:4b0efe61d9eee664dc19203478e3312e596be0d200c3bbd4ef1b584aef7146d3", size = 34275798, upload-time = "2025-03-12T10:36:00.826Z" },
     { url = "https://files.pythonhosted.org/packages/3f/9b/3c32fd6dbb1210a8e9dc83feee82778c8bf2ad483c9e8394138c25789110/rdkit-2024.9.6-cp313-cp313-win_amd64.whl", hash = "sha256:6c740c543b55f99d8d3bdea92c68617ef5669bcf2cc1652752a65f156f26dbc0", size = 22486705, upload-time = "2025-03-12T10:36:05.44Z" },
-]
-
-[[package]]
-name = "rdkit2ase"
-version = "0.1.13"
-source = { editable = "." }
-dependencies = [
-    { name = "ase" },
-    { name = "matplotlib" },
-    { name = "networkx" },
-    { name = "rdkit" },
-]
-
-[package.optional-dependencies]
-vesin = [
-    { name = "vesin" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "ipykernel" },
-    { name = "networkx" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
-    { name = "ruff" },
-]
-docs = [
-    { name = "furo" },
-    { name = "nbsphinx" },
-    { name = "sphinx" },
-    { name = "sphinx-copybutton" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "ase", specifier = ">=3.25.0" },
-    { name = "matplotlib", specifier = ">=3.10.1" },
-    { name = "networkx", specifier = ">=3.4.2" },
-    { name = "rdkit", specifier = ">=2024" },
-    { name = "vesin", marker = "extra == 'vesin'", specifier = ">=0.3.7" },
-]
-provides-extras = ["vesin"]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "ipykernel", specifier = ">=6.29.5" },
-    { name = "networkx", specifier = ">=3.4.2" },
-    { name = "pytest", specifier = ">=8.3.5" },
-    { name = "pytest-cov", specifier = ">=6.1.1" },
-    { name = "ruff", specifier = ">=0.11.8" },
-]
-docs = [
-    { name = "furo", specifier = ">=2024.8.6" },
-    { name = "nbsphinx", specifier = ">=0.9.7" },
-    { name = "sphinx", specifier = ">=8.1.3" },
-    { name = "sphinx-copybutton", specifier = ">=0.5.2" },
 ]
 
 [[package]]

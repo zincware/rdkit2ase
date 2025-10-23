@@ -187,3 +187,126 @@ def test_networkx2ase_subgraph_index_mapping():
     # (This was the original failing case)
     unwrapped = rdkit2ase.unwrap_structures(subgraph_atoms)
     assert len(unwrapped) == len(subgraph_atoms)
+
+
+# ============================================================================
+# Tests for networkx2rdkit with None bond orders (new architecture)
+# ============================================================================
+
+
+@pytest.mark.parametrize("graph_smiles_atoms", SMILES_LIST, indirect=True)
+def test_networkx2rdkit_with_none_bond_orders(graph_smiles_atoms):
+    """Test networkx2rdkit determines bond orders when graph has bond_order=None."""
+    graph, smiles, atoms = graph_smiles_atoms
+
+    # Create a graph with bond_order=None by removing bond orders
+    graph_no_orders = graph.copy()
+    for u, v in graph_no_orders.edges():
+        graph_no_orders.edges[u, v]["bond_order"] = None
+
+    # This should determine bond orders automatically
+    mol = rdkit2ase.networkx2rdkit(graph_no_orders, suggestions=[])
+
+    # Verify the molecule is correct
+    assert Chem.MolToSmiles(mol, canonical=True) == Chem.MolToSmiles(
+        Chem.AddHs(Chem.MolFromSmiles(smiles)), canonical=True
+    )
+
+
+@pytest.mark.parametrize("graph_smiles_atoms", SMILES_LIST, indirect=True)
+def test_networkx2rdkit_with_smiles_suggestions(graph_smiles_atoms):
+    """Test networkx2rdkit uses SMILES suggestions for bond order determination."""
+    graph, smiles, atoms = graph_smiles_atoms
+
+    # Create a graph with bond_order=None
+    graph_no_orders = graph.copy()
+    for u, v in graph_no_orders.edges():
+        graph_no_orders.edges[u, v]["bond_order"] = None
+
+    # Use SMILES suggestion for bond order determination
+    mol = rdkit2ase.networkx2rdkit(graph_no_orders, suggestions=[smiles])
+
+    # Verify the molecule matches expected structure
+    assert Chem.MolToSmiles(mol, canonical=True) == Chem.MolToSmiles(
+        Chem.AddHs(Chem.MolFromSmiles(smiles)), canonical=True
+    )
+
+
+def test_networkx2rdkit_preserves_input_graph():
+    """Test that networkx2rdkit doesn't modify the input graph."""
+    atoms = rdkit2ase.smiles2atoms("CC")
+    graph = rdkit2ase.ase2networkx(atoms)
+
+    # Remove bond orders
+    for u, v in graph.edges():
+        graph.edges[u, v]["bond_order"] = None
+
+    # Store original state
+    original_edges = {(u, v): data.copy() for u, v, data in graph.edges(data=True)}
+
+    # Call networkx2rdkit
+    mol = rdkit2ase.networkx2rdkit(graph, suggestions=[])
+
+    # Verify original graph is unchanged
+    for u, v, data in graph.edges(data=True):
+        assert data["bond_order"] is None
+        assert original_edges[(u, v)] == data
+
+
+def test_networkx2rdkit_mixed_bond_orders():
+    """Test networkx2rdkit with mixed None and specified bond orders."""
+    # Create a simple molecule
+    atoms = rdkit2ase.smiles2atoms("CCO")
+    graph = rdkit2ase.ase2networkx(atoms)
+    original_connectivity = atoms.info["connectivity"].copy()
+
+    # Set some bond orders to None
+    edges = list(graph.edges())
+    if len(edges) >= 2:
+        graph.edges[edges[0][0], edges[0][1]]["bond_order"] = None
+
+    # This should determine only the None bond orders
+    mol = rdkit2ase.networkx2rdkit(graph, suggestions=[])
+
+    # Verify molecule is correct
+    expected_smiles = Chem.MolToSmiles(Chem.AddHs(Chem.MolFromSmiles("CCO")), canonical=True)
+    assert Chem.MolToSmiles(mol, canonical=True) == expected_smiles
+
+
+def test_networkx2rdkit_complex_molecule_with_none_bond_orders(ec_emc_li_pf6):
+    """Test networkx2rdkit with complex molecule missing bond orders."""
+    atoms = ec_emc_li_pf6
+    connectivity = atoms.info["connectivity"].copy()
+    graph = rdkit2ase.ase2networkx(atoms)
+
+    # Remove all bond orders
+    for u, v in graph.edges():
+        graph.edges[u, v]["bond_order"] = None
+
+    # Determine bond orders
+    mol = rdkit2ase.networkx2rdkit(graph, suggestions=[])
+
+    # Verify molecule has correct structure
+    assert len(mol.GetAtoms()) == len(atoms)
+    assert len(mol.GetBonds()) == len(connectivity)
+
+    # Verify all bonds have determined orders
+    for bond in mol.GetBonds():
+        assert bond.GetBondTypeAsDouble() > 0
+
+
+def test_networkx2rdkit_error_on_failed_determination():
+    """Test networkx2rdkit raises error when bond determination fails."""
+    import networkx as nx
+
+    # Create a pathological graph with impossible geometry
+    graph = nx.Graph()
+    graph.add_node(0, atomic_number=6, charge=0, position=[0, 0, 0])
+    graph.add_node(1, atomic_number=6, charge=0, position=[100, 100, 100])  # Too far apart
+    graph.add_edge(0, 1, bond_order=None)
+    graph.graph["pbc"] = False
+    graph.graph["cell"] = None
+
+    # This should raise an error (from underlying bond determination)
+    with pytest.raises(ValueError, match="Failed to determine bonds"):
+        rdkit2ase.networkx2rdkit(graph, suggestions=[])

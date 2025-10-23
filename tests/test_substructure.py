@@ -222,9 +222,7 @@ def test_hydrogens_included(ethanol_mol):
 def test_hydrogens_isolated(ethanol_mol):
     """Test the 'isolated' option for hydrogens."""
     # Select ONLY the hydrogens from the C-O match
-    indices = molify.select_atoms_flat_unique(
-        ethanol_mol, "CO", hydrogens="isolated"
-    )
+    indices = molify.select_atoms_flat_unique(ethanol_mol, "CO", hydrogens="isolated")
     # Expected: H(6), H(7), H(8)
     assert sorted(indices) == [6, 7, 8]
 
@@ -347,9 +345,7 @@ def test_visualize_selected_molecules_with_alpha(ethanol_mol):
     b = [2]  # Oxygen
 
     # Test with different alpha values
-    img_transparent = molify.visualize_selected_molecules(
-        ethanol_mol, a, b, alpha=0.2
-    )
+    img_transparent = molify.visualize_selected_molecules(ethanol_mol, a, b, alpha=0.2)
     assert img_transparent is not None
 
     img_opaque = molify.visualize_selected_molecules(ethanol_mol, a, b, alpha=1.0)
@@ -399,9 +395,7 @@ def test_use_label_multiple_times(alanine_dipeptide):
     with pytest.raises(ValueError, match="Label '1' is used multiple times"):
         # we do not allow the same label to be used multiple for selection,
         # need to be unique
-        molify.select_atoms_grouped(
-            mol, smarts_or_smiles="CC(=O)N[C:1]([C:1])C(=O)NC"
-        )
+        molify.select_atoms_grouped(mol, smarts_or_smiles="CC(=O)N[C:1]([C:1])C(=O)NC")
 
 
 def test_select_atoms_grouped_order(alanine_dipeptide):

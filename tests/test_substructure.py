@@ -537,11 +537,11 @@ def test_select_atoms_grouped_order_box(alanine_dipeptide_box):
 @pytest.mark.parametrize("packmol", ["packmol.jl"])
 def test_select_atoms_grouped_ions_with_none_bond_orders(packmol):
     """Test that ase2rdkit automatically handles None bond orders.
-    
+
     This reproduces the exact error scenario from hillclimber where
     connectivity exists but has None bond orders, causing:
     ValueError: Edge (0, 1) is missing 'bond_order' attribute.
-    
+
     The fix: ase2rdkit now automatically detects and handles this.
     """
     # Create a system with water and ions (reproduces user's scenario)
@@ -560,9 +560,7 @@ def test_select_atoms_grouped_ions_with_none_bond_orders(packmol):
 
     # Simulate corrupted connectivity with None bond orders
     # This causes the exact error the user reported
-    box.info["connectivity"] = [
-        (i, j, None) for i, j, _ in box.info["connectivity"]
-    ]
+    box.info["connectivity"] = [(i, j, None) for i, j, _ in box.info["connectivity"]]
 
     # ase2rdkit should NOW automatically handle this (after our fix)
     mol = rdkit2ase.ase2rdkit(box)

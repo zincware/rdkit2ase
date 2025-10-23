@@ -26,6 +26,7 @@ def test_partial_suggestions():
     # To get bond orders with suggestions, pass through networkx2rdkit
     graph_a = rdkit2ase.ase2networkx(atoms)
     from rdkit2ase import networkx2rdkit, rdkit2networkx
+
     mol_a = networkx2rdkit(graph_a, suggestions=[VC, DMC])
     a = rdkit2networkx(mol_a)
 

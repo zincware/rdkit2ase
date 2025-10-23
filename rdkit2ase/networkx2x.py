@@ -71,9 +71,7 @@ def networkx2ase(graph: nx.Graph) -> ase.Atoms:
     return atoms
 
 
-def networkx2rdkit(
-    graph: nx.Graph, suggestions: list[str] | None = None
-) -> Chem.Mol:
+def networkx2rdkit(graph: nx.Graph, suggestions: list[str] | None = None) -> Chem.Mol:
     """Convert a NetworkX graph to an RDKit molecule.
 
     Automatically determines bond orders for edges with bond_order=None.

@@ -1,26 +1,145 @@
 molify Documentation
 ====================
 
-molify provides a bridge between RDKit_ and ASE_.
-It further integrates features from Packmol_ and NetworkX_.
+**molify** - molecular structure conversion between RDKit, ASE, and NetworkX
+
+The molify package provides tools to convert molecular structures between
+RDKit_, ASE_ and NetworkX_.
+
+- RDKit is a versatile and popular cheminformatics library.
+
+- ASE allows interfacing with a wide range of atomistic simulation codes and reads/writes many file formats.
+
+- NetworkX is designed for the creation, manipulation, and study of complex networks.
+
+Key Features
+------------
+
+- **Bidirectional conversions** between RDKit Mol, ASE Atoms, and NetworkX Graph objects
+- **3D conformer generation** from SMILES strings using RDKit's embedding algorithms
+- **Molecular system building** with Packmol integration for creating solvated systems and mixtures
+- **Connectivity preservation** with automatic bond detection when needed
+
+Conversion Overview
+-------------------
+
+These bridging functions are illustrated below.
+
+.. mermaid::
+
+   graph LR
+      A[rdkit.Mol] -->|molify.rdkit2networkx| B[networkx.Graph]
+      B -->|molify.networkx2ase| C[ase.Atoms]
+      A -->|molify.rdkit2ase| C
+
+.. mermaid::
+
+   graph LR
+      A[ase.Atoms] -->|molify.ase2networkx| B[networkx.Graph]
+      B -->|molify.networkx2rdkit| C[rdkit.Mol]
+      A -->|molify.ase2rdkit| C
+
+Conversion Details
+------------------
+The rdkit package is built around the concept of molecules, with defined connections, bond orders and charges. Positional information is optional.
+In contrast, ASE Atoms objects are built around atomic positions and atomic numbers, with no inherent concept of bonds or connectivity.
+NetworkX Graphs are general-purpose graph structures with no predefined chemistry concepts.
+
+To store the connectivity information inside ASE Atoms objects, molify introduces a custom attribute ``ase.Atoms.info['connectivity']``: a list of tuples ``(atom_index_1, atom_index_2, bond_order)`` where indices are 0-based integers and ``bond_order`` can be a float (1.0, 2.0, 3.0, 1.5 for aromatic) or None for unknown bond orders.
+
+When connectivity information is not available:
+
+- **ase2networkx**: Uses covalent radii to estimate bonds between atoms.
+- **networkx2rdkit**: Uses ``rdkit.Chem.rdDetermineBonds.DetermineBonds`` to determine bond orders from 3D coordinates.
+
+
+Quick Start
+-----------
+
+**Basic Conversions**
+
+We can convert any RDKit molecule to an ASE Atoms object:
+
+.. code-block:: python
+
+   import molify
+   from rdkit import Chem
+
+   etoh = Chem.MolFromSmiles("CCO")
+   etoh = Chem.AddHs(etoh)
+
+   atoms = molify.rdkit2ase(etoh)
+   
+
+Likewise, we can convert the ASE Atoms object back to an RDKit molecule:
+
+.. code-block:: python
+
+   import molify
+   import ase.build
+
+   nh3 = ase.build.molecule("NH3")
+   mol = molify.ase2rdkit(nh3)
+
+**NetworkX Conversions**
+
+The networkx.Graph representation can be obtained from either RDKit or ASE objects:
+
+.. code-block:: python
+
+   import molify
+   import ase.build
+   from rdkit import Chem
+
+   etoh_mol = Chem.MolFromSmiles("CCO")
+   nh3_atoms = ase.build.molecule("NH3")
+
+   etoh_graph = molify.rdkit2networkx(etoh_mol)
+   nh3_graph = molify.ase2networkx(nh3_atoms)
+
+
+Advanced Features
+-----------------
+
+**3D Conformer Generation**
+
+The main functionality of molify is expanded by additional tools that combine multiple packages.
+For example, molify provides helper functions to generate 3D conformers directly from SMILES strings:
 
 .. code-block:: python
 
    import molify
 
+   # Generate 10 different 3D conformers of water
+   water = molify.smiles2conformers("O", numConfs=10)
+
+
+**Molecular System Building**
+
+For many applications, it is useful to solvate molecules or create mixtures.
+molify provides a convenient interface to Packmol_ for building molecular systems.
+
+.. code-block:: python
+
+   import molify
+
+   # Generate conformers for water and ethanol
    water = molify.smiles2conformers("O", numConfs=10)
    etoh = molify.smiles2conformers("CCO", numConfs=10)
+
+   # Pack 5 water and 5 ethanol molecules into a box at 800 kg/m³
+   # Note: Requires Packmol.jl (Julia) or Packmol to be installed
    box = molify.pack(
       data=[water, etoh], counts=[5, 5], density=800, packmol="packmol.jl"
    )
 
-   mol = molify.ase2rdkit(water[0])
-   graph = molify.ase2networkx(box)
+More of these tools are described in the :doc:`packmol_tools`, :doc:`ase_tools`, :doc:`rdkit_tools`, and :doc:`atom_selection` sections.
 
-More examples are provided below.
 
 Installation
 ------------
+
+**From PyPI**
 
 You can install molify from PyPI:
 
@@ -28,8 +147,7 @@ You can install molify from PyPI:
 
    (.venv) $ pip install molify
 
-From Source
------------
+**From Source**
 
 To install and develop molify from source, we recommend using `uv <https://docs.astral.sh/uv>`_.
 
@@ -37,19 +155,34 @@ More information and installation instructions can be found in the `UV documenta
 
 .. code-block:: console
 
-   (.venv) $ git clone https://github.com/zincware/rdkit2ase
-   (.venv) $ cd rdkit2ase
+   (.venv) $ git clone https://github.com/zincware/molify
+   (.venv) $ cd molify
    (.venv) $ uv sync
    (.venv) $ source .venv/bin/activate
 
-Documentation
--------------
+Documentation Guide
+-------------------
+**1. Understanding Data Structures**
+
+- :doc:`rdkit_tools` - RDKit molecule representation and explicit bond information
+- :doc:`ase_tools` - Creating structures from SMILES and bond detection from geometry
+- :doc:`packmol_tools` - Building molecular systems with Packmol
+
+**2. Advanced Topics**
+
+- :doc:`networkx_tools` - Bond order determination and the ``suggestions`` parameter
+- :doc:`atom_selection` - Advanced SMARTS patterns and mapped SMILES
+
+**4. Full Reference**
+
+- :doc:`modules` - API documentation
 
 .. toctree::
    :maxdepth: 2
+   :hidden:
 
-   ase_tools
    rdkit_tools
+   ase_tools
    packmol_tools
    networkx_tools
    atom_selection

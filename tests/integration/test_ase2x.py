@@ -309,9 +309,7 @@ def test_ase2rdkit_with_none_bond_orders_in_connectivity():
 
     # Simulate user-provided connectivity with None bond orders
     # This mimics what happens when connectivity is known but bond orders aren't
-    connectivity_without_orders = [
-        (i, j, None) for i, j, _ in original_connectivity
-    ]
+    connectivity_without_orders = [(i, j, None) for i, j, _ in original_connectivity]
     atoms.info["connectivity"] = connectivity_without_orders
 
     # This should work seamlessly - ase2networkx preserves connectivity,
@@ -336,9 +334,7 @@ def test_ase2networkx_preserves_none_bond_orders_in_connectivity():
     original_connectivity = atoms.info["connectivity"].copy()
 
     # Set bond orders to None
-    connectivity_without_orders = [
-        (i, j, None) for i, j, _ in original_connectivity
-    ]
+    connectivity_without_orders = [(i, j, None) for i, j, _ in original_connectivity]
     atoms.info["connectivity"] = connectivity_without_orders
 
     # ase2networkx should preserve this connectivity (with None bond orders)

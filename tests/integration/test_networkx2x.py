@@ -269,7 +269,9 @@ def test_networkx2rdkit_mixed_bond_orders():
     mol = rdkit2ase.networkx2rdkit(graph, suggestions=[])
 
     # Verify molecule is correct
-    expected_smiles = Chem.MolToSmiles(Chem.AddHs(Chem.MolFromSmiles("CCO")), canonical=True)
+    expected_smiles = Chem.MolToSmiles(
+        Chem.AddHs(Chem.MolFromSmiles("CCO")), canonical=True
+    )
     assert Chem.MolToSmiles(mol, canonical=True) == expected_smiles
 
 
@@ -302,7 +304,9 @@ def test_networkx2rdkit_error_on_failed_determination():
     # Create a pathological graph with impossible geometry
     graph = nx.Graph()
     graph.add_node(0, atomic_number=6, charge=0, position=[0, 0, 0])
-    graph.add_node(1, atomic_number=6, charge=0, position=[100, 100, 100])  # Too far apart
+    graph.add_node(
+        1, atomic_number=6, charge=0, position=[100, 100, 100]
+    )  # Too far apart
     graph.add_edge(0, 1, bond_order=None)
     graph.graph["pbc"] = False
     graph.graph["cell"] = None

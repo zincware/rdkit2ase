@@ -6,8 +6,8 @@ from ase.build import separate
 from rdkit import Chem
 from rdkit.Chem import Draw
 
-from rdkit2ase.ase2x import ase2rdkit
-from rdkit2ase.utils import find_connected_components
+from molify.ase2x import ase2rdkit
+from molify.utils import find_connected_components
 
 
 def match_substructure(

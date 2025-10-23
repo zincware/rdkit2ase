@@ -120,7 +120,7 @@ def unwrap_structures(atoms, scale=1.2, **kwargs) -> ase.Atoms:
     Examples
     --------
     >>> import numpy as np
-    >>> from rdkit2ase import smiles2conformers, pack, unwrap_structures
+    >>> from molify import smiles2conformers, pack, unwrap_structures
     >>>
     >>> # Create a realistic molecular system
     >>> water = smiles2conformers("O", numConfs=1)
@@ -146,7 +146,7 @@ def unwrap_structures(atoms, scale=1.2, **kwargs) -> ase.Atoms:
     >>> # Unwrap the structures to get continuous molecules
     >>> unwrapped_atoms = unwrap_structures(wrapped_atoms)
     """
-    from rdkit2ase import ase2networkx
+    from molify import ase2networkx
 
     atoms = atoms.copy()  # Work on a copy to avoid modifying the original
 
@@ -213,7 +213,7 @@ def rdkit_determine_bonds(unwrapped_atoms: ase.Atoms) -> rdkit.Chem.Mol:
 
 
 def suggestions2networkx(smiles: list[str]) -> list[nx.Graph]:
-    from rdkit2ase import rdkit2networkx
+    from molify import rdkit2networkx
 
     mols = []
     for _smiles in smiles:

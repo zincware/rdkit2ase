@@ -2,7 +2,7 @@ import ase
 import numpy as np
 from ase.cell import Cell
 
-from rdkit2ase.utils import calculate_box_dimensions
+from molify.utils import calculate_box_dimensions
 
 
 def compress(

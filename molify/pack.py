@@ -9,7 +9,7 @@ import numpy as np
 from ase.io.proteindatabank import write_proteindatabank
 from rdkit import Chem
 
-from rdkit2ase.utils import calculate_box_dimensions, get_packmol_julia_version
+from molify.utils import calculate_box_dimensions, get_packmol_julia_version
 
 log = logging.getLogger(__name__)
 
@@ -204,7 +204,7 @@ def pack(
 
     Example
     -------
-    >>> from rdkit2ase import pack, smiles2conformers
+    >>> from molify import pack, smiles2conformers
     >>> water = smiles2conformers("O", 1)
     >>> ethanol = smiles2conformers("CCO", 1)
     >>> density = 1000  # kg/m^3

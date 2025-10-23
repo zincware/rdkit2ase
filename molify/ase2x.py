@@ -146,7 +146,7 @@ def ase2networkx(
 
     Examples
     --------
-    >>> from rdkit2ase import ase2networkx, smiles2atoms
+    >>> from molify import ase2networkx, smiles2atoms
     >>> atoms = smiles2atoms(smiles="O")
     >>> graph = ase2networkx(atoms)
     >>> len(graph.nodes)
@@ -205,7 +205,7 @@ def ase2rdkit(atoms: ase.Atoms, suggestions: list[str] | None = None) -> Chem.Mo
 
     Examples
     --------
-    >>> from rdkit2ase import ase2rdkit, smiles2atoms
+    >>> from molify import ase2rdkit, smiles2atoms
     >>> atoms = smiles2atoms(smiles="C=O")
     >>> mol = ase2rdkit(atoms)
     >>> mol.GetNumAtoms()
@@ -214,7 +214,7 @@ def ase2rdkit(atoms: ase.Atoms, suggestions: list[str] | None = None) -> Chem.Mo
     if len(atoms) == 0:
         return Chem.Mol()
 
-    from rdkit2ase import ase2networkx, networkx2rdkit
+    from molify import ase2networkx, networkx2rdkit
 
     graph = ase2networkx(atoms)
     return networkx2rdkit(graph, suggestions=suggestions)

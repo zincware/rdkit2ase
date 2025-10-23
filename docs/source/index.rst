@@ -1,37 +1,37 @@
-rdkit2ase Documentation
-=======================
+molify Documentation
+====================
 
-rdkit2ase provides a bridge between RDKit_ and ASE_.
+molify provides a bridge between RDKit_ and ASE_.
 It further integrates features from Packmol_ and NetworkX_.
 
 .. code-block:: python
 
-   import rdkit2ase
+   import molify
 
-   water = rdkit2ase.smiles2conformers("O", numConfs=10)
-   etoh = rdkit2ase.smiles2conformers("CCO", numConfs=10)
-   box = rdkit2ase.pack(
+   water = molify.smiles2conformers("O", numConfs=10)
+   etoh = molify.smiles2conformers("CCO", numConfs=10)
+   box = molify.pack(
       data=[water, etoh], counts=[5, 5], density=800, packmol="packmol.jl"
    )
 
-   mol = rdkit2ase.ase2rdkit(water[0])
-   graph = rdkit2ase.ase2networkx(box)
+   mol = molify.ase2rdkit(water[0])
+   graph = molify.ase2networkx(box)
 
 More examples are provided below.
 
 Installation
 ------------
 
-You can install rdkit2ase from PyPI:
+You can install molify from PyPI:
 
 .. code-block:: console
 
-   (.venv) $ pip install rdkit2ase
+   (.venv) $ pip install molify
 
 From Source
 -----------
 
-To install and develop rdkit2ase from source, we recommend using `uv <https://docs.astral.sh/uv>`_.
+To install and develop molify from source, we recommend using `uv <https://docs.astral.sh/uv>`_.
 
 More information and installation instructions can be found in the `UV documentation <https://docs.astral.sh/uv/getting-started/installation/>`_.
 

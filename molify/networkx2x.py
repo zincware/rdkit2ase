@@ -3,7 +3,7 @@ import networkx as nx
 import numpy as np
 from rdkit import Chem
 
-from rdkit2ase.utils import bond_type_from_order
+from molify.utils import bond_type_from_order
 
 
 def networkx2ase(graph: nx.Graph) -> ase.Atoms:
@@ -34,7 +34,7 @@ def networkx2ase(graph: nx.Graph) -> ase.Atoms:
     Examples
     --------
     >>> import networkx as nx
-    >>> from rdkit2ase import networkx2ase
+    >>> from molify import networkx2ase
     >>> graph = nx.Graph()
     >>> graph.add_node(0, position=[0,0,0], atomic_number=1, charge=0)
     >>> graph.add_node(1, position=[1,0,0], atomic_number=1, charge=0)
@@ -111,7 +111,7 @@ def networkx2rdkit(graph: nx.Graph, suggestions: list[str] | None = None) -> Che
     Examples
     --------
     >>> import networkx as nx
-    >>> from rdkit2ase import networkx2rdkit
+    >>> from molify import networkx2rdkit
     >>> graph = nx.Graph()
     >>> graph.add_node(0, atomic_number=6, charge=0)
     >>> graph.add_node(1, atomic_number=8, charge=0)
@@ -127,7 +127,7 @@ def networkx2rdkit(graph: nx.Graph, suggestions: list[str] | None = None) -> Che
     >>> graph2.add_edge(0, 1, bond_order=None)  # Will be determined
     >>> mol2 = networkx2rdkit(graph2)
     """
-    from rdkit2ase.bond_order import update_bond_order
+    from molify.bond_order import update_bond_order
 
     # Check if any edges have bond_order=None and determine them if needed
     has_none_bond_orders = any(

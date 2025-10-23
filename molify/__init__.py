@@ -14,6 +14,10 @@ from molify.substructure import (
     visualize_selected_molecules,
 )
 from molify.utils import unwrap_structures
+import importlib.metadata
+
+
+__version__ = importlib.metadata.version("molify")
 
 __all__ = [
     "ase2rdkit",

@@ -22,10 +22,16 @@ def test_partial_suggestions():
     wrapped_atoms.positions += [5, 5, 5]
     wrapped_atoms.wrap()
 
-    # it will work, if all suggestions are present
-    a = rdkit2ase.ase2networkx(atoms, suggestions=[VC, DMC])
+    # ase2networkx now only determines connectivity, not bond orders
+    # To get bond orders with suggestions, pass through networkx2rdkit
+    graph_a = rdkit2ase.ase2networkx(atoms)
+    from rdkit2ase import networkx2rdkit, rdkit2networkx
+    mol_a = networkx2rdkit(graph_a, suggestions=[VC, DMC])
+    a = rdkit2networkx(mol_a)
 
-    b = rdkit2ase.ase2networkx(wrapped_atoms, suggestions=[VC, DMC])
+    graph_b = rdkit2ase.ase2networkx(wrapped_atoms)
+    mol_b = networkx2rdkit(graph_b, suggestions=[VC, DMC])
+    b = rdkit2networkx(mol_b)
 
     for node in a.nodes:
         assert a[node] == b[node]

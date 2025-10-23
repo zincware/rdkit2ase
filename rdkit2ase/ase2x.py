@@ -4,8 +4,6 @@ import numpy as np
 from ase.neighborlist import natural_cutoffs, neighbor_list
 from rdkit import Chem
 
-from rdkit2ase.bond_order import update_bond_order
-
 try:
     import vesin
 except ImportError:
@@ -98,24 +96,19 @@ def _add_node_properties(
 
 def ase2networkx(
     atoms: ase.Atoms,
-    suggestions: list[str] | None = None,
     pbc: bool = True,
     scale: float = 1.2,
 ) -> nx.Graph:
-    """Convert an ASE Atoms object to a NetworkX graph with bonding information.
+    """Convert an ASE Atoms object to a NetworkX graph.
+
+    Determines which atoms are bonded (connectivity).
+    All edges will have bond_order=None unless atoms.info['connectivity']
+    already has bond orders.
 
     Parameters
     ----------
     atoms : ase.Atoms
         The ASE Atoms object to convert into a graph.
-    suggestions : list[str], optional
-        List of SMILES patterns to suggest bond orders (default is None).
-        If None, bond order is only determined from connectivity.
-        If you provide an empty list, bond order will be determined
-        using rdkit's bond order determination algorithm.
-        If SMILES patterns are provided, they will be used to
-        suggest bond orders first, and then
-        rdkit's bond order determination algorithm will be used.
     pbc : bool, optional
         Whether to consider periodic boundary conditions when calculating
         distances (default is True). If False, only connections within
@@ -127,7 +120,7 @@ def ase2networkx(
     Returns
     -------
     networkx.Graph
-        An undirected NetworkX graph with atomic properties and bonding information.
+        An undirected NetworkX graph with connectivity information.
 
     Notes
     -----
@@ -147,8 +140,9 @@ def ase2networkx(
     Connectivity is determined by:
 
     1. Using explicit connectivity if present in atoms.info
-    2. Otherwise using distance-based cutoffs and use SMILES patterns
-    3. Use rdkit's bond order determination algorithm if no suggestions are provided.
+    2. Otherwise using distance-based cutoffs (edges will have bond_order=None)
+
+    To get bond orders, pass the graph to networkx2rdkit().
 
     Examples
     --------
@@ -172,6 +166,7 @@ def ase2networkx(
             (int(i), int(j), float(bond_order) if bond_order is not None else None)
             for i, j, bond_order in connectivity
         ]
+        # Always use explicit connectivity if provided
         return _create_graph_from_connectivity(atoms, connectivity, charges)
 
     connectivity_matrix, non_bonding_atomic_numbers = _compute_connectivity_matrix(
@@ -187,35 +182,27 @@ def ase2networkx(
     graph.graph["pbc"] = atoms.pbc
     graph.graph["cell"] = atoms.cell
 
-    if suggestions is not None:
-        update_bond_order(graph, suggestions)
-
     return graph
 
 
 def ase2rdkit(atoms: ase.Atoms, suggestions: list[str] | None = None) -> Chem.Mol:
     """Convert an ASE Atoms object to an RDKit molecule.
 
+    Convenience function that chains:
+    ase2networkx() → networkx2rdkit(suggestions=...)
+
     Parameters
     ----------
     atoms : ase.Atoms
         The ASE Atoms object to convert.
     suggestions : list[str], optional
-        List of SMARTS patterns to suggest bond orders (default is None).
+        SMILES/SMARTS patterns for bond order determination.
+        Passed directly to networkx2rdkit().
 
     Returns
     -------
     rdkit.Chem.Mol
-        The resulting RDKit molecule with 3D coordinates.
-
-    Notes
-    -----
-    This function first converts the Atoms object to a NetworkX graph using
-    ase2networkx, then converts the graph to an RDKit molecule using
-    networkx2rdkit.
-
-    If connectivity information exists but contains None bond orders, it will
-    be automatically removed and bond orders will be determined automatically.
+        The resulting RDKit molecule with bond orders determined.
 
     Examples
     --------
@@ -230,15 +217,5 @@ def ase2rdkit(atoms: ase.Atoms, suggestions: list[str] | None = None) -> Chem.Mo
 
     from rdkit2ase import ase2networkx, networkx2rdkit
 
-    # Check if connectivity exists but has None bond orders
-    # If so, remove it and use suggestions=[] to determine bond orders
-    if suggestions is None and "connectivity" in atoms.info:
-        connectivity = atoms.info["connectivity"]
-        if connectivity and any(bond_order is None for _, _, bond_order in connectivity):
-            # Create a copy to avoid modifying the original
-            atoms = atoms.copy()
-            del atoms.info["connectivity"]
-            suggestions = []
-
-    graph = ase2networkx(atoms, suggestions=suggestions)
-    return networkx2rdkit(graph)
+    graph = ase2networkx(atoms)
+    return networkx2rdkit(graph, suggestions=suggestions)

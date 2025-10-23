@@ -112,20 +112,36 @@ def test_ase2networkx_no_connectivity(atoms_and_connectivity):
 def test_ase2networkx_guess_connectivity(atoms_and_connectivity):
     _, atoms, connectivity = atoms_and_connectivity
     atoms.info.pop("connectivity")
-    graph = rdkit2ase.ase2networkx(atoms, suggestions=[])
+    # ase2networkx now only determines connectivity, not bond orders
+    # To get bond orders, we need to pass through networkx2rdkit
+    graph = rdkit2ase.ase2networkx(atoms)
+    from rdkit2ase import networkx2rdkit
+    # This will determine bond orders
+    mol = networkx2rdkit(graph, suggestions=[])
+    # Convert back to verify bond orders were determined
+    from rdkit2ase import rdkit2networkx
+    graph_with_orders = rdkit2networkx(mol)
     for i, j, bond_order in connectivity:
-        assert graph.has_edge(i, j)
-        assert graph.edges[i, j]["bond_order"] == bond_order
+        assert graph_with_orders.has_edge(i, j)
+        assert graph_with_orders.edges[i, j]["bond_order"] == bond_order
 
 
 @pytest.mark.parametrize("atoms_and_connectivity", SMILES_LIST, indirect=True)
 def test_ase2networkx_smiles_connectivity(atoms_and_connectivity):
     smiles, atoms, connectivity = atoms_and_connectivity
     atoms.info.pop("connectivity")
-    graph = rdkit2ase.ase2networkx(atoms, suggestions=[smiles])
+    # ase2networkx now only determines connectivity, not bond orders
+    # To get bond orders with SMILES suggestions, pass through networkx2rdkit
+    graph = rdkit2ase.ase2networkx(atoms)
+    from rdkit2ase import networkx2rdkit
+    # This will determine bond orders using the SMILES suggestion
+    mol = networkx2rdkit(graph, suggestions=[smiles])
+    # Convert back to verify bond orders were determined
+    from rdkit2ase import rdkit2networkx
+    graph_with_orders = rdkit2networkx(mol)
     for i, j, bond_order in connectivity:
-        assert graph.has_edge(i, j)
-        assert graph.edges[i, j]["bond_order"] == bond_order
+        assert graph_with_orders.has_edge(i, j)
+        assert graph_with_orders.edges[i, j]["bond_order"] == bond_order
 
 
 @pytest.mark.parametrize("atoms_and_connectivity", SMILES_LIST, indirect=True)
@@ -154,14 +170,12 @@ def test_ase2rdkit(atoms_and_connectivity):
 def test_ase2rdkit_no_connectivity(atoms_and_connectivity):
     smiles, atoms, connectivity = atoms_and_connectivity
     atoms.info.pop("connectivity")
-    if len(connectivity) > 0:
-        with pytest.raises(ValueError):
-            rdkit2ase.ase2rdkit(atoms)
-    else:
-        mol = rdkit2ase.ase2rdkit(atoms)
-        assert Chem.MolToSmiles(mol, canonical=True) == Chem.MolToSmiles(
-            Chem.AddHs(Chem.MolFromSmiles(smiles)), canonical=True
-        )
+    # With the new architecture, ase2rdkit automatically determines bond orders
+    # So this should work even without connectivity information
+    mol = rdkit2ase.ase2rdkit(atoms, suggestions=[])
+    assert Chem.MolToSmiles(mol, canonical=True) == Chem.MolToSmiles(
+        Chem.AddHs(Chem.MolFromSmiles(smiles)), canonical=True
+    )
 
 
 @pytest.mark.parametrize("atoms_and_connectivity", SMILES_LIST, indirect=True)
@@ -216,12 +230,20 @@ def test_ase2networkx_ec_emc_li_pf6_no_connectivity(ec_emc_li_pf6):
 def test_ase2networkx_ec_emc_li_pf6_guess_connectivity(ec_emc_li_pf6):
     connectivity = ec_emc_li_pf6.info.pop("connectivity")
     ec_emc_li_pf6.set_initial_charges()
-    graph = rdkit2ase.ase2networkx(ec_emc_li_pf6, suggestions=[])
+    # ase2networkx now only determines connectivity, not bond orders
+    # To get bond orders, we need to pass through networkx2rdkit
+    graph = rdkit2ase.ase2networkx(ec_emc_li_pf6)
+    from rdkit2ase import networkx2rdkit
+    # This will determine bond orders
+    mol = networkx2rdkit(graph, suggestions=[])
+    # Convert back to verify bond orders were determined
+    from rdkit2ase import rdkit2networkx
+    graph_with_orders = rdkit2networkx(mol)
     for i, j, bond_order in connectivity:
-        assert graph.has_edge(i, j)
-        assert graph.edges[i, j]["bond_order"] == bond_order
+        assert graph_with_orders.has_edge(i, j)
+        assert graph_with_orders.edges[i, j]["bond_order"] == bond_order
 
-    li_nodes = [d for _, d in graph.nodes(data=True) if d["atomic_number"] == 3]
+    li_nodes = [d for _, d in graph_with_orders.nodes(data=True) if d["atomic_number"] == 3]
     assert len(li_nodes) == 3
     for d in li_nodes:
         assert d["charge"] == 1

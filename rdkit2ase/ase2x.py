@@ -166,7 +166,6 @@ def ase2networkx(
             (int(i), int(j), float(bond_order) if bond_order is not None else None)
             for i, j, bond_order in connectivity
         ]
-        # Always use explicit connectivity if provided
         return _create_graph_from_connectivity(atoms, connectivity, charges)
 
     connectivity_matrix, non_bonding_atomic_numbers = _compute_connectivity_matrix(

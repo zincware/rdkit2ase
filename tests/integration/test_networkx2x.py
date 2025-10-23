@@ -245,7 +245,7 @@ def test_networkx2rdkit_preserves_input_graph():
     original_edges = {(u, v): data.copy() for u, v, data in graph.edges(data=True)}
 
     # Call networkx2rdkit
-    mol = rdkit2ase.networkx2rdkit(graph, suggestions=[])
+    _ = rdkit2ase.networkx2rdkit(graph, suggestions=[])
 
     # Verify original graph is unchanged
     for u, v, data in graph.edges(data=True):
@@ -258,7 +258,7 @@ def test_networkx2rdkit_mixed_bond_orders():
     # Create a simple molecule
     atoms = rdkit2ase.smiles2atoms("CCO")
     graph = rdkit2ase.ase2networkx(atoms)
-    original_connectivity = atoms.info["connectivity"].copy()
+    _ = atoms.info["connectivity"].copy()
 
     # Set some bond orders to None
     edges = list(graph.edges())

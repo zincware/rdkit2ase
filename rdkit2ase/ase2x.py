@@ -214,6 +214,9 @@ def ase2rdkit(atoms: ase.Atoms, suggestions: list[str] | None = None) -> Chem.Mo
     ase2networkx, then converts the graph to an RDKit molecule using
     networkx2rdkit.
 
+    If connectivity information exists but contains None bond orders, it will
+    be automatically removed and bond orders will be determined automatically.
+
     Examples
     --------
     >>> from rdkit2ase import ase2rdkit, smiles2atoms
@@ -226,6 +229,16 @@ def ase2rdkit(atoms: ase.Atoms, suggestions: list[str] | None = None) -> Chem.Mo
         return Chem.Mol()
 
     from rdkit2ase import ase2networkx, networkx2rdkit
+
+    # Check if connectivity exists but has None bond orders
+    # If so, remove it and use suggestions=[] to determine bond orders
+    if suggestions is None and "connectivity" in atoms.info:
+        connectivity = atoms.info["connectivity"]
+        if connectivity and any(bond_order is None for _, _, bond_order in connectivity):
+            # Create a copy to avoid modifying the original
+            atoms = atoms.copy()
+            del atoms.info["connectivity"]
+            suggestions = []
 
     graph = ase2networkx(atoms, suggestions=suggestions)
     return networkx2rdkit(graph)

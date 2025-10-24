@@ -31,7 +31,9 @@ def test_get_substructure():
     atoms = molify.smiles2atoms("C(C(CO[N+](=O)[O-])O[N+](=O)[O-])O[N+](=O)[O-]")
     # match NO3 group using smarts
     frames = molify.get_substructures(
-        atoms, "[N+](=O)[O-]", suggestions=["C(C(CO[N+](=O)[O-])O[N+](=O)[O-])O[N+](=O)[O-]"]
+        atoms,
+        "[N+](=O)[O-]",
+        suggestions=["C(C(CO[N+](=O)[O-])O[N+](=O)[O-])O[N+](=O)[O-]"],
     )
     assert len(frames) == 3
     for frame in frames:
@@ -47,7 +49,9 @@ def test_get_substructure_box(packmol):
 
     # match NO3 group using smarts
     frames = molify.get_substructures(
-        box, "[N+](=O)[O-]", suggestions=["C(C(CO[N+](=O)[O-])O[N+](=O)[O-])O[N+](=O)[O-]"]
+        box,
+        "[N+](=O)[O-]",
+        suggestions=["C(C(CO[N+](=O)[O-])O[N+](=O)[O-])O[N+](=O)[O-]"],
     )
     assert len(frames) == 9
     for frame in frames:
@@ -90,7 +94,9 @@ def test_bmim_bf4_no_info():
         assert box[match].get_chemical_symbols() == bf4[0].get_chemical_symbols()
 
     # Note: RDKit perceives the imidazolium ring as aromatic, so we use lowercase notation
-    bmim_matches = molify.match_substructure(mol, "CCCCn1cc[n+](C)c1", hydrogens="include")
+    bmim_matches = molify.match_substructure(
+        mol, "CCCCn1cc[n+](C)c1", hydrogens="include"
+    )
     assert len(bmim_matches) == 10
     for match in bmim_matches:
         assert len(match) == 25
@@ -129,7 +135,7 @@ def test_bmim_bf4_no_info():
     assert len(bmim_matches_smarts) == 10
     for match in bmim_matches_smarts:
         # explict only hydrogens are returned
-        assert len(match) == 25 # 10 heavy + 15 H
+        assert len(match) == 25  # 10 heavy + 15 H
 
 
 @pytest.fixture
@@ -313,24 +319,16 @@ def test_match_substructure_mapped_order(alanine_dipeptide):
     mol = molify.ase2rdkit(alanine_dipeptide)
 
     # Select single mapped atom
-    matches = molify.match_substructure(
-        mol, "CC(=O)N[C:1](C)C(=O)NC", mapped_only=True
-    )
+    matches = molify.match_substructure(mol, "CC(=O)N[C:1](C)C(=O)NC", mapped_only=True)
     assert matches == ((4,),)
 
-    matches = molify.match_substructure(
-        mol, "CC(=O)NC([C:1])C(=O)NC", mapped_only=True
-    )
+    matches = molify.match_substructure(mol, "CC(=O)NC([C:1])C(=O)NC", mapped_only=True)
     assert matches == ((5,),)
 
-    matches = molify.match_substructure(
-        mol, "CC(=O)NC(C)[C:1](=O)NC", mapped_only=True
-    )
+    matches = molify.match_substructure(mol, "CC(=O)NC(C)[C:1](=O)NC", mapped_only=True)
     assert matches == ((6,),)
 
-    matches = molify.match_substructure(
-        mol, "CC(=O)NC(C)C(=O)[N:1]C", mapped_only=True
-    )
+    matches = molify.match_substructure(mol, "CC(=O)NC(C)C(=O)[N:1]C", mapped_only=True)
     assert matches == ((8,),)
 
     # now all of them in order
@@ -380,9 +378,7 @@ def test_match_substructure_mapped_order_box(alanine_dipeptide_box):
     """Test mapped atom selection with multiple molecules."""
     mol = molify.ase2rdkit(alanine_dipeptide_box)
 
-    matches = molify.match_substructure(
-        mol, "CC(=O)N[C:1](C)C(=O)NC", mapped_only=True
-    )
+    matches = molify.match_substructure(mol, "CC(=O)N[C:1](C)C(=O)NC", mapped_only=True)
     # Group by fragment
     grouped = molify.group_matches_by_fragment(mol, matches)
     assert grouped == [[4], [26], [48]]

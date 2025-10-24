@@ -139,7 +139,8 @@ def match_substructure(
                     h_neighbors = sorted(
                         neighbor.GetIdx()
                         for neighbor in atom.GetNeighbors()
-                        if neighbor.GetAtomicNum() == 1 and neighbor.GetIdx() not in already_added
+                        if neighbor.GetAtomicNum() == 1
+                        and neighbor.GetIdx() not in already_added
                     )
                     final_atoms_list.extend(h_neighbors)
                     already_added.update(h_neighbors)

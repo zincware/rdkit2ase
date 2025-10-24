@@ -16,9 +16,8 @@ Key Features
 ------------
 
 - **Bidirectional conversions** between RDKit Mol, ASE Atoms, and NetworkX Graph objects
-- **3D conformer generation** from SMILES strings using RDKit's embedding algorithms
-- **Molecular system building** with Packmol integration for creating solvated systems and mixtures
 - **Connectivity preservation** with automatic bond detection when needed
+- **Molecular system building** from SMILES to solvated systems via an additional Packmol_ interface
 
 Conversion Overview
 -------------------
@@ -45,7 +44,7 @@ The rdkit package is built around the concept of molecules, with defined connect
 In contrast, ASE Atoms objects are built around atomic positions and atomic numbers, with no inherent concept of bonds or connectivity.
 NetworkX Graphs are general-purpose graph structures with no predefined chemistry concepts.
 
-To store the connectivity information inside ASE Atoms objects, molify introduces a custom attribute ``ase.Atoms.info['connectivity']``: a list of tuples ``(atom_index_1, atom_index_2, bond_order)`` where indices are 0-based integers and ``bond_order`` can be a float (1.0, 2.0, 3.0, 1.5 for aromatic) or None for unknown bond orders.
+To store the connectivity information inside ASE Atoms objects, molify introduces a custom attribute ``ase.Atoms.info['connectivity']``: a list of tuples ``(atom_index_1, atom_index_2, bond_order)`` where indices are 0-based integers and ``bond_order`` can be a float following RDKit convention or None for unknown bond orders.
 
 When connectivity information is not available:
 
@@ -69,7 +68,7 @@ We can convert any RDKit molecule to an ASE Atoms object:
    etoh = Chem.AddHs(etoh)
 
    atoms = molify.rdkit2ase(etoh)
-   
+
 
 Likewise, we can convert the ASE Atoms object back to an RDKit molecule:
 
@@ -133,7 +132,7 @@ molify provides a convenient interface to Packmol_ for building molecular system
       data=[water, etoh], counts=[5, 5], density=800, packmol="packmol.jl"
    )
 
-More of these tools are described in the :doc:`packmol_tools`, :doc:`ase_tools`, :doc:`rdkit_tools`, and :doc:`atom_selection` sections.
+More details on these tools can be found in the :doc:`packmol_tools`, :doc:`ase_tools`, :doc:`rdkit_tools`, and :doc:`atom_selection` sections.
 
 
 Installation

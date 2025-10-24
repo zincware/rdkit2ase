@@ -1,13 +1,18 @@
 import io
 import subprocess
 from collections import defaultdict
+from typing import Literal, Optional, cast
 
 import ase.io
 import ase.units
+import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 import rdkit.Chem
 import rdkit.Chem.rdDetermineBonds
+from ase.data.colors import jmol_colors
+from matplotlib.axes import Axes
+from matplotlib.figure import Figure
 from rdkit import Chem
 
 
@@ -253,3 +258,271 @@ def get_packmol_julia_version() -> str:
             "Failed to get Packmol version via Julia. Please verify that you can"
             ' import packmol via `julia -e "import Pkg; Pkg.status("Packmol")"`'
         ) from e
+
+
+def draw_molecular_graph(
+    graph: nx.Graph,
+    layout: Literal["spring", "circular", "kamada_kawai"] = "kamada_kawai",
+    figsize: tuple[float, float] = (8, 8),
+    node_size: int = 500,
+    font_size: Optional[int] = None,
+    show_bond_orders: bool = True,
+    weight_by_bond_order: bool = True,
+    ax: Optional[Axes] = None,
+) -> Figure:
+    """Draw a molecular graph with bond order visualization.
+
+    This function visualizes NetworkX molecular graphs with proper representation
+    of chemical bonds. Single, double, triple, and aromatic bonds are displayed
+    with appropriate line styles.
+
+    Parameters
+    ----------
+    graph : nx.Graph
+        NetworkX graph with node attribute 'atomic_number' and edge attribute
+        'bond_order'. Can be created from molify conversion functions like
+        ase2networkx() or rdkit2networkx().
+    layout : Literal["spring", "circular", "kamada_kawai"], optional
+        Layout algorithm to use for node positioning. Options are:
+        - 'spring': Force-directed layout
+        - 'circular': Nodes arranged in a circle
+        - 'kamada_kawai': Force-directed using Kamada-Kawai algorithm (default)
+    figsize : tuple[float, float], optional
+        Figure size as (width, height) in inches. Default is (8, 8).
+    node_size : int, optional
+        Size of the nodes. Default is 3000.
+    font_size : int, optional
+        Font size for node labels (atomic numbers). If None, automatically scaled
+        based on node_size (approximately 0.66 * sqrt(node_size)). Default is None.
+    show_bond_orders : bool, optional
+        If True, visualize different bond orders with multiple parallel lines.
+        Default is True.
+    weight_by_bond_order : bool, optional
+        If True and layout is 'spring', use bond_order as edge weights in the
+        spring layout algorithm. Higher bond orders pull atoms closer together.
+        This makes double/triple bonds appear shorter than single bonds.
+        Default is True.
+    ax : Axes, optional
+        Matplotlib axes to draw on. If None, creates a new figure.
+
+    Returns
+    -------
+    Figure
+        Matplotlib figure containing the molecular graph visualization.
+
+    Notes
+    -----
+    Node Colors:
+    - Nodes are colored using Jmol color scheme based on atomic numbers
+    - Common colors: Carbon (gray), Hydrogen (white), Oxygen (red),
+      Nitrogen (blue)
+
+    Bond Order Visualization:
+    - Single bond (1.0): 1 solid line
+    - Double bond (2.0): 2 parallel solid lines
+    - Triple bond (3.0): 3 parallel solid lines
+    - Aromatic bond (1.5): 1 solid line + 1 dashed line (parallel)
+    - Unknown (None): 1 thin solid line
+
+    Examples
+    --------
+    >>> from molify import smiles2atoms, ase2networkx, draw_molecular_graph
+    >>> atoms = smiles2atoms("C=C=O")  # Ketene
+    >>> graph = ase2networkx(atoms)
+    >>> fig = draw_molecular_graph(graph, layout='spring')
+
+    >>> # For benzene showing aromatic bonds
+    >>> benzene = smiles2atoms("c1ccccc1")
+    >>> graph_benzene = ase2networkx(benzene)
+    >>> fig = draw_molecular_graph(graph_benzene, show_bond_orders=True)
+    """
+    # Calculate font_size and linewidth based on node_size if not provided
+    if font_size is None:
+        font_size = int(0.66 * np.sqrt(node_size))
+
+    linewidth = 0.091 * np.sqrt(node_size)
+
+    # Create figure if axes not provided
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize)
+        created_fig = True
+    else:
+        fig_or_none = ax.get_figure()
+        if fig_or_none is None:
+            raise ValueError("Provided axes is not attached to a figure")
+        # Cast to Figure (assuming user provides proper Axes, not SubFigure axes)
+        fig = cast(Figure, fig_or_none)
+        created_fig = False
+
+    # Compute node positions using the specified layout
+    if layout == "spring":
+        if weight_by_bond_order:
+            # Use bond_order as weights - higher order = stronger spring
+            pos = nx.spring_layout(graph, weight="bond_order", seed=42)
+        else:
+            pos = nx.spring_layout(graph, seed=42)
+    elif layout == "circular":
+        pos = nx.circular_layout(graph)
+    elif layout == "kamada_kawai":
+        pos = nx.kamada_kawai_layout(graph)
+    else:
+        raise ValueError(
+            f"Unknown layout '{layout}'. "
+            f"Choose from 'spring', 'circular', 'kamada_kawai'."
+        )
+
+    # Draw edges with bond order visualization
+    if show_bond_orders:
+        _draw_edges_with_bond_orders(graph, pos, ax)
+    else:
+        nx.draw_networkx_edges(graph, pos, ax=ax, width=2)
+
+    # Get node colors based on atomic numbers using Jmol colors
+    node_colors = []
+    for node in graph.nodes():
+        atomic_number = graph.nodes[node].get("atomic_number", 0)
+        # jmol_colors is indexed by atomic number (1-indexed for elements)
+        if atomic_number > 0 and atomic_number < len(jmol_colors):
+            node_colors.append(jmol_colors[atomic_number])
+        else:
+            node_colors.append([0.5, 0.5, 0.5])  # Gray for unknown
+
+    # Draw nodes with Jmol colors
+    nx.draw_networkx_nodes(
+        graph,
+        pos,
+        node_size=node_size,
+        node_color=node_colors,
+        edgecolors="black",
+        linewidths=linewidth,
+        ax=ax,
+    )
+
+    # Draw labels (atomic numbers)
+    labels = nx.get_node_attributes(graph, "atomic_number")
+    nx.draw_networkx_labels(
+        graph, pos, labels=labels, font_size=font_size, font_color="black", ax=ax
+    )
+
+    # Add margins to prevent node clipping at edges
+    ax.margins(0.15)
+    ax.axis("off")
+    fig.tight_layout()
+
+    # Close figure to prevent double display in notebooks
+    # (only if we created it; otherwise it's managed externally)
+    if created_fig:
+        plt.close(fig)
+
+    return fig
+
+
+def _draw_edges_with_bond_orders(
+    graph: nx.Graph, pos: dict, ax: Axes, line_offset: float = 0.02
+) -> None:
+    """Draw edges with multiple parallel lines based on bond order.
+
+    Parameters
+    ----------
+    graph : nx.Graph
+        NetworkX graph with edge attribute 'bond_order'
+    pos : dict
+        Dictionary mapping node IDs to (x, y) positions
+    ax : Axes
+        Matplotlib axes to draw on
+    line_offset : float
+        Perpendicular offset between parallel lines for multiple bonds
+    """
+    for u, v, data in graph.edges(data=True):
+        bond_order = data.get("bond_order")
+
+        # Get node positions
+        x0, y0 = pos[u]
+        x1, y1 = pos[v]
+
+        # Calculate perpendicular direction for parallel lines
+        dx = x1 - x0
+        dy = y1 - y0
+        length = np.sqrt(dx**2 + dy**2)
+
+        if length == 0:
+            continue
+
+        # Perpendicular unit vector
+        perp_x = -dy / length
+        perp_y = dx / length
+
+        if bond_order is None:
+            # Unknown bond order - draw thin line
+            ax.plot([x0, x1], [y0, y1], "k-", linewidth=1, zorder=1)
+
+        elif bond_order == 1.0:
+            # Single bond
+            ax.plot([x0, x1], [y0, y1], "k-", linewidth=2, zorder=1)
+
+        elif bond_order == 2.0:
+            # Double bond - two parallel lines
+            offset = line_offset
+            for sign in [-1, 1]:
+                x0_offset = x0 + sign * offset * perp_x
+                y0_offset = y0 + sign * offset * perp_y
+                x1_offset = x1 + sign * offset * perp_x
+                y1_offset = y1 + sign * offset * perp_y
+                ax.plot(
+                    [x0_offset, x1_offset],
+                    [y0_offset, y1_offset],
+                    "k-",
+                    linewidth=2,
+                    zorder=1,
+                )
+
+        elif bond_order == 3.0:
+            # Triple bond - three parallel lines
+            offset = line_offset
+            # Center line
+            ax.plot([x0, x1], [y0, y1], "k-", linewidth=2, zorder=1)
+            # Two outer lines
+            for sign in [-1, 1]:
+                x0_offset = x0 + sign * offset * perp_x
+                y0_offset = y0 + sign * offset * perp_y
+                x1_offset = x1 + sign * offset * perp_x
+                y1_offset = y1 + sign * offset * perp_y
+                ax.plot(
+                    [x0_offset, x1_offset],
+                    [y0_offset, y1_offset],
+                    "k-",
+                    linewidth=2,
+                    zorder=1,
+                )
+
+        elif bond_order == 1.5:
+            # Aromatic bond - one solid and one dashed line
+            offset = line_offset * 0.7
+            # Solid line
+            x0_offset = x0 - offset * perp_x
+            y0_offset = y0 - offset * perp_y
+            x1_offset = x1 - offset * perp_x
+            y1_offset = y1 - offset * perp_y
+            ax.plot(
+                [x0_offset, x1_offset],
+                [y0_offset, y1_offset],
+                "k-",
+                linewidth=2,
+                zorder=1,
+            )
+            # Dashed line
+            x0_offset = x0 + offset * perp_x
+            y0_offset = y0 + offset * perp_y
+            x1_offset = x1 + offset * perp_x
+            y1_offset = y1 + offset * perp_y
+            ax.plot(
+                [x0_offset, x1_offset],
+                [y0_offset, y1_offset],
+                "k--",
+                linewidth=2,
+                zorder=1,
+            )
+
+        else:
+            # Unknown bond order value - draw single line
+            ax.plot([x0, x1], [y0, y1], "k-", linewidth=2, zorder=1)

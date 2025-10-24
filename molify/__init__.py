@@ -15,7 +15,7 @@ from molify.substructure import (
     select_atoms_grouped,
     visualize_selected_molecules,
 )
-from molify.utils import unwrap_structures
+from molify.utils import draw_molecular_graph, unwrap_structures
 
 __version__ = importlib.metadata.version("molify")
 
@@ -32,6 +32,7 @@ __all__ = [
     "visualize_selected_molecules",
     "unwrap_structures",
     "select_atoms_grouped",
+    "draw_molecular_graph",
     #
     "ase2networkx",
     #

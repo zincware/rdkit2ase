@@ -6,72 +6,33 @@ import molify
 
 def test_match_substructure():
     atoms = molify.smiles2atoms("CC(=O)O")
+    mol = molify.ase2rdkit(atoms, suggestions=["CC(=O)O"])
 
-    # match CH3 fragment using smarts
-    match = molify.match_substructure(atoms, smarts="[C]([H])([H])[H]")
+    # match CH3 fragment (carbon with 3 hydrogens)
+    match = molify.match_substructure(mol, "[C;H3]", hydrogens="include")
     assert match == ((0, 4, 5, 6),)
     assert atoms[match[0]].get_chemical_symbols() == ["C", "H", "H", "H"]
 
-    # now match using a ase.Atoms object
-
-    ref = molify.smiles2atoms("[C]([H])([H])[H]")
-    match = molify.match_substructure(atoms, fragment=ref)
-    assert match == ((0, 4, 5, 6),)
-
-    # now match using a Chem.Mol object
-    ref_mol = Chem.MolFromSmarts("[C]([H])([H])[H]")
-    match = molify.match_substructure(atoms, mol=ref_mol)
-    assert match == ((0, 4, 5, 6),)
-
-    # check everything else raises TypeError
-    with pytest.raises(TypeError):
-        molify.match_substructure(atoms, 42)  # type: ignore[arg-type]
-
 
 @pytest.mark.parametrize("packmol", ["packmol.jl"])
-def test_match_substructur_box(packmol):
+def test_match_substructure_box(packmol):
     atoms = molify.smiles2conformers("CC(=O)O", 1)
     box = molify.pack([atoms], counts=[3], packmol=packmol, density=0.5)
+    mol = molify.ase2rdkit(box, suggestions=["CC(=O)O"])
 
-    # match CH3 fragment using smarts
-    match = molify.match_substructure(box, smarts="[C]([H])([H])[H]")
+    # match CH3 fragment (carbon with 3 hydrogens)
+    match = molify.match_substructure(mol, "[C;H3]", hydrogens="include")
     assert match == ((0, 4, 5, 6), (8, 12, 13, 14), (16, 20, 21, 22))
     for m in match:
         assert box[m].get_chemical_symbols() == ["C", "H", "H", "H"]
-
-    # now match using a ase.Atoms object
-    ref = molify.smiles2atoms("[C]([H])([H])[H]")
-    match = molify.match_substructure(box, fragment=ref)
-    assert match == ((0, 4, 5, 6), (8, 12, 13, 14), (16, 20, 21, 22))
-
-    # now match using a Chem.Mol object
-    ref_mol = Chem.MolFromSmarts("[C]([H])([H])[H]")
-    match = molify.match_substructure(box, mol=ref_mol)
-    assert match == ((0, 4, 5, 6), (8, 12, 13, 14), (16, 20, 21, 22))
-
-    # check everything else raises TypeError
-    with pytest.raises(TypeError):
-        molify.match_substructure(box, 42)
 
 
 def test_get_substructure():
     atoms = molify.smiles2atoms("C(C(CO[N+](=O)[O-])O[N+](=O)[O-])O[N+](=O)[O-]")
     # match NO3 group using smarts
-    frames = molify.get_substructures(atoms, smarts="[N+](=O)[O-]")
-    assert len(frames) == 3
-    for frame in frames:
-        assert frame.get_chemical_symbols() == ["N", "O", "O"]
-
-    # match using a ase.Atoms object
-    ref = molify.smiles2atoms("[N+](=O)[O-]")
-    frames = molify.get_substructures(atoms, fragment=ref)
-    assert len(frames) == 3
-    for frame in frames:
-        assert frame.get_chemical_symbols() == ["N", "O", "O"]
-
-    # match using a Chem.Mol object
-    ref_mol = Chem.MolFromSmarts("[N+](=O)[O-]")
-    frames = molify.get_substructures(atoms, mol=ref_mol)
+    frames = molify.get_substructures(
+        atoms, "[N+](=O)[O-]", suggestions=["C(C(CO[N+](=O)[O-])O[N+](=O)[O-])O[N+](=O)[O-]"]
+    )
     assert len(frames) == 3
     for frame in frames:
         assert frame.get_chemical_symbols() == ["N", "O", "O"]
@@ -85,21 +46,9 @@ def test_get_substructure_box(packmol):
     box = molify.pack([atoms], counts=[3], packmol=packmol, density=0.5)
 
     # match NO3 group using smarts
-    frames = molify.get_substructures(box, smarts="[N+](=O)[O-]")
-    assert len(frames) == 9
-    for frame in frames:
-        assert frame.get_chemical_symbols() == ["N", "O", "O"]
-
-    # match using a ase.Atoms object
-    ref = molify.smiles2atoms("[N+](=O)[O-]")
-    frames = molify.get_substructures(box, fragment=ref)
-    assert len(frames) == 9
-    for frame in frames:
-        assert frame.get_chemical_symbols() == ["N", "O", "O"]
-
-    # match using a Chem.Mol object
-    ref_mol = Chem.MolFromSmarts("[N+](=O)[O-]")
-    frames = molify.get_substructures(box, mol=ref_mol)
+    frames = molify.get_substructures(
+        box, "[N+](=O)[O-]", suggestions=["C(C(CO[N+](=O)[O-])O[N+](=O)[O-])O[N+](=O)[O-]"]
+    )
     assert len(frames) == 9
     for frame in frames:
         assert frame.get_chemical_symbols() == ["N", "O", "O"]
@@ -130,18 +79,18 @@ def test_bmim_bf4_no_info():
         tolerance=3,
     )
     del box.info["connectivity"]
-    bf4_matches = molify.match_substructure(
-        box, smiles="[B-](F)(F)(F)F", suggestions=[]
-    )
+
+    # Convert to RDKit Mol with suggestions for proper bond detection
+    # Without connectivity, we need suggestions to detect aromatic bonds correctly
+    mol = molify.ase2rdkit(box, suggestions=["CCCCN1C=C[N+](=C1)C", "[B-](F)(F)(F)F"])
+
+    bf4_matches = molify.match_substructure(mol, "[B-](F)(F)(F)F")
     assert len(bf4_matches) == 10
     for match in bf4_matches:
         assert box[match].get_chemical_symbols() == bf4[0].get_chemical_symbols()
 
-    bmim_matches = molify.match_substructure(
-        box,
-        smiles="CCCCN1C=C[N+](=C1)C",
-        suggestions=[],
-    )
+    # Note: RDKit perceives the imidazolium ring as aromatic, so we use lowercase notation
+    bmim_matches = molify.match_substructure(mol, "CCCCn1cc[n+](C)c1", hydrogens="include")
     assert len(bmim_matches) == 10
     for match in bmim_matches:
         assert len(match) == 25
@@ -149,17 +98,38 @@ def test_bmim_bf4_no_info():
             bmim[0].get_chemical_symbols()
         )
 
-    bmim_matches = molify.match_substructure(
-        box,
-        smarts="[H]c1c([H])[n+](C([H])([H])[H])c([H])n1C([H])([H])C([H])([H])C([H])([H])C([H])([H])[H]",
-        suggestions=[],
+    # Also test with explicit hydrogen SMARTS pattern
+    # Note: patterns with explicit [H] should use default hydrogens="exclude"
+    # since the [H] atoms are part of the pattern itself
+    bmim_matches_smarts = molify.match_substructure(
+        mol,
+        "[H]c1c([H])[n+](C([H])([H])[H])c([H])n1C([H])([H])C([H])([H])C([H])([H])C([H])([H])[H]",
+        hydrogens="exclude",
     )
-    assert len(bmim_matches) == 10
-    for match in bmim_matches:
-        assert len(match) == 25
-        assert sorted(box[match].get_chemical_symbols()) == sorted(
-            bmim[0].get_chemical_symbols()
-        )
+    assert len(bmim_matches_smarts) == 10
+    for match in bmim_matches_smarts:
+        # When pattern has explicit [H], only heavy atoms are returned by default
+        assert len(match) == 10
+
+    bmim_matches_smarts = molify.match_substructure(
+        mol,
+        "[H]c1c([H])[n+](C([H])([H])[H])c([H])n1C([H])([H])C([H])([H])C([H])([H])C([H])([H])[H]",
+        hydrogens="isolated",
+    )
+    assert len(bmim_matches_smarts) == 10
+    for match in bmim_matches_smarts:
+        # explict only hydrogens are returned
+        assert len(match) == 15
+
+    bmim_matches_smarts = molify.match_substructure(
+        mol,
+        "[H]c1c([H])[n+](C([H])([H])[H])c([H])n1C([H])([H])C([H])([H])C([H])([H])C([H])([H])[H]",
+        hydrogens="include",
+    )
+    assert len(bmim_matches_smarts) == 10
+    for match in bmim_matches_smarts:
+        # explict only hydrogens are returned
+        assert len(match) == 25 # 10 heavy + 15 H
 
 
 @pytest.fixture
@@ -177,27 +147,30 @@ def toluene_mol():
 
 
 # =============================================================================
-# Test Cases for select_atoms_flat_unique
+# Test Cases for match_substructure with hydrogen handling
 # =============================================================================
 
 
 def test_select_carbons(ethanol_mol):
     """Test selecting all carbon atoms."""
     # Ethanol (CCO with Hs): C(0), C(1), O(2), H(3-8)
-    indices = molify.select_atoms_flat_unique(ethanol_mol, "[#6]")
+    matches = molify.match_substructure(ethanol_mol, "[#6]")
+    # Flatten to get all matched indices
+    indices = [idx for match in matches for idx in match]
     assert sorted(indices) == [0, 1]
 
 
 def test_select_oxygen(ethanol_mol):
     """Test selecting the oxygen atom."""
-    indices = molify.select_atoms_flat_unique(ethanol_mol, "[#8]")
+    matches = molify.match_substructure(ethanol_mol, "[#8]")
+    indices = [idx for match in matches for idx in match]
     assert sorted(indices) == [2]
 
 
 def test_no_matches(ethanol_mol):
     """Test a SMARTS pattern that has no matches."""
-    indices = molify.select_atoms_flat_unique(ethanol_mol, "[F]")  # Fluorine
-    assert indices == []
+    matches = molify.match_substructure(ethanol_mol, "[F]")  # Fluorine
+    assert matches == ()
 
 
 # --- Hydrogen Handling Tests ---
@@ -206,41 +179,37 @@ def test_no_matches(ethanol_mol):
 def test_hydrogens_excluded_by_default(ethanol_mol):
     """Test that hydrogens are excluded by default."""
     # C-O bond involves atoms 1 and 2. Hydrogens attached are not included.
-    indices = molify.select_atoms_flat_unique(ethanol_mol, "CO")
-    assert sorted(indices) == [1, 2]
+    matches = molify.match_substructure(ethanol_mol, "CO")
+    assert matches == ((1, 2),)
 
 
 def test_hydrogens_included(ethanol_mol):
     """Test the 'include' option for hydrogens."""
     # C-O bond (atoms 1, 2) plus attached hydrogens (atoms 6, 7, 8)
     # H on O is atom 8. Hs on C(1) are 6, 7.
-    indices = molify.select_atoms_flat_unique(ethanol_mol, "CO", hydrogens="include")
-    # Expected: C(1), O(2), H(6), H(7), H(8)
-    assert sorted(indices) == [1, 2, 6, 7, 8]
+    matches = molify.match_substructure(ethanol_mol, "CO", hydrogens="include")
+    # Expected: C(1), H(6), H(7), O(2), H(8)
+    assert matches == ((1, 6, 7, 2, 8),)
 
 
 def test_hydrogens_isolated(ethanol_mol):
     """Test the 'isolated' option for hydrogens."""
     # Select ONLY the hydrogens from the C-O match
-    indices = molify.select_atoms_flat_unique(ethanol_mol, "CO", hydrogens="isolated")
+    matches = molify.match_substructure(ethanol_mol, "CO", hydrogens="isolated")
     # Expected: H(6), H(7), H(8)
-    assert sorted(indices) == [6, 7, 8]
+    assert matches == ((6, 7, 8),)
 
 
 def test_smarts_with_explicit_hydrogens(ethanol_mol):
     """Test a SMARTS pattern that explicitly includes hydrogens."""
-    # Find all hydrogens attached to an oxygen
-    indices = molify.select_atoms_flat_unique(
-        ethanol_mol, "[#8]-[H]", hydrogens="include"
-    )
-    # Expected: O(2), H(8)
-    assert sorted(indices) == [2, 8]
+    # Find oxygen attached to hydrogen (pattern includes both O and H)
+    # With default hydrogens="exclude", we get only the heavy atom (oxygen)
+    matches_exclude = molify.match_substructure(ethanol_mol, "[#8]-[H]")
+    assert matches_exclude == ((2,),)
 
-    # Now isolate only the hydrogen from that match
-    h_indices = molify.select_atoms_flat_unique(
-        ethanol_mol, "[#8]-[H]", hydrogens="isolated"
-    )
-    assert sorted(h_indices) == [8]
+    # With hydrogens="isolated", we get only the hydrogen from the match
+    h_matches = molify.match_substructure(ethanol_mol, "[#8]-[H]", hydrogens="isolated")
+    assert h_matches == ((8,),)
 
 
 # --- Mapped SMILES Tests ---
@@ -250,35 +219,34 @@ def test_mapped_smiles(ethanol_mol):
     """Test selecting only mapped atoms using a mapped SMILES pattern."""
     # The pattern "[C:1][C:2]O" matches atoms 0, 1, and 2,
     # but only C:1 and C:2 are mapped.
-    # The function should now return only the indices of the mapped atoms.
-    indices = molify.select_atoms_flat_unique(ethanol_mol, "[C:1][C:2]O")
-    # FIX: The test's expectation is updated to only expect the mapped carbons [0, 1].
-    assert sorted(indices) == [0, 1]
+    # With mapped_only=True, should return only the mapped atoms.
+    matches = molify.match_substructure(ethanol_mol, "[C:1][C:2]O", mapped_only=True)
+    assert matches == ((0, 1),)
 
 
 def test_mapped_smiles_with_hydrogens(ethanol_mol):
     """Test mapped SMILES with hydrogen filtering."""
     # Pattern "C[O:1]" matches atoms C(1) and O(2), but only O(2) is mapped.
-    # The core selection will be just atom 2.
+    # With mapped_only=True, core selection will be just atom 2.
 
     # Include hydrogens attached to the mapped oxygen
-    indices_included = molify.select_atoms_flat_unique(
-        ethanol_mol, "C[O:1]", hydrogens="include"
+    matches_included = molify.match_substructure(
+        ethanol_mol, "C[O:1]", hydrogens="include", mapped_only=True
     )
     # Expected: O(2) and its hydrogen H(8)
-    assert sorted(indices_included) == [2, 8]
+    assert matches_included == ((2, 8),)
 
     # Exclude hydrogens (returns just the mapped heavy atom)
-    indices_excluded = molify.select_atoms_flat_unique(
-        ethanol_mol, "C[O:1]", hydrogens="exclude"
+    matches_excluded = molify.match_substructure(
+        ethanol_mol, "C[O:1]", hydrogens="exclude", mapped_only=True
     )
-    assert sorted(indices_excluded) == [2]
+    assert matches_excluded == ((2,),)
 
     # Isolate only hydrogens attached to the mapped oxygen
-    indices_isolated = molify.select_atoms_flat_unique(
-        ethanol_mol, "C[O:1]", hydrogens="isolated"
+    matches_isolated = molify.match_substructure(
+        ethanol_mol, "C[O:1]", hydrogens="isolated", mapped_only=True
     )
-    assert sorted(indices_isolated) == [8]
+    assert matches_isolated == ((8,),)
 
 
 # --- Error Handling Tests ---
@@ -288,7 +256,208 @@ def test_invalid_smarts_raises_error():
     """Test that an invalid SMARTS string raises a ValueError."""
     mol = Chem.MolFromSmiles("C")
     with pytest.raises(ValueError, match="Invalid SMARTS/SMILES"):
-        molify.select_atoms_flat_unique(mol, "this is not valid")
+        molify.match_substructure(mol, "this is not valid")
+
+
+# =============================================================================
+# Test Cases for group_matches_by_fragment
+# =============================================================================
+
+
+def test_group_matches_by_fragment(ethanol_water):
+    """Test grouping matches from disconnected fragments."""
+    # ethanol_water is an ase.Atoms object with 2 ethanol and 2 water molecules.
+    mol = molify.ase2rdkit(ethanol_water)
+
+    # Test 1: Select all carbon atoms.
+    # Should find 4 matches (2 per ethanol)
+    matches = molify.match_substructure(mol, "[#6]")
+    assert len(matches) == 4
+
+    # Group by fragment - should find 2 groups (the two ethanol molecules)
+    grouped = molify.group_matches_by_fragment(mol, matches)
+    assert grouped == [[0, 1], [9, 10]]
+
+    # Verify they are indeed carbons
+    for group in grouped:
+        for idx in group:
+            assert mol.GetAtomWithIdx(idx).GetAtomicNum() == 6
+
+    # Test 2: Select all oxygen atoms.
+    matches_oxygen = molify.match_substructure(mol, "[#8]")
+    grouped_oxygen = molify.group_matches_by_fragment(mol, matches_oxygen)
+    assert grouped_oxygen == [[2], [11], [18], [21]]
+
+    # Verify they are indeed oxygens
+    for group in grouped_oxygen:
+        for idx in group:
+            assert mol.GetAtomWithIdx(idx).GetAtomicNum() == 8
+
+    # Test 3: Select a non-existent atom.
+    matches_fluorine = molify.match_substructure(mol, "[F]")
+    grouped_fluorine = molify.group_matches_by_fragment(mol, matches_fluorine)
+    assert grouped_fluorine == []
+
+
+def test_use_label_multiple_times(alanine_dipeptide):
+    """Test selecting atoms using the same label multiple times."""
+    mol = molify.ase2rdkit(alanine_dipeptide)
+    with pytest.raises(ValueError, match="Atom map label '1' is used multiple times"):
+        # we do not allow the same label to be used multiple times for selection,
+        # need to be unique
+        molify.match_substructure(mol, "CC(=O)N[C:1]([C:1])C(=O)NC", mapped_only=True)
+
+
+def test_match_substructure_mapped_order(alanine_dipeptide):
+    """Test that mapped atoms are returned in map number order."""
+    mol = molify.ase2rdkit(alanine_dipeptide)
+
+    # Select single mapped atom
+    matches = molify.match_substructure(
+        mol, "CC(=O)N[C:1](C)C(=O)NC", mapped_only=True
+    )
+    assert matches == ((4,),)
+
+    matches = molify.match_substructure(
+        mol, "CC(=O)NC([C:1])C(=O)NC", mapped_only=True
+    )
+    assert matches == ((5,),)
+
+    matches = molify.match_substructure(
+        mol, "CC(=O)NC(C)[C:1](=O)NC", mapped_only=True
+    )
+    assert matches == ((6,),)
+
+    matches = molify.match_substructure(
+        mol, "CC(=O)NC(C)C(=O)[N:1]C", mapped_only=True
+    )
+    assert matches == ((8,),)
+
+    # now all of them in order
+    matches = molify.match_substructure(
+        mol, "CC(=O)N[C:1]([C:2])[C:3](=O)[N:4]C", mapped_only=True
+    )
+    assert matches == ((4, 5, 6, 8),)
+
+    # now in a different order (should still return in map number order: 1,2,3,4)
+    matches = molify.match_substructure(
+        mol, "CC(=O)N[C:4]([C:3])[C:2](=O)[N:1]C", mapped_only=True
+    )
+    # Map numbers are 4,3,2,1 so should return atoms in order: 8,6,5,4
+    # Actually, atoms are sorted by map number, so 1,2,3,4 -> 8,6,5,4
+    assert matches == ((8, 6, 5, 4),)
+
+    # now with hydrogens which are in order: atom 1, hydrogens of 1, atom 2, hydrogens of 2, ...
+    matches = molify.match_substructure(
+        mol, "CC(=O)N[C:1](C)C(=O)NC", hydrogens="include", mapped_only=True
+    )
+    assert matches == ((4, 14),)
+
+    matches = molify.match_substructure(
+        mol, "CC(=O)N[C:1]([C:2])C(=O)NC", hydrogens="include", mapped_only=True
+    )
+    assert matches == ((4, 14, 5, 15, 16, 17),)
+
+    # now inverse order
+    matches = molify.match_substructure(
+        mol, "CC(=O)N[C:2]([C:1])C(=O)NC", hydrogens="include", mapped_only=True
+    )
+    assert matches == ((5, 15, 16, 17, 4, 14),)
+
+    # now with hydrogens isolated
+    matches = molify.match_substructure(
+        mol, "CC(=O)N[C:1]([C:2])C(=O)NC", hydrogens="isolated", mapped_only=True
+    )
+    assert matches == ((14, 15, 16, 17),)
+
+    matches = molify.match_substructure(
+        mol, "CC(=O)N[C:2]([C:1])C(=O)NC", hydrogens="isolated", mapped_only=True
+    )
+    assert matches == ((15, 16, 17, 14),)
+
+
+def test_match_substructure_mapped_order_box(alanine_dipeptide_box):
+    """Test mapped atom selection with multiple molecules."""
+    mol = molify.ase2rdkit(alanine_dipeptide_box)
+
+    matches = molify.match_substructure(
+        mol, "CC(=O)N[C:1](C)C(=O)NC", mapped_only=True
+    )
+    # Group by fragment
+    grouped = molify.group_matches_by_fragment(mol, matches)
+    assert grouped == [[4], [26], [48]]
+
+    matches = molify.match_substructure(
+        mol, "CC(=O)N[C:1]([C:2])[C:3](=O)[N:4]C", mapped_only=True
+    )
+    grouped = molify.group_matches_by_fragment(mol, matches)
+    assert grouped == [[4, 5, 6, 8], [26, 27, 28, 30], [48, 49, 50, 52]]
+
+    # Different order
+    matches = molify.match_substructure(
+        mol, "CC(=O)N[C:4]([C:3])[C:2](=O)[N:1]C", mapped_only=True
+    )
+    grouped = molify.group_matches_by_fragment(mol, matches)
+    assert grouped == [[8, 6, 5, 4], [30, 28, 27, 26], [52, 50, 49, 48]]
+
+    # With hydrogens
+    matches = molify.match_substructure(
+        mol, "CC(=O)N[C:1](C)C(=O)NC", hydrogens="include", mapped_only=True
+    )
+    grouped = molify.group_matches_by_fragment(mol, matches)
+    assert grouped == [[4, 14], [26, 36], [48, 58]]
+
+    matches = molify.match_substructure(
+        mol, "CC(=O)N[C:1]([C:2])C(=O)NC", hydrogens="include", mapped_only=True
+    )
+    grouped = molify.group_matches_by_fragment(mol, matches)
+    assert grouped == [
+        [4, 14, 5, 15, 16, 17],
+        [26, 36, 27, 37, 38, 39],
+        [48, 58, 49, 59, 60, 61],
+    ]
+
+
+@pytest.mark.parametrize("packmol", ["packmol.jl"])
+def test_match_substructure_ions_with_none_bond_orders(packmol):
+    """Test that ase2rdkit automatically handles None bond orders.
+
+    This reproduces the exact error scenario from hillclimber where
+    connectivity exists but has None bond orders, causing:
+    ValueError: Edge (0, 1) is missing 'bond_order' attribute.
+
+    The fix: ase2rdkit now automatically detects and handles this.
+    """
+    # Create a system with water and ions (reproduces user's scenario)
+    water = molify.smiles2conformers("O", numConfs=1)
+    na_ion = molify.smiles2conformers("[Na+]", numConfs=1)
+    cl_ion = molify.smiles2conformers("[Cl-]", numConfs=1)
+
+    # Pack them together
+    box = molify.pack(
+        [water, na_ion, cl_ion],
+        counts=[16, 1, 1],
+        density=1000,
+        packmol=packmol,
+        tolerance=2.0,
+    )
+
+    # Simulate corrupted connectivity with None bond orders
+    # This causes the exact error the user reported
+    box.info["connectivity"] = [(i, j, None) for i, j, _ in box.info["connectivity"]]
+
+    # ase2rdkit should NOW automatically handle this (after our fix)
+    mol = molify.ase2rdkit(box)
+
+    # Verify match_substructure works
+    na_matches = molify.match_substructure(mol, "[Na+]")
+    assert len(na_matches) == 1
+
+    cl_matches = molify.match_substructure(mol, "[Cl-]")
+    assert len(cl_matches) == 1
+
+    water_matches = molify.match_substructure(mol, "[OH2]")
+    assert len(water_matches) == 16
 
 
 # =============================================================================
@@ -350,221 +519,3 @@ def test_visualize_selected_molecules_with_alpha(ethanol_mol):
 
     img_opaque = molify.visualize_selected_molecules(ethanol_mol, a, b, alpha=1.0)
     assert img_opaque is not None
-
-
-def test_select_atoms_grouped(ethanol_water):
-    """Test selecting atoms from disconnected fragments."""
-    # ethanol_water is an ase.Atoms object with 2 ethanol and 2 water molecules.
-    # We need to convert it to an RDKit Mol object first.
-    mol = molify.ase2rdkit(ethanol_water)
-
-    # Test 1: Select all carbon atoms.
-    # Should find 2 groups (the two ethanol molecules), each with 2 carbons.
-    indices_carbons = molify.select_atoms_grouped(mol, "[#6]")
-    assert indices_carbons == [[0, 1], [9, 10]]
-    # Verify they are indeed carbons
-    for group in indices_carbons:
-        for idx in group:
-            assert mol.GetAtomWithIdx(idx).GetAtomicNum() == 6
-
-    # Test 2: Select all oxygen atoms.
-    # Should find 4 groups (2 ethanol, 2 water), each with 1 oxygen.
-    indices_oxygens = molify.select_atoms_grouped(mol, "[#8]")
-    assert indices_oxygens == [[2], [11], [18], [21]]
-    # Verify they are indeed oxygens
-    for group in indices_oxygens:
-        for idx in group:
-            assert mol.GetAtomWithIdx(idx).GetAtomicNum() == 8
-
-    # Test 3: Select a non-existent atom.
-    indices_fluorine = molify.select_atoms_grouped(mol, "[F]")
-    assert indices_fluorine == []
-
-    # Test 4: Select hydroxyl group in ethanol, including hydrogens.
-    indices_hydroxyl = molify.select_atoms_grouped(mol, "[OH]", hydrogens="include")
-    assert indices_hydroxyl == [[2, 8], [11, 17]]
-    for group in indices_hydroxyl:
-        symbols = [mol.GetAtomWithIdx(idx).GetSymbol() for idx in group]
-        assert "O" in symbols
-        assert "H" in symbols
-
-
-def test_use_label_multiple_times(alanine_dipeptide):
-    """Test selecting atoms using the same label multiple times."""
-    mol = molify.ase2rdkit(alanine_dipeptide)
-    with pytest.raises(ValueError, match="Label '1' is used multiple times"):
-        # we do not allow the same label to be used multiple for selection,
-        # need to be unique
-        molify.select_atoms_grouped(mol, smarts_or_smiles="CC(=O)N[C:1]([C:1])C(=O)NC")
-
-
-def test_select_atoms_grouped_order(alanine_dipeptide):
-    mol = molify.ase2rdkit(alanine_dipeptide)
-    indices = molify.select_atoms_grouped(
-        mol, smarts_or_smiles="CC(=O)N[C:1](C)C(=O)NC"
-    )
-    assert indices == [[4]]
-
-    indices = molify.select_atoms_grouped(
-        mol, smarts_or_smiles="CC(=O)NC([C:1])C(=O)NC"
-    )
-    assert indices == [[5]]
-
-    indices = molify.select_atoms_grouped(
-        mol, smarts_or_smiles="CC(=O)NC(C)[C:1](=O)NC"
-    )
-    assert indices == [[6]]
-
-    indices = molify.select_atoms_grouped(
-        mol, smarts_or_smiles="CC(=O)NC(C)C(=O)[N:1]C"
-    )
-    assert indices == [[8]]
-
-    # now all of them
-    indices = molify.select_atoms_grouped(
-        mol, smarts_or_smiles="CC(=O)N[C:1]([C:2])[C:3](=O)[N:4]C"
-    )
-    assert indices == [[4, 5, 6, 8]]
-    # now in a different order
-    indices = molify.select_atoms_grouped(
-        mol, smarts_or_smiles="CC(=O)N[C:4]([C:3])[C:2](=O)[N:1]C"
-    )
-    assert indices == [[8, 6, 5, 4]]
-
-    # now with hydrogens which are in order 1, hydrogens of 1, 2 hydrogens of 2, ...
-    indices = molify.select_atoms_grouped(
-        mol, smarts_or_smiles="CC(=O)N[C:1](C)C(=O)NC", hydrogens="include"
-    )
-    assert indices == [[4, 14]]
-
-    indices = molify.select_atoms_grouped(
-        mol, smarts_or_smiles="CC(=O)N[C:1]([C:2])C(=O)NC", hydrogens="include"
-    )
-    assert indices == [[4, 14, 5, 15, 16, 17]]
-
-    # now inverse order
-    indices = molify.select_atoms_grouped(
-        mol, smarts_or_smiles="CC(=O)N[C:2]([C:1])C(=O)NC", hydrogens="include"
-    )
-    assert indices == [[5, 15, 16, 17, 4, 14]]
-
-    # now with hydrogens isolated
-    indices = molify.select_atoms_grouped(
-        mol, smarts_or_smiles="CC(=O)N[C:1]([C:2])C(=O)NC", hydrogens="isolated"
-    )
-    assert indices == [[14, 15, 16, 17]]
-    indices = molify.select_atoms_grouped(
-        mol, smarts_or_smiles="CC(=O)N[C:2]([C:1])C(=O)NC", hydrogens="isolated"
-    )
-    assert indices == [[15, 16, 17, 14]]
-
-
-def test_select_atoms_grouped_order_box(alanine_dipeptide_box):
-    mol = molify.ase2rdkit(alanine_dipeptide_box)
-    indices = molify.select_atoms_grouped(
-        mol, smarts_or_smiles="CC(=O)N[C:1](C)C(=O)NC"
-    )
-    assert indices == [[4], [26], [48]]
-
-    indices = molify.select_atoms_grouped(
-        mol, smarts_or_smiles="CC(=O)NC([C:1])C(=O)NC"
-    )
-    assert indices == [[5], [27], [49]]
-
-    indices = molify.select_atoms_grouped(
-        mol, smarts_or_smiles="CC(=O)NC(C)[C:1](=O)NC"
-    )
-    assert indices == [[6], [28], [50]]
-
-    indices = molify.select_atoms_grouped(
-        mol, smarts_or_smiles="CC(=O)NC(C)C(=O)[N:1]C"
-    )
-    assert indices == [[8], [30], [52]]
-
-    # now all of them
-    indices = molify.select_atoms_grouped(
-        mol, smarts_or_smiles="CC(=O)N[C:1]([C:2])[C:3](=O)[N:4]C"
-    )
-    assert indices == [[4, 5, 6, 8], [26, 27, 28, 30], [48, 49, 50, 52]]
-    # now in a different order
-    indices = molify.select_atoms_grouped(
-        mol, smarts_or_smiles="CC(=O)N[C:4]([C:3])[C:2](=O)[N:1]C"
-    )
-    assert indices == [[8, 6, 5, 4], [30, 28, 27, 26], [52, 50, 49, 48]]
-
-    # now with hydrogens which are in order 1, hydrogens of 1, 2 hydrogens of 2, ...
-    indices = molify.select_atoms_grouped(
-        mol, smarts_or_smiles="CC(=O)N[C:1](C)C(=O)NC", hydrogens="include"
-    )
-    assert indices == [[4, 14], [26, 36], [48, 58]]
-
-    indices = molify.select_atoms_grouped(
-        mol, smarts_or_smiles="CC(=O)N[C:1]([C:2])C(=O)NC", hydrogens="include"
-    )
-    assert indices == [
-        [4, 14, 5, 15, 16, 17],
-        [26, 36, 27, 37, 38, 39],
-        [48, 58, 49, 59, 60, 61],
-    ]
-
-    # now inverse order
-    indices = molify.select_atoms_grouped(
-        mol, smarts_or_smiles="CC(=O)N[C:2]([C:1])C(=O)NC", hydrogens="include"
-    )
-    assert indices == [
-        [5, 15, 16, 17, 4, 14],
-        [27, 37, 38, 39, 26, 36],
-        [49, 59, 60, 61, 48, 58],
-    ]
-
-    # now with hydrogens isolated
-    indices = molify.select_atoms_grouped(
-        mol, smarts_or_smiles="CC(=O)N[C:1]([C:2])C(=O)NC", hydrogens="isolated"
-    )
-    assert indices == [[14, 15, 16, 17], [36, 37, 38, 39], [58, 59, 60, 61]]
-    indices = molify.select_atoms_grouped(
-        mol, smarts_or_smiles="CC(=O)N[C:2]([C:1])C(=O)NC", hydrogens="isolated"
-    )
-    assert indices == [[15, 16, 17, 14], [37, 38, 39, 36], [59, 60, 61, 58]]
-
-
-@pytest.mark.parametrize("packmol", ["packmol.jl"])
-def test_select_atoms_grouped_ions_with_none_bond_orders(packmol):
-    """Test that ase2rdkit automatically handles None bond orders.
-
-    This reproduces the exact error scenario from hillclimber where
-    connectivity exists but has None bond orders, causing:
-    ValueError: Edge (0, 1) is missing 'bond_order' attribute.
-
-    The fix: ase2rdkit now automatically detects and handles this.
-    """
-    # Create a system with water and ions (reproduces user's scenario)
-    water = molify.smiles2conformers("O", numConfs=1)
-    na_ion = molify.smiles2conformers("[Na+]", numConfs=1)
-    cl_ion = molify.smiles2conformers("[Cl-]", numConfs=1)
-
-    # Pack them together
-    box = molify.pack(
-        [water, na_ion, cl_ion],
-        counts=[16, 1, 1],
-        density=1000,
-        packmol=packmol,
-        tolerance=2.0,
-    )
-
-    # Simulate corrupted connectivity with None bond orders
-    # This causes the exact error the user reported
-    box.info["connectivity"] = [(i, j, None) for i, j, _ in box.info["connectivity"]]
-
-    # ase2rdkit should NOW automatically handle this (after our fix)
-    mol = molify.ase2rdkit(box)
-
-    # Verify select_atoms_grouped works
-    na_indices = molify.select_atoms_grouped(mol, "[Na+]")
-    assert len(na_indices) == 1
-
-    cl_indices = molify.select_atoms_grouped(mol, "[Cl-]")
-    assert len(cl_indices) == 1
-
-    water_indices = molify.select_atoms_grouped(mol, "[OH2]")
-    assert len(water_indices) == 16

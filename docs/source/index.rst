@@ -172,7 +172,7 @@ Documentation Guide
 - :doc:`networkx_tools` - Bond order determination and the ``suggestions`` parameter
 - :doc:`atom_selection` - Advanced SMARTS patterns and mapped SMILES
 
-**4. Full Reference**
+**3. Full Reference**
 
 - :doc:`modules` - API documentation
 

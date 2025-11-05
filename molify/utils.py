@@ -1,4 +1,5 @@
 import io
+import shutil
 import subprocess
 from collections import defaultdict
 from typing import Literal, Optional, cast
@@ -258,6 +259,48 @@ def get_packmol_julia_version() -> str:
             "Failed to get Packmol version via Julia. Please verify that you can"
             ' import packmol via `julia -e "import Pkg; Pkg.status("Packmol")"`'
         ) from e
+
+
+def find_packmol_executable() -> str:
+    """Auto-detect available packmol installation.
+
+    Searches for packmol installations in the following order:
+    1. packmol.jl (Julia wrapper) - preferred for cross-platform compatibility
+    2. packmol binary in system PATH
+
+    Returns
+    -------
+    str
+        Either "packmol.jl" if Julia + Packmol package is found,
+        or the path to the packmol binary if found in system PATH.
+
+    Raises
+    ------
+    RuntimeError
+        If no packmol installation is found, with instructions for installation.
+
+    Examples
+    --------
+    >>> executable = find_packmol_executable()
+    >>> print(f"Found packmol: {executable}")
+    """
+    # Try Julia version first (preferred)
+    try:
+        get_packmol_julia_version()  # This will raise if not available
+        return "packmol.jl"
+    except RuntimeError:
+        pass  # Julia version not available, try native binary
+
+    # Try native packmol binary in PATH
+    packmol_path = shutil.which("packmol")
+    if packmol_path is not None:
+        return "packmol"
+
+    # Neither found - raise helpful error
+    raise RuntimeError(
+        "Could not find packmol installation.\n\n"
+        "See https://m3g.github.io/packmol/download.shtml."
+    )
 
 
 def draw_molecular_graph(

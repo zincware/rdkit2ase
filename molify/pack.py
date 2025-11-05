@@ -9,7 +9,11 @@ import numpy as np
 from ase.io.proteindatabank import write_proteindatabank
 from rdkit import Chem
 
-from molify.utils import calculate_box_dimensions, get_packmol_julia_version
+from molify.utils import (
+    calculate_box_dimensions,
+    find_packmol_executable,
+    get_packmol_julia_version,
+)
 
 log = logging.getLogger(__name__)
 
@@ -162,7 +166,7 @@ def pack(
     seed: int = 42,
     tolerance: float = 2,
     verbose: bool = False,
-    packmol: str = "packmol",
+    packmol: str | None = None,
     pbc: bool = True,
     output_format: FORMAT = "pdb",
     ratio: tuple[float, float, float] = (1.0, 1.0, 1.0),
@@ -184,9 +188,13 @@ def pack(
         The tolerance for the packing algorithm, by default 2.
     verbose : bool, optional
         If True, enables logging of the packing process, by default False.
-    packmol : str, optional
-        The path to the packmol executable, by default "packmol".
-        When installing Packmol via Julia, use "packmol.jl".
+    packmol : str or None, optional
+        The path to the packmol executable. If None (default), automatically
+        detects available packmol installation. Auto-detection searches in order:
+        1) "packmol.jl" (Julia wrapper - preferred)
+        2) "packmol" binary in system PATH
+        You can explicitly specify "packmol.jl", "packmol", or a custom path
+        to override auto-detection.
     pbc : bool, optional
         Ensure tolerance across periodic boundaries, by default True.
     output_format : str, optional
@@ -212,6 +220,10 @@ def pack(
     >>> print(packed_system)
     Atoms(symbols='C10H44O12', pbc=True, cell=[8.4, 8.4, 8.4])
     """
+    # Auto-detect packmol executable if not specified
+    if packmol is None:
+        packmol = find_packmol_executable()
+
     selected_images = _select_conformers(data, counts, seed)
     cell = calculate_box_dimensions(images=selected_images, density=density)
 

@@ -103,7 +103,7 @@ Advanced Features
 **3D Conformer Generation**
 
 The main functionality of molify is expanded by additional tools that combine multiple packages.
-For example, molify provides helper functions to generate 3D conformers directly from SMILES strings:
+For example, molify provides helper functions to generate 3D conformers directly from SMILES strings and store them as ASE Atoms objects.
 
 .. code-block:: python
 
@@ -159,22 +159,6 @@ More information and installation instructions can be found in the `UV documenta
    (.venv) $ uv sync
    (.venv) $ source .venv/bin/activate
 
-Documentation Guide
--------------------
-**1. Understanding Data Structures**
-
-- :doc:`rdkit_tools` - RDKit molecule representation and explicit bond information
-- :doc:`ase_tools` - Creating structures from SMILES and bond detection from geometry
-- :doc:`packmol_tools` - Building molecular systems with Packmol
-
-**2. Advanced Topics**
-
-- :doc:`networkx_tools` - Bond order determination and the ``suggestions`` parameter
-- :doc:`atom_selection` - Advanced SMARTS patterns and mapped SMILES
-
-**3. Full Reference**
-
-- :doc:`modules` - API documentation
 
 .. toctree::
    :maxdepth: 2

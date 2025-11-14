@@ -88,11 +88,16 @@ class CustomBuildHook(BuildHookInterface):
             raise RuntimeError(f"Failed to compile packmol: {e}") from e
 
         # Verify and copy the compiled binary
+        # (packmol on Unix, packmol.exe on Windows)
         source_binary = packmol_source / "packmol"
         if not source_binary.exists():
-            raise RuntimeError(
-                f"Compilation succeeded but binary not found at {source_binary}"
-            )
+            source_binary = packmol_source / "packmol.exe"
+            if not source_binary.exists():
+                raise RuntimeError(
+                    "Compilation succeeded but binary not found at "
+                    f"{packmol_source / 'packmol'} or "
+                    f"{packmol_source / 'packmol.exe'}"
+                )
 
         shutil.copy2(source_binary, target_binary)
         target_binary.chmod(0o755)

@@ -1,5 +1,6 @@
 """Custom Hatchling build hook to compile packmol binary."""
 
+import glob
 import shutil
 import subprocess
 from pathlib import Path
@@ -9,6 +10,35 @@ from hatchling.builders.hooks.plugin.interface import BuildHookInterface
 
 class CustomBuildHook(BuildHookInterface):
     """Build hook that compiles packmol and includes it in the wheel."""
+
+    def _find_gfortran(self):
+        """Find gfortran compiler (plain or versioned like gfortran-15)."""
+        # Try plain gfortran first
+        gfortran = shutil.which("gfortran")
+        if gfortran:
+            return gfortran
+
+        # Look for versioned gfortran (e.g., gfortran-15 on macOS via Homebrew)
+        # Common locations: /opt/homebrew/bin, /usr/local/bin, /usr/bin
+        search_paths = [
+            "/opt/homebrew/bin/gfortran-*",
+            "/usr/local/bin/gfortran-*",
+            "/usr/bin/gfortran-*",
+        ]
+
+        for pattern in search_paths:
+            matches = glob.glob(pattern)
+            if matches:
+                # Sort to get the highest version number
+                matches.sort(reverse=True)
+                return matches[0]
+
+        raise RuntimeError(
+            "gfortran compiler not found. Please install it:\n"
+            "  macOS: brew install gcc\n"
+            "  Ubuntu/Debian: apt-get install gfortran\n"
+            "  RHEL/CentOS: yum install gcc-gfortran"
+        )
 
     def initialize(self, version, build_data):
         """Compile packmol before building the wheel."""
@@ -28,6 +58,10 @@ class CustomBuildHook(BuildHookInterface):
                 "Run: git submodule update --init --recursive"
             )
 
+        # Find gfortran compiler
+        gfortran_path = self._find_gfortran()
+        print(f"Using gfortran: {gfortran_path}")
+
         # Compile packmol
         print("Compiling packmol...")
         try:
@@ -39,10 +73,10 @@ class CustomBuildHook(BuildHookInterface):
                 capture_output=True,
             )
 
-            # Override FORTRAN variable to use gfortran from PATH
+            # Override FORTRAN variable to use detected gfortran
             # Note: Not using -j4 due to Fortran module dependencies
             result = subprocess.run(
-                ["make", "FORTRAN=gfortran"],
+                ["make", f"FORTRAN={gfortran_path}"],
                 cwd=packmol_source,
                 check=True,
                 capture_output=True,

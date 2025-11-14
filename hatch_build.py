@@ -101,7 +101,7 @@ class CustomBuildHook(BuildHookInterface):
 
         shutil.copy2(source_binary, target_binary)
         target_binary.chmod(0o755)
-        print(f"✓ Successfully compiled packmol -> {target_binary}")
+        print(f"Successfully compiled packmol -> {target_binary}")
 
         # Include binary in the wheel using force_include
         relative_path = target_binary.relative_to(project_root / "src")

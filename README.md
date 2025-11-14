@@ -41,8 +41,9 @@ print(atoms)
 Given the molecular units, you can build periodic boxes with a given density
 using the `molify.pack` function.
 
-The `molify` package ships with an installation of [packmol](https://github.com/m3g/packmol).
-If you like packmol, give it a star on GitHub!
+The `molify` package ships with an installation of
+[packmol](https://github.com/m3g/packmol). If you like packmol, give it a star
+on GitHub!
 
 ```py
 from molify import pack, smiles2conformers

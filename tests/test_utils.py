@@ -35,7 +35,6 @@ def ec_emc_li_pf6():
         data=[atoms_pf6, atoms_li, atoms_ec, atoms_emc],
         counts=[3, 3, 8, 12],
         density=1400,
-        packmol="packmol.jl",
     )
 
 
@@ -46,7 +45,6 @@ def test_unwrap_structures(scale):
         data=[hexane],
         counts=[10],
         density=800,
-        packmol="packmol.jl",
     )
     shifted_box = box.copy()
     shifted_box.set_positions(
@@ -92,7 +90,6 @@ def test_unwrap_ring_molecules(scale):
         data=[benzene],
         counts=[10],
         density=800,
-        packmol="packmol.jl",
     )
 
     # Copy and shift box to break molecules across PBC

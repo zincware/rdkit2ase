@@ -28,22 +28,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - uses: julia-actions/setup-julia@v2
       - name: Install uv and set the python version
         uses: astral-sh/setup-uv@v5
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install the project
         run: uv sync --all-extras --dev
-      - name: Install packmol
-        run: |
-          wget https://github.com/m3g/packmol/archive/refs/tags/v${{ matrix.packmol-version}}.tar.gz
-          tar -xvf v${{ matrix.packmol-version}}.tar.gz
-          cd packmol-${{ matrix.packmol-version}}
-          make
-      - name: Install packmol.jl
-        run: |
-          julia -e 'import Pkg; Pkg.add("Packmol")'
       - name: Pytest
         run: |
           # add packmol to path

@@ -14,10 +14,9 @@ def test_match_substructure():
     assert atoms[match[0]].get_chemical_symbols() == ["C", "H", "H", "H"]
 
 
-@pytest.mark.parametrize("packmol", ["packmol.jl"])
-def test_match_substructure_box(packmol):
+def test_match_substructure_box():
     atoms = molify.smiles2conformers("CC(=O)O", 1)
-    box = molify.pack([atoms], counts=[3], packmol=packmol, density=0.5)
+    box = molify.pack([atoms], counts=[3], density=0.5)
     mol = molify.ase2rdkit(box, suggestions=["CC(=O)O"])
 
     # match CH3 fragment (carbon with 3 hydrogens)
@@ -40,13 +39,11 @@ def test_get_substructure():
         assert frame.get_chemical_symbols() == ["N", "O", "O"]
 
 
-@pytest.mark.parametrize("packmol", ["packmol.jl"])
-def test_get_substructure_box(packmol):
+def test_get_substructure_box():
     atoms = molify.smiles2conformers(
         "C(C(CO[N+](=O)[O-])O[N+](=O)[O-])O[N+](=O)[O-]", 1
     )
-    box = molify.pack([atoms], counts=[3], packmol=packmol, density=0.5)
-
+    box = molify.pack([atoms], counts=[3], density=0.5)
     # match NO3 group using smarts
     frames = molify.get_substructures(
         box,
@@ -59,10 +56,9 @@ def test_get_substructure_box(packmol):
 
 
 @pytest.mark.parametrize("remove_connectivity", [True, False])
-@pytest.mark.parametrize("packmol", ["packmol.jl"])
-def test_iter_fragments(packmol, remove_connectivity):
+def test_iter_fragments(remove_connectivity):
     water = molify.smiles2conformers("O", 1)
-    box = molify.pack([water], [10], density=500, packmol=packmol)
+    box = molify.pack([water], [10], density=500)
     if remove_connectivity:
         del box.info["connectivity"]
     fragments = list(molify.iter_fragments(box))
@@ -79,7 +75,6 @@ def test_bmim_bf4_no_info():
         [bmim, bf4],
         counts=[10, 10],
         density=500,
-        packmol="packmol.jl",
         tolerance=3,
     )
     del box.info["connectivity"]
@@ -414,8 +409,7 @@ def test_match_substructure_mapped_order_box(alanine_dipeptide_box):
     ]
 
 
-@pytest.mark.parametrize("packmol", ["packmol.jl"])
-def test_match_substructure_ions_with_none_bond_orders(packmol):
+def test_match_substructure_ions_with_none_bond_orders():
     """Test that ase2rdkit automatically handles None bond orders.
 
     This reproduces the exact error scenario from hillclimber where
@@ -434,7 +428,6 @@ def test_match_substructure_ions_with_none_bond_orders(packmol):
         [water, na_ion, cl_ion],
         counts=[16, 1, 1],
         density=1000,
-        packmol=packmol,
         tolerance=2.0,
     )
 

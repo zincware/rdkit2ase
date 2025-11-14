@@ -28,8 +28,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - uses: julia-actions/setup-julia@v2
-
       - name: Install uv and set the python version
         uses: astral-sh/setup-uv@v5
         with:
@@ -37,9 +35,6 @@ jobs:
 
       - name: Install the project
         run: uv sync --all-extras --dev --all-groups
-
-      - name: Install packmol.jl
-        run: julia -e 'import Pkg; Pkg.add("Packmol")'
 
       - name: Install pandoc
         run: |

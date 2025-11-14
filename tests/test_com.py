@@ -106,8 +106,7 @@ def test_com_with_packed_system(shift):
     packed_system = molify.pack(
         [water_template, ethanol_template],
         [num_water, num_ethanol],
-        density,
-        packmol="packmol.jl",
+        density
     )
     packed_system.positions += np.array([shift, shift, shift])
     packed_system.wrap()
@@ -142,7 +141,6 @@ def test_get_centers_of_mass_species():
         [a, b, c, d],
         [1, 2, 3, 4],
         density=786,
-        packmol="packmol.jl",
     )
 
     com = molify.get_centers_of_mass(box)

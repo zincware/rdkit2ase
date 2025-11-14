@@ -27,8 +27,8 @@ jobs:
       - name: Build wheels
         uses: pypa/cibuildwheel@v3.3.0
         env:
-          # Set minimum macOS version to 14.0 for compatibility
-          MACOSX_DEPLOYMENT_TARGET: "14.0"
+          # Set macOS deployment target dynamically based on runner
+          CIBW_ENVIRONMENT_MACOS: MACOSX_DEPLOYMENT_TARGET=${{ matrix.os == 'macos-15-intel' && '15.0' || '14.0' }}
 
       - name: Upload wheels
         uses: actions/upload-artifact@v4

@@ -26,7 +26,9 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
 
       - name: Install uv and set the python version
         uses: astral-sh/setup-uv@v5

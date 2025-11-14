@@ -26,17 +26,9 @@ jobs:
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v3.3.0
-        # env:
-          # Skip all Windows builds for now (packmol needs mingw-w64/gfortran setup)
-          # CIBW_SKIP: "*-win*"
-          # On Linux x86_64 runners, build native + ARM via QEMU
-          # On Linux ARM runners, build only native
-          # CIBW_ARCHS_LINUX: ${{ runner.arch == 'X64' && 'auto aarch64' || 'auto' }}
-          # On macOS, build for native architecture only
-          # CIBW_ARCHS_MACOS: native
-          # Install gfortran before building on each platform
-          # CIBW_BEFORE_ALL_LINUX: yum install -y gcc-gfortran || apt-get update && apt-get install -y gfortran
-          # CIBW_BEFORE_ALL_MACOS: brew install gcc
+        env:
+          # Set minimum macOS version to 14.0 for compatibility
+          MACOSX_DEPLOYMENT_TARGET: "14.0"
 
       - name: Upload wheels
         uses: actions/upload-artifact@v4

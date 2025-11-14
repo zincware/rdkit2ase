@@ -70,3 +70,9 @@ class CustomBuildHook(BuildHookInterface):
         build_data.setdefault('force_include', {})[
             str(target_binary)
         ] = str(relative_path)
+
+        # Mark wheel as platform-specific (not pure Python)
+        # This tells hatchling to create platform-specific wheel tags
+        # like cp310-macosx_14_0_arm64 instead of py3-none-any
+        build_data['pure_python'] = False
+        build_data['infer_tag'] = True

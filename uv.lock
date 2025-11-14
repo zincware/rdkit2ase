@@ -948,7 +948,7 @@ wheels = [
 
 [[package]]
 name = "molify"
-version = "0.0.1a0"
+version = "0.0.1a1"
 source = { editable = "." }
 dependencies = [
     { name = "ase" },

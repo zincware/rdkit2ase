@@ -1,0 +1,60 @@
+name: Build
+
+on: [push, pull_request]
+
+jobs:
+  build_wheels:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Skip Windows for now (packmol needs gfortran/mingw setup)
+        # macos-15-intel is Intel, macos-14 is Apple Silicon
+        os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, windows-11-arm, macos-15-intel, macos-14]
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive  # Critical: fetch packmol submodule
+
+      # - name: Set up QEMU (for Linux x86_64 cross-compilation to ARM)
+      #   if: runner.os == 'Linux' && runner.arch == 'X64'
+      #   uses: docker/setup-qemu-action@v3
+      #   with:
+      #     platforms: arm64
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v3.3.0
+        # env:
+        #   # On Linux x86_64 runners, build native + ARM via QEMU
+        #   # On Linux ARM runners, build only native
+        #   CIBW_ARCHS_LINUX: ${{ runner.arch == 'X64' && 'auto aarch64' || 'auto' }}
+        #   # On macOS, build for native architecture only
+        #   CIBW_ARCHS_MACOS: native
+
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
+          path: ./wheelhouse/*.whl
+
+  build_sdist:
+    name: Build source distribution
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Build sdist
+        run: uv build --sdist
+
+      - name: Upload sdist
+        uses: actions/upload-artifact@v4
+        with:
+          name: sdist
+          path: dist/*.tar.gz

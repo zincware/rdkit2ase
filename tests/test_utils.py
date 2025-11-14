@@ -1,4 +1,3 @@
-import re
 import sys
 
 import networkx as nx
@@ -244,4 +243,3 @@ def test_suggestions2networkx():
 
     assert graphs[1].number_of_nodes() == 4  # pbc and cell
     assert graphs[1].number_of_edges() == 3
-

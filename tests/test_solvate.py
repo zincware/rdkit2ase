@@ -51,9 +51,7 @@ def test_pack_density():
     atoms = pack([ethanol], [2], density=1000)
     assert atoms.get_chemical_formula() == "C4H12O2"
 
-    atoms = pack(
-        [ethanol, water, hydrochloric_acid], [2, 1, 3], density=1000
-    )
+    atoms = pack([ethanol, water, hydrochloric_acid], [2, 1, 3], density=1000)
     assert atoms.get_chemical_formula() == "C4H17Cl3O3"
 
 
@@ -63,6 +61,7 @@ def test_pack_atoms():
     atoms = pack([methane], [2], density=800)
     assert atoms.get_chemical_formula() == "C2H8"
     assert atoms.get_volume() == pytest.approx(66.6, abs=0.001)
+
 
 def test_pack_connectivity():
     water = smiles2conformers("O", 1)

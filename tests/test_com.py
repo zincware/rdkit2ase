@@ -104,9 +104,7 @@ def test_com_with_packed_system(shift):
     density = 900  # kg/m^3
 
     packed_system = molify.pack(
-        [water_template, ethanol_template],
-        [num_water, num_ethanol],
-        density
+        [water_template, ethanol_template], [num_water, num_ethanol], density
     )
     packed_system.positions += np.array([shift, shift, shift])
     packed_system.wrap()

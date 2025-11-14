@@ -10,7 +10,6 @@ from ase import Atoms
 import molify
 from molify.utils import (
     find_connected_components,
-    get_packmol_julia_version,
     rdkit_determine_bonds,
     suggestions2networkx,
     unwrap_structures,
@@ -246,8 +245,3 @@ def test_suggestions2networkx():
     assert graphs[1].number_of_nodes() == 4  # pbc and cell
     assert graphs[1].number_of_edges() == 3
 
-
-def test_get_packmol_julia_version():
-    """Test the retrieval of the Packmol version when using Julia."""
-    version = get_packmol_julia_version()
-    assert re.fullmatch(r"v\d+\.\d+\.\d+(?:[+-].+)?", version)

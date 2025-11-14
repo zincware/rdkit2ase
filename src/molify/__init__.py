@@ -16,7 +16,6 @@ from molify.substructure import (
 )
 from molify.utils import (
     draw_molecular_graph,
-    find_packmol_executable,
     unwrap_structures,
 )
 
@@ -35,7 +34,6 @@ __all__ = [
     "visualize_selected_molecules",
     "unwrap_structures",
     "draw_molecular_graph",
-    "find_packmol_executable",
     #
     "ase2networkx",
     #

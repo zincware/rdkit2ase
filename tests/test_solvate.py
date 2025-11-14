@@ -6,7 +6,7 @@ import pytest
 from molify import ase2rdkit, pack, smiles2conformers
 
 
-def test_pack_clean_info_arrays(packmol):
+def test_pack_clean_info_arrays():
     water = smiles2conformers("O", 1)
     atoms = pack([water], [10], 997, 42, tolerance=1.5)
     # we don't want to have unused info in the atoms object.

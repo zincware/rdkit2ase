@@ -1,8 +1,8 @@
 """Python wrapper for packmol binary."""
 
 import subprocess
-from pathlib import Path
 import sys
+from pathlib import Path
 
 
 def get_packmol_binary() -> Path:

@@ -1,6 +1,4 @@
 import io
-import shutil
-import subprocess
 from collections import defaultdict
 from typing import Literal, Optional, cast
 
@@ -227,8 +225,6 @@ def suggestions2networkx(smiles: list[str]) -> list[nx.Graph]:
         mol = Chem.AddHs(mol)
         mols.append(mol)
     return [rdkit2networkx(mol) for mol in mols]
-
-
 
 
 def draw_molecular_graph(

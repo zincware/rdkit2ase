@@ -1,6 +1,5 @@
 """Custom Hatchling build hook to compile packmol binary."""
 
-import platform
 import shutil
 import subprocess
 from pathlib import Path
@@ -37,7 +36,7 @@ class CustomBuildHook(BuildHookInterface):
                 ["make", "clean"],
                 cwd=packmol_source,
                 check=False,  # Don't fail if clean fails
-                capture_output=True
+                capture_output=True,
             )
 
             # Override FORTRAN variable to use gfortran from PATH
@@ -47,7 +46,7 @@ class CustomBuildHook(BuildHookInterface):
                 cwd=packmol_source,
                 check=True,
                 capture_output=True,
-                text=True
+                text=True,
             )
             print(result.stdout)
         except subprocess.CalledProcessError as e:
@@ -67,12 +66,12 @@ class CustomBuildHook(BuildHookInterface):
 
         # Include binary in the wheel using force_include
         relative_path = target_binary.relative_to(project_root / "src")
-        build_data.setdefault('force_include', {})[
-            str(target_binary)
-        ] = str(relative_path)
+        build_data.setdefault("force_include", {})[str(target_binary)] = str(
+            relative_path
+        )
 
         # Mark wheel as platform-specific (not pure Python)
         # This tells hatchling to create platform-specific wheel tags
         # like cp310-macosx_14_0_arm64 instead of py3-none-any
-        build_data['pure_python'] = False
-        build_data['infer_tag'] = True
+        build_data["pure_python"] = False
+        build_data["infer_tag"] = True

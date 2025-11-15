@@ -88,7 +88,8 @@ def test_bmim_bf4_no_info():
     for match in bf4_matches:
         assert box[match].get_chemical_symbols() == bf4[0].get_chemical_symbols()
 
-    # Note: RDKit perceives the imidazolium ring as aromatic, so we use lowercase notation
+    # Note: RDKit perceives the imidazolium ring as aromatic, so we use
+    # lowercase notation
     bmim_matches = molify.match_substructure(
         mol, "CCCCn1cc[n+](C)c1", hydrogens="include"
     )
@@ -129,7 +130,7 @@ def test_bmim_bf4_no_info():
     )
     assert len(bmim_matches_smarts) == 10
     for match in bmim_matches_smarts:
-        # explicit only hydrogens are returned 
+        # explicit only hydrogens are returned
         assert len(match) == 25  # 10 heavy + 15 H
 
 
@@ -340,7 +341,8 @@ def test_match_substructure_mapped_order(alanine_dipeptide):
     # Actually, atoms are sorted by map number, so 1,2,3,4 -> 8,6,5,4
     assert matches == ((8, 6, 5, 4),)
 
-    # now with hydrogens which are in order: atom 1, hydrogens of 1, atom 2, hydrogens of 2, ...
+    # now with hydrogens which are in order:
+    # atom 1, hydrogens of 1, atom 2, hydrogens of 2, ...
     matches = molify.match_substructure(
         mol, "CC(=O)N[C:1](C)C(=O)NC", hydrogens="include", mapped_only=True
     )

@@ -227,7 +227,7 @@ def suggestions2networkx(smiles: list[str]) -> list[nx.Graph]:
     return [rdkit2networkx(mol) for mol in mols]
 
 
-def draw_molecular_graph(
+def draw_molecular_graph(  # noqa: C901
     graph: nx.Graph,
     layout: Literal["spring", "circular", "kamada_kawai"] = "kamada_kawai",
     figsize: tuple[float, float] = (8, 8),

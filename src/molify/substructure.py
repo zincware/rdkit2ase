@@ -10,7 +10,7 @@ from molify.ase2x import ase2rdkit
 from molify.utils import find_connected_components
 
 
-def match_substructure(
+def match_substructure(  # noqa: C901
     mol: Chem.Mol,
     smarts_or_smiles: str,
     hydrogens: tp.Literal["include", "exclude", "isolated"] = "exclude",

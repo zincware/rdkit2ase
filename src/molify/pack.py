@@ -9,7 +9,8 @@ import numpy as np
 from ase.io.proteindatabank import write_proteindatabank
 from rdkit import Chem
 
-from molify.utils import calculate_box_dimensions, get_packmol_julia_version
+from molify.packmol import get_packmol_binary
+from molify.utils import calculate_box_dimensions
 
 log = logging.getLogger(__name__)
 
@@ -61,36 +62,20 @@ end structure
 
 
 def _run_packmol(
-    packmol_executable: str,
+    packmol_executable: pathlib.Path | str,
     input_file: pathlib.Path,
     tmpdir: pathlib.Path,
     verbose: bool,
 ) -> None:
     """Executes the PACKMOL program."""
-    if packmol_executable == "packmol.jl":
-        version = get_packmol_julia_version()
-        if verbose:
-            print(f"Using Packmol version {version} via Julia")
-        with open(tmpdir / "pack.jl", "w") as f:
-            f.write("using Packmol \n")
-            f.write(f'run_packmol("{input_file.name}") \n')
-
-    if packmol_executable == "packmol.jl":
+    with open(input_file, "rb") as fin:
         subprocess.run(
-            ["julia", str(tmpdir / "pack.jl")],
+            [str(packmol_executable)],
             cwd=tmpdir,
             check=True,
             capture_output=not verbose,
+            stdin=fin,
         )
-    else:
-        with open(input_file, "rb") as fin:
-            subprocess.run(
-                [packmol_executable],
-                cwd=tmpdir,
-                check=True,
-                capture_output=not verbose,
-                stdin=fin,
-            )
 
 
 def _write_molecule_files(
@@ -162,7 +147,7 @@ def pack(
     seed: int = 42,
     tolerance: float = 2,
     verbose: bool = False,
-    packmol: str = "packmol",
+    packmol: str | None = None,
     pbc: bool = True,
     output_format: FORMAT = "pdb",
     ratio: tuple[float, float, float] = (1.0, 1.0, 1.0),
@@ -184,9 +169,11 @@ def pack(
         The tolerance for the packing algorithm, by default 2.
     verbose : bool, optional
         If True, enables logging of the packing process, by default False.
-    packmol : str, optional
-        The path to the packmol executable, by default "packmol".
-        When installing Packmol via Julia, use "packmol.jl".
+    packmol : str or None, optional
+        The path to the packmol executable. If None (default), uses the bundled
+        packmol binary shipped with molify. You can provide a custom path to
+        use a different packmol installation (e.g., "packmol" to use system
+        PATH, or "/path/to/custom/packmol").
     pbc : bool, optional
         Ensure tolerance across periodic boundaries, by default True.
     output_format : str, optional
@@ -212,6 +199,10 @@ def pack(
     >>> print(packed_system)
     Atoms(symbols='C10H44O12', pbc=True, cell=[8.4, 8.4, 8.4])
     """
+    # Use bundled packmol binary if not specified
+    if packmol is None:
+        packmol = str(get_packmol_binary())
+
     selected_images = _select_conformers(data, counts, seed)
     cell = calculate_box_dimensions(images=selected_images, density=density)
 
@@ -243,14 +234,7 @@ def pack(
             packed_atoms.arrays.pop("residuenumbers", None)
         except FileNotFoundError as e:
             log.error("Packmol Input:\n%s", packmol_input)
-            if packmol == "packmol.jl":
-                try:
-                    version = get_packmol_julia_version()
-                    log.error("Using Packmol via Julia with version: %s", version)
-                except Exception:
-                    log.warning("Could not determine Packmol.jl version", exc_info=True)
-            else:
-                log.error("Using Packmol executable at: %s", packmol)
+            log.error("Using Packmol executable at: %s", packmol)
             log.exception("Packmol did not produce mixture.%s", output_format)
             raise FileNotFoundError(
                 f"Packmol did not produce 'mixture.{output_format}'."

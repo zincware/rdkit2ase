@@ -23,7 +23,6 @@ def ec_emc_li_pf6():
         data=[atoms_pf6, atoms_li, atoms_ec, atoms_emc],
         counts=[3, 3, 8, 12],
         density=1400,
-        packmol="packmol.jl",
     )
 
 

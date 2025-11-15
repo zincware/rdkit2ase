@@ -9,13 +9,15 @@ from molify.rdkit2x import rdkit2ase, rdkit2networkx
 from molify.smiles2x import smiles2atoms, smiles2conformers
 from molify.substructure import (
     get_substructures,
+    group_matches_by_fragment,
     iter_fragments,
     match_substructure,
-    select_atoms_flat_unique,
-    select_atoms_grouped,
     visualize_selected_molecules,
 )
-from molify.utils import unwrap_structures
+from molify.utils import (
+    draw_molecular_graph,
+    unwrap_structures,
+)
 
 __version__ = importlib.metadata.version("molify")
 
@@ -26,12 +28,12 @@ __all__ = [
     "smiles2conformers",
     "compress",
     "match_substructure",
+    "group_matches_by_fragment",
     "get_substructures",
     "iter_fragments",
-    "select_atoms_flat_unique",
     "visualize_selected_molecules",
     "unwrap_structures",
-    "select_atoms_grouped",
+    "draw_molecular_graph",
     #
     "ase2networkx",
     #

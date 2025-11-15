@@ -4,11 +4,10 @@ import molify
 from molify.utils import calculate_density
 
 
-@pytest.mark.parametrize("packmol", ["packmol.jl", "packmol"])
-def test_compress(packmol):
+def test_compress():
     water = molify.smiles2conformers("O", 1)
     # pack a box
-    atoms = molify.pack([water], [10], density=500, packmol=packmol)
+    atoms = molify.pack([water], [10], density=500)
 
     density = calculate_density(atoms)
     assert density == pytest.approx(500, abs=0.01)
@@ -22,11 +21,10 @@ def test_compress(packmol):
     assert density == pytest.approx(1000, abs=0.01)
 
 
-@pytest.mark.parametrize("packmol", ["packmol.jl", "packmol"])
-def test_compress_freeze(packmol):
+def test_compress_freeze():
     water = molify.smiles2conformers("O", 1)
     # pack a box
-    atoms = molify.pack([water], [10], density=500, packmol=packmol)
+    atoms = molify.pack([water], [10], density=500)
 
     density = calculate_density(atoms)
     assert density == pytest.approx(500, abs=0.01)

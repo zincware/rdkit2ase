@@ -127,9 +127,8 @@ molify provides a convenient interface to Packmol_ for building molecular system
    etoh = molify.smiles2conformers("CCO", numConfs=10)
 
    # Pack 5 water and 5 ethanol molecules into a box at 800 kg/m³
-   # Note: Requires Packmol.jl (Julia) or Packmol to be installed
    box = molify.pack(
-      data=[water, etoh], counts=[5, 5], density=800, packmol="packmol.jl"
+      data=[water, etoh], counts=[5, 5], density=800
    )
 
 More details on these tools can be found in the :doc:`packmol_tools`, :doc:`ase_tools`, :doc:`rdkit_tools`, and :doc:`atom_selection` sections.

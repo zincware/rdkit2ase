@@ -1,6 +1,6 @@
 [project]
 name = "molify"
-version = "0.0.1a0"
+version = "0.0.1a1"
 description = "Interface between rdkit and ASE"
 readme = "README.md"
 license = "Apache-2.0"
@@ -37,6 +37,9 @@ vesin = [
     "vesin>=0.3.7",
 ]
 
+[project.scripts]
+packmol = "molify.packmol:packmol_cli"
+
 [tool.ruff.lint]
 select = ["E", "F", "N", "C", "I"]
 extend-ignore = [
@@ -47,6 +50,33 @@ extend-ignore = [
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.hatch.build.hooks.custom]
+path = "hatch_build.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/molify"]
+
+# [tool.cibuildwheel]
+# Build for CPython 3.10, 3.11, 3.12, 3.13
+# build = "cp3{10,11,12,13}-*"
+
+# Skip 32-bit builds, musllinux, and Windows (for now)
+# skip = [
+#     "*-win*",           # Windows (needs mingw/gfortran setup)
+#     "*-musllinux*",     # musl-based Linux
+#     "*-manylinux_i686", # 32-bit Linux
+#     "*-win32",          # 32-bit Windows
+# ]
+
+# # Build for x86_64 and ARM64
+# [tool.cibuildwheel.linux]
+# archs = ["x86_64", "aarch64"]
+# # Install gfortran before building
+# before-all = "yum install -y gcc-gfortran || apt-get update && apt-get install -y gfortran"
+
+# [tool.cibuildwheel.macos]
+# archs = ["x86_64", "arm64"]
+# gfortran should be available via Homebrew on GitHub runners
 
 [tool.codespell]
 skip = "*.ipynb"

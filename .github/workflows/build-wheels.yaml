@@ -59,7 +59,9 @@ jobs:
 
   upload_pypi:
     needs: [build_wheels, build_sdist]
-    environment: pypi
+    environment:
+      name: pypi
+      url: https://pypi.org/p/molify
     permissions:
       id-token: write
     runs-on: ubuntu-latest

@@ -251,13 +251,13 @@ def draw_molecular_graph(
         ase2networkx() or rdkit2networkx().
     layout : Literal["spring", "circular", "kamada_kawai"], optional
         Layout algorithm to use for node positioning. Options are:
-        - 'spring': Force-directed layout
-        - 'circular': Nodes arranged in a circle
-        - 'kamada_kawai': Force-directed using Kamada-Kawai algorithm (default)
+            * `spring`: Force-directed layout
+            * `circular`: Nodes arranged in a circle
+            * `kamada_kawai`: Force-directed using Kamada-Kawai algorithm (default)
     figsize : tuple[float, float], optional
         Figure size as (width, height) in inches. Default is (8, 8).
     node_size : int, optional
-        Size of the nodes. Default is 3000.
+        Size of the nodes. Default is 500.
     font_size : int, optional
         Font size for node labels (atomic numbers). If None, automatically scaled
         based on node_size (approximately 0.66 * sqrt(node_size)). Default is None.
@@ -279,12 +279,14 @@ def draw_molecular_graph(
 
     Notes
     -----
-    Node Colors:
+    **Node Colors:**
+
     - Nodes are colored using Jmol color scheme based on atomic numbers
     - Common colors: Carbon (gray), Hydrogen (white), Oxygen (red),
       Nitrogen (blue)
 
-    Bond Order Visualization:
+    **Bond Order Visualization:**
+
     - Single bond (1.0): 1 solid line
     - Double bond (2.0): 2 parallel solid lines
     - Triple bond (3.0): 3 parallel solid lines

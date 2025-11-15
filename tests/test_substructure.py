@@ -119,7 +119,7 @@ def test_bmim_bf4_no_info():
     )
     assert len(bmim_matches_smarts) == 10
     for match in bmim_matches_smarts:
-        # explict only hydrogens are returned
+        # explicit only hydrogens are returned
         assert len(match) == 15
 
     bmim_matches_smarts = molify.match_substructure(
@@ -129,7 +129,7 @@ def test_bmim_bf4_no_info():
     )
     assert len(bmim_matches_smarts) == 10
     for match in bmim_matches_smarts:
-        # explict only hydrogens are returned
+        # explicit only hydrogens are returned 
         assert len(match) == 25  # 10 heavy + 15 H
 
 

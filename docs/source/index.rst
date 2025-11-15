@@ -1,16 +1,19 @@
 molify Documentation
 ====================
 
-**molify** - molecular structure conversion between RDKit, ASE, and NetworkX
+**molify** - molecular structure interface with RDKit, ASE, Packmol and NetworkX
 
 The molify package provides tools to convert molecular structures between
 RDKit_, ASE_ and NetworkX_.
+Furthermore, it provides a python interface for building periodic simulation boxes using Packmol_.
 
 - RDKit is a versatile and popular cheminformatics library.
 
 - ASE allows interfacing with a wide range of atomistic simulation codes and reads/writes many file formats.
 
 - NetworkX is designed for the creation, manipulation, and study of complex networks.
+
+- Packmol is a tool for building initial configurations for molecular dynamics simulations.
 
 Key Features
 ------------
@@ -173,5 +176,5 @@ More information and installation instructions can be found in the `UV documenta
 
 .. _RDKit: https://www.rdkit.org/
 .. _ASE: https://wiki.fysik.dtu.dk/ase/
-.. _Packmol: https://github.com/m3g/Packmol.jl
+.. _Packmol: https://github.com/m3g/Packmol
 .. _NetworkX: https://networkx.org/

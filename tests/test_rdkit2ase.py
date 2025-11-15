@@ -5,7 +5,7 @@ import pytest
 import rdkit
 from rdkit import Chem
 
-from rdkit2ase import ase2rdkit, rdkit2ase, smiles2atoms
+from molify import ase2rdkit, rdkit2ase, smiles2atoms
 
 
 @pytest.fixture

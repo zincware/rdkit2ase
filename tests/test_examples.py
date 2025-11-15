@@ -3,7 +3,7 @@ import pathlib
 import ase.io
 import networkx as nx
 
-import rdkit2ase
+import molify
 
 DATA = pathlib.Path(__file__).parent / "data"
 
@@ -22,10 +22,17 @@ def test_partial_suggestions():
     wrapped_atoms.positions += [5, 5, 5]
     wrapped_atoms.wrap()
 
-    # it will work, if all suggestions are present
-    a = rdkit2ase.ase2networkx(atoms, suggestions=[VC, DMC])
+    # ase2networkx now only determines connectivity, not bond orders
+    # To get bond orders with suggestions, pass through networkx2rdkit
+    graph_a = molify.ase2networkx(atoms)
+    from molify import networkx2rdkit, rdkit2networkx
 
-    b = rdkit2ase.ase2networkx(wrapped_atoms, suggestions=[VC, DMC])
+    mol_a = networkx2rdkit(graph_a, suggestions=[VC, DMC])
+    a = rdkit2networkx(mol_a)
+
+    graph_b = molify.ase2networkx(wrapped_atoms)
+    mol_b = networkx2rdkit(graph_b, suggestions=[VC, DMC])
+    b = rdkit2networkx(mol_b)
 
     for node in a.nodes:
         assert a[node] == b[node]

@@ -1,3 +1,4 @@
+import logging
 import pathlib
 import subprocess
 import tempfile
@@ -8,7 +9,10 @@ import numpy as np
 from ase.io.proteindatabank import write_proteindatabank
 from rdkit import Chem
 
-from rdkit2ase.utils import calculate_box_dimensions
+from molify.packmol import get_packmol_binary
+from molify.utils import calculate_box_dimensions
+
+log = logging.getLogger(__name__)
 
 OBJ_OR_STR = t.Union[str, Chem.rdchem.Mol, ase.Atoms]
 OBJ_OR_STR_OR_LIST = t.Union[OBJ_OR_STR, t.List[t.Tuple[OBJ_OR_STR, float]]]
@@ -58,27 +62,20 @@ end structure
 
 
 def _run_packmol(
-    packmol_executable: str,
+    packmol_executable: pathlib.Path | str,
     input_file: pathlib.Path,
     tmpdir: pathlib.Path,
     verbose: bool,
 ) -> None:
     """Executes the PACKMOL program."""
-    if packmol_executable == "packmol.jl":
-        with open(tmpdir / "pack.jl", "w") as f:
-            f.write("using Packmol \n")
-            f.write(f'run_packmol("{input_file.name}") \n')
-        command = f"julia {tmpdir / 'pack.jl'}"
-    else:
-        command = f"{packmol_executable} < {input_file.name}"
-
-    subprocess.run(
-        command,
-        cwd=tmpdir,
-        shell=True,
-        check=True,
-        capture_output=not verbose,
-    )
+    with open(input_file, "rb") as fin:
+        subprocess.run(
+            [str(packmol_executable)],
+            cwd=tmpdir,
+            check=True,
+            capture_output=not verbose,
+            stdin=fin,
+        )
 
 
 def _write_molecule_files(
@@ -150,9 +147,10 @@ def pack(
     seed: int = 42,
     tolerance: float = 2,
     verbose: bool = False,
-    packmol: str = "packmol",
+    packmol: str | None = None,
     pbc: bool = True,
     output_format: FORMAT = "pdb",
+    ratio: tuple[float, float, float] = (1.0, 1.0, 1.0),
 ) -> ase.Atoms:
     """
     Packs the given molecules into a box with the specified density using PACKMOL.
@@ -171,15 +169,20 @@ def pack(
         The tolerance for the packing algorithm, by default 2.
     verbose : bool, optional
         If True, enables logging of the packing process, by default False.
-    packmol : str, optional
-        The path to the packmol executable, by default "packmol".
-        When installing packmol via jula, use "packmol.jl".
+    packmol : str or None, optional
+        The path to the packmol executable. If None (default), uses the bundled
+        packmol binary shipped with molify. You can provide a custom path to
+        use a different packmol installation (e.g., "packmol" to use system
+        PATH, or "/path/to/custom/packmol").
     pbc : bool, optional
         Ensure tolerance across periodic boundaries, by default True.
     output_format : str, optional
         The file format used for communication with packmol, by default "pdb".
         WARNING: Do not use "xyz". This might cause issues and
         is only implemented for debugging purposes.
+    ratio : tuple[float, float, float], optional
+        Box aspect ratio (a:b:c). Must be three positive, finite numbers.
+        Defaults to (1.0, 1.0, 1.0) for a cubic box.
 
     Returns
     -------
@@ -188,7 +191,7 @@ def pack(
 
     Example
     -------
-    >>> from rdkit2ase import pack, smiles2conformers
+    >>> from molify import pack, smiles2conformers
     >>> water = smiles2conformers("O", 1)
     >>> ethanol = smiles2conformers("CCO", 1)
     >>> density = 1000  # kg/m^3
@@ -196,8 +199,19 @@ def pack(
     >>> print(packed_system)
     Atoms(symbols='C10H44O12', pbc=True, cell=[8.4, 8.4, 8.4])
     """
+    # Use bundled packmol binary if not specified
+    if packmol is None:
+        packmol = str(get_packmol_binary())
+
     selected_images = _select_conformers(data, counts, seed)
     cell = calculate_box_dimensions(images=selected_images, density=density)
+
+    # Adjust cell dimensions according to ratio while keeping volume unchanged
+    original_volume = np.prod(cell)
+    ratio_product = np.prod(ratio)
+    scale = original_volume ** (1 / 3) / (ratio_product ** (1 / 3))
+    cell = [float(scale * r) for r in ratio]
+
     packmol_input = _generate_packmol_input(
         selected_images, cell, tolerance, seed, output_format, pbc
     )
@@ -211,7 +225,21 @@ def pack(
             print(f"{packmol} < ")
             print(packmol_input)
         _run_packmol(packmol, tmpdir / "pack.inp", tmpdir, verbose)
-        packed_atoms: ase.Atoms = ase.io.read(tmpdir / f"mixture.{output_format}")
+        try:
+            packed_atoms: ase.Atoms = ase.io.read(tmpdir / f"mixture.{output_format}")
+            packed_atoms.arrays.pop("atomtypes", None)
+            packed_atoms.arrays.pop("bfactor", None)
+            packed_atoms.arrays.pop("occupancy", None)
+            packed_atoms.arrays.pop("residuenames", None)
+            packed_atoms.arrays.pop("residuenumbers", None)
+        except FileNotFoundError as e:
+            log.error("Packmol Input:\n%s", packmol_input)
+            log.error("Using Packmol executable at: %s", packmol)
+            log.exception("Packmol did not produce mixture.%s", output_format)
+            raise FileNotFoundError(
+                f"Packmol did not produce 'mixture.{output_format}'."
+                " Please check the input parameters."
+            ) from e
 
     packed_atoms.cell = cell
     packed_atoms.pbc = True

@@ -1,19 +1,18 @@
 import pytest
 
-import rdkit2ase
-from rdkit2ase.utils import calculate_density
+import molify
+from molify.utils import calculate_density
 
 
-@pytest.mark.parametrize("packmol", ["packmol.jl", "packmol"])
-def test_compress(packmol):
-    water = rdkit2ase.smiles2conformers("O", 1)
+def test_compress():
+    water = molify.smiles2conformers("O", 1)
     # pack a box
-    atoms = rdkit2ase.pack([water], [10], density=500, packmol=packmol)
+    atoms = molify.pack([water], [10], density=500)
 
     density = calculate_density(atoms)
     assert density == pytest.approx(500, abs=0.01)
 
-    compressed_atoms = rdkit2ase.compress(
+    compressed_atoms = molify.compress(
         atoms,
         density=1000,
     )
@@ -22,16 +21,15 @@ def test_compress(packmol):
     assert density == pytest.approx(1000, abs=0.01)
 
 
-@pytest.mark.parametrize("packmol", ["packmol.jl", "packmol"])
-def test_compress_freeze(packmol):
-    water = rdkit2ase.smiles2conformers("O", 1)
+def test_compress_freeze():
+    water = molify.smiles2conformers("O", 1)
     # pack a box
-    atoms = rdkit2ase.pack([water], [10], density=500, packmol=packmol)
+    atoms = molify.pack([water], [10], density=500)
 
     density = calculate_density(atoms)
     assert density == pytest.approx(500, abs=0.01)
 
-    compressed_atoms = rdkit2ase.compress(
+    compressed_atoms = molify.compress(
         atoms,
         density=1000,
         freeze_molecules=True,
@@ -41,7 +39,7 @@ def test_compress_freeze(packmol):
     density = calculate_density(compressed_atoms)
     assert density == pytest.approx(1000, abs=0.01)
     # iterate all the OH bonds and ensure they are not compressed
-    all_molecules = list(rdkit2ase.iter_fragments(compressed_atoms))
+    all_molecules = list(molify.iter_fragments(compressed_atoms))
     assert len(all_molecules) == 10
     ref_water = water[0].copy()
     for molecule in all_molecules:

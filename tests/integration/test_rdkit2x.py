@@ -1,7 +1,7 @@
 import pytest
 from rdkit import Chem
 
-import rdkit2ase
+import molify
 
 # Shared test cases
 SMILES_LIST = [
@@ -59,7 +59,7 @@ SMILES_LIST = [
 def test_rdkit2ase(smiles):
     mol = Chem.MolFromSmiles(smiles)
     mol = Chem.AddHs(mol)
-    atoms = rdkit2ase.rdkit2ase(mol)
+    atoms = molify.rdkit2ase(mol)
     assert sorted(atoms.get_chemical_symbols()) == sorted(
         [atom.GetSymbol() for atom in mol.GetAtoms()]
     )
@@ -76,7 +76,7 @@ def test_rdkit2ase(smiles):
 def test_rdkit2networkx(smiles):
     mol = Chem.MolFromSmiles(smiles)
     mol = Chem.AddHs(mol)
-    graph = rdkit2ase.rdkit2networkx(mol)
+    graph = molify.rdkit2networkx(mol)
 
     for u, v, data in graph.edges(data=True):
         bond_order = data.get("bond_order")

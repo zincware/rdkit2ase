@@ -25,14 +25,14 @@ def get_centers_of_mass(atoms: ase.Atoms, unwrap: bool = True, **kwargs) -> ase.
 
     Example
     -------
-    >>> from rdkit2ase import smiles2conformers, pack, get_centers_of_mass
+    >>> from molify import smiles2conformers, pack, get_centers_of_mass
     >>> ethanol = smiles2conformers("CCO", numConfs=10)
     >>> box = pack([ethanol], [10], density=786)
     >>> centers = get_centers_of_mass(box)
     >>> print(centers.get_positions().shape)
     (10, 3)
     """
-    from rdkit2ase import ase2networkx, networkx2ase, unwrap_structures
+    from molify import ase2networkx, networkx2ase, unwrap_structures
 
     if unwrap:
         graph = ase2networkx(atoms, **kwargs)

@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from rdkit import Chem
 
-from rdkit2ase import ase2rdkit, smiles2conformers
+from molify import ase2rdkit, smiles2conformers
 
 
 def test_smiles2conformers():

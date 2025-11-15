@@ -4,8 +4,6 @@ import numpy as np
 from ase.neighborlist import natural_cutoffs, neighbor_list
 from rdkit import Chem
 
-from rdkit2ase.bond_order import update_bond_order
-
 try:
     import vesin
 except ImportError:
@@ -24,7 +22,7 @@ def _create_graph_from_connectivity(
         graph.add_node(
             i,
             position=atom.position,
-            atomic_number=atom.number,
+            atomic_number=int(atom.number),
             original_index=atom.index,
             charge=charges[i],
         )
@@ -89,7 +87,7 @@ def _add_node_properties(
     """Add node properties to the graph."""
     for i, atom in enumerate(atoms):
         graph.nodes[i]["position"] = atom.position
-        graph.nodes[i]["atomic_number"] = atom.number
+        graph.nodes[i]["atomic_number"] = int(atom.number)
         graph.nodes[i]["original_index"] = atom.index
         graph.nodes[i]["charge"] = float(charges[i])
         if atom.number in non_bonding_atomic_numbers:
@@ -98,24 +96,19 @@ def _add_node_properties(
 
 def ase2networkx(
     atoms: ase.Atoms,
-    suggestions: list[str] | None = None,
     pbc: bool = True,
     scale: float = 1.2,
 ) -> nx.Graph:
-    """Convert an ASE Atoms object to a NetworkX graph with bonding information.
+    """Convert an ASE Atoms object to a NetworkX graph.
+
+    Determines which atoms are bonded (connectivity).
+    All edges will have bond_order=None unless atoms.info['connectivity']
+    already has bond orders.
 
     Parameters
     ----------
     atoms : ase.Atoms
         The ASE Atoms object to convert into a graph.
-    suggestions : list[str], optional
-        List of SMILES patterns to suggest bond orders (default is None).
-        If None, bond order is only determined from connectivity.
-        If you provide an empty list, bond order will be determined
-        using rdkit's bond order determination algorithm.
-        If SMILES patterns are provided, they will be used to
-        suggest bond orders first, and then
-        rdkit's bond order determination algorithm will be used.
     pbc : bool, optional
         Whether to consider periodic boundary conditions when calculating
         distances (default is True). If False, only connections within
@@ -127,7 +120,7 @@ def ase2networkx(
     Returns
     -------
     networkx.Graph
-        An undirected NetworkX graph with atomic properties and bonding information.
+        An undirected NetworkX graph with connectivity information.
 
     Notes
     -----
@@ -147,12 +140,13 @@ def ase2networkx(
     Connectivity is determined by:
 
     1. Using explicit connectivity if present in atoms.info
-    2. Otherwise using distance-based cutoffs and use SMILES patterns
-    3. Use rdkit's bond order determination algorithm if no suggestions are provided.
+    2. Otherwise using distance-based cutoffs (edges will have bond_order=None)
+
+    To get bond orders, pass the graph to networkx2rdkit().
 
     Examples
     --------
-    >>> from rdkit2ase import ase2networkx, smiles2atoms
+    >>> from molify import ase2networkx, smiles2atoms
     >>> atoms = smiles2atoms(smiles="O")
     >>> graph = ase2networkx(atoms)
     >>> len(graph.nodes)
@@ -162,7 +156,6 @@ def ase2networkx(
     """
     if len(atoms) == 0:
         return nx.Graph()
-
     charges = atoms.get_initial_charges()
 
     if "connectivity" in atoms.info:
@@ -188,36 +181,31 @@ def ase2networkx(
     graph.graph["pbc"] = atoms.pbc
     graph.graph["cell"] = atoms.cell
 
-    if suggestions is not None:
-        update_bond_order(graph, suggestions)
-
     return graph
 
 
 def ase2rdkit(atoms: ase.Atoms, suggestions: list[str] | None = None) -> Chem.Mol:
     """Convert an ASE Atoms object to an RDKit molecule.
 
+    Convenience function that chains:
+    ase2networkx() → networkx2rdkit(suggestions=...)
+
     Parameters
     ----------
     atoms : ase.Atoms
         The ASE Atoms object to convert.
     suggestions : list[str], optional
-        List of SMARTS patterns to suggest bond orders (default is None).
+        SMILES/SMARTS patterns for bond order determination.
+        Passed directly to networkx2rdkit().
 
     Returns
     -------
     rdkit.Chem.Mol
-        The resulting RDKit molecule with 3D coordinates.
-
-    Notes
-    -----
-    This function first converts the Atoms object to a NetworkX graph using
-    ase2networkx, then converts the graph to an RDKit molecule using
-    networkx2rdkit.
+        The resulting RDKit molecule with bond orders determined.
 
     Examples
     --------
-    >>> from rdkit2ase import ase2rdkit, smiles2atoms
+    >>> from molify import ase2rdkit, smiles2atoms
     >>> atoms = smiles2atoms(smiles="C=O")
     >>> mol = ase2rdkit(atoms)
     >>> mol.GetNumAtoms()
@@ -226,7 +214,7 @@ def ase2rdkit(atoms: ase.Atoms, suggestions: list[str] | None = None) -> Chem.Mo
     if len(atoms) == 0:
         return Chem.Mol()
 
-    from rdkit2ase import ase2networkx, networkx2rdkit
+    from molify import ase2networkx, networkx2rdkit
 
-    graph = ase2networkx(atoms, suggestions=suggestions)
-    return networkx2rdkit(graph)
+    graph = ase2networkx(atoms)
+    return networkx2rdkit(graph, suggestions=suggestions)

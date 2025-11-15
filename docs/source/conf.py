@@ -8,9 +8,9 @@
 import typing as t
 from importlib.metadata import metadata
 
-pkg_metadata = metadata("rdkit2ase")
+pkg_metadata = metadata("molify")
 
-project = "rdkit2ase"
+project = "molify"
 author = "Fabian Zills"
 version = pkg_metadata["Version"]
 release = f"v{version}"
@@ -26,6 +26,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
+    "sphinxcontrib.mermaid",
 ]
 
 templates_path = ["_templates"]

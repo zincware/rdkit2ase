@@ -4,7 +4,7 @@ import ase
 import pytest
 from rdkit import Chem
 
-import rdkit2ase
+import molify
 
 
 class SMILES:
@@ -16,16 +16,15 @@ class SMILES:
 
 @pytest.fixture
 def ec_emc_li_pf6():
-    atoms_pf6 = rdkit2ase.smiles2conformers(SMILES.PF6, numConfs=10)
-    atoms_li = rdkit2ase.smiles2conformers(SMILES.Li, numConfs=10)
-    atoms_ec = rdkit2ase.smiles2conformers(SMILES.EC, numConfs=10)
-    atoms_emc = rdkit2ase.smiles2conformers(SMILES.EMC, numConfs=10)
+    atoms_pf6 = molify.smiles2conformers(SMILES.PF6, numConfs=10)
+    atoms_li = molify.smiles2conformers(SMILES.Li, numConfs=10)
+    atoms_ec = molify.smiles2conformers(SMILES.EC, numConfs=10)
+    atoms_emc = molify.smiles2conformers(SMILES.EMC, numConfs=10)
 
-    return rdkit2ase.pack(
+    return molify.pack(
         data=[atoms_pf6, atoms_li, atoms_ec, atoms_emc],
         counts=[3, 3, 8, 12],
         density=1400,
-        packmol="packmol.jl",
     )
 
 
@@ -84,7 +83,7 @@ SMILES_LIST = [
 @pytest.fixture
 def atoms_and_connectivity(request):
     smiles = request.param
-    atoms = rdkit2ase.smiles2atoms(smiles)
+    atoms = molify.smiles2atoms(smiles)
     connectivity = atoms.info["connectivity"]
     return smiles, atoms, connectivity
 
@@ -92,7 +91,7 @@ def atoms_and_connectivity(request):
 @pytest.mark.parametrize("atoms_and_connectivity", SMILES_LIST, indirect=True)
 def test_ase2networkx(atoms_and_connectivity):
     _, atoms, connectivity = atoms_and_connectivity
-    graph = rdkit2ase.ase2networkx(atoms)
+    graph = molify.ase2networkx(atoms)
     for i, j, bond_order in connectivity:
         assert graph.has_edge(i, j)
         assert graph.edges[i, j]["bond_order"] == bond_order
@@ -102,36 +101,16 @@ def test_ase2networkx(atoms_and_connectivity):
 def test_ase2networkx_no_connectivity(atoms_and_connectivity):
     _, atoms, connectivity = atoms_and_connectivity
     atoms.info.pop("connectivity")
-    graph = rdkit2ase.ase2networkx(atoms)
+    graph = molify.ase2networkx(atoms)
     for i, j, bond_order in connectivity:
         assert graph.has_edge(i, j)
         assert graph.edges[i, j]["bond_order"] is None
 
 
 @pytest.mark.parametrize("atoms_and_connectivity", SMILES_LIST, indirect=True)
-def test_ase2networkx_guess_connectivity(atoms_and_connectivity):
-    _, atoms, connectivity = atoms_and_connectivity
-    atoms.info.pop("connectivity")
-    graph = rdkit2ase.ase2networkx(atoms, suggestions=[])
-    for i, j, bond_order in connectivity:
-        assert graph.has_edge(i, j)
-        assert graph.edges[i, j]["bond_order"] == bond_order
-
-
-@pytest.mark.parametrize("atoms_and_connectivity", SMILES_LIST, indirect=True)
-def test_ase2networkx_smiles_connectivity(atoms_and_connectivity):
-    smiles, atoms, connectivity = atoms_and_connectivity
-    atoms.info.pop("connectivity")
-    graph = rdkit2ase.ase2networkx(atoms, suggestions=[smiles])
-    for i, j, bond_order in connectivity:
-        assert graph.has_edge(i, j)
-        assert graph.edges[i, j]["bond_order"] == bond_order
-
-
-@pytest.mark.parametrize("atoms_and_connectivity", SMILES_LIST, indirect=True)
 def test_ase2rdkit(atoms_and_connectivity):
     smiles, atoms, connectivity = atoms_and_connectivity
-    mol = rdkit2ase.ase2rdkit(atoms)
+    mol = molify.ase2rdkit(atoms)
     assert Chem.MolToSmiles(mol, canonical=True) == Chem.MolToSmiles(
         Chem.AddHs(Chem.MolFromSmiles(smiles)), canonical=True
     )
@@ -152,23 +131,10 @@ def test_ase2rdkit(atoms_and_connectivity):
 
 @pytest.mark.parametrize("atoms_and_connectivity", SMILES_LIST, indirect=True)
 def test_ase2rdkit_no_connectivity(atoms_and_connectivity):
+    """Test ase2rdkit determines bond orders when connectivity is not provided."""
     smiles, atoms, connectivity = atoms_and_connectivity
     atoms.info.pop("connectivity")
-    if len(connectivity) > 0:
-        with pytest.raises(ValueError):
-            rdkit2ase.ase2rdkit(atoms)
-    else:
-        mol = rdkit2ase.ase2rdkit(atoms)
-        assert Chem.MolToSmiles(mol, canonical=True) == Chem.MolToSmiles(
-            Chem.AddHs(Chem.MolFromSmiles(smiles)), canonical=True
-        )
-
-
-@pytest.mark.parametrize("atoms_and_connectivity", SMILES_LIST, indirect=True)
-def test_ase2rdkit_guess_connectivity(atoms_and_connectivity):
-    smiles, atoms, connectivity = atoms_and_connectivity
-    atoms.info.pop("connectivity")
-    mol = rdkit2ase.ase2rdkit(atoms, suggestions=[])
+    mol = molify.ase2rdkit(atoms, suggestions=[])
     assert Chem.MolToSmiles(mol, canonical=True) == Chem.MolToSmiles(
         Chem.AddHs(Chem.MolFromSmiles(smiles)), canonical=True
     )
@@ -178,14 +144,14 @@ def test_ase2rdkit_guess_connectivity(atoms_and_connectivity):
 def test_ase2rdkit_smiles_connectivity(atoms_and_connectivity):
     smiles, atoms, connectivity = atoms_and_connectivity
     atoms.info.pop("connectivity")
-    mol = rdkit2ase.ase2rdkit(atoms, suggestions=[smiles])
+    mol = molify.ase2rdkit(atoms, suggestions=[smiles])
     assert Chem.MolToSmiles(mol, canonical=True) == Chem.MolToSmiles(
         Chem.AddHs(Chem.MolFromSmiles(smiles)), canonical=True
     )
 
 
 def test_ase2networkx_ec_emc_li_pf6(ec_emc_li_pf6):
-    graph = rdkit2ase.ase2networkx(ec_emc_li_pf6)
+    graph = molify.ase2networkx(ec_emc_li_pf6)
     assert len(graph.nodes) == 3 * 7 + 3 * 1 + 15 * 12 + 10 * 8
     connectivity = ec_emc_li_pf6.info["connectivity"]
     for i, j, bond_order in connectivity:
@@ -201,7 +167,7 @@ def test_ase2networkx_ec_emc_li_pf6(ec_emc_li_pf6):
 def test_ase2networkx_ec_emc_li_pf6_no_connectivity(ec_emc_li_pf6):
     connectivity = ec_emc_li_pf6.info.pop("connectivity")
     ec_emc_li_pf6.set_initial_charges()
-    graph = rdkit2ase.ase2networkx(ec_emc_li_pf6)
+    graph = molify.ase2networkx(ec_emc_li_pf6)
     for i, j, bond_order in connectivity:
         assert graph.has_edge(i, j)
         assert graph.edges[i, j]["bond_order"] is None
@@ -213,24 +179,10 @@ def test_ase2networkx_ec_emc_li_pf6_no_connectivity(ec_emc_li_pf6):
     #     assert d["charge"] == 1
 
 
-def test_ase2networkx_ec_emc_li_pf6_guess_connectivity(ec_emc_li_pf6):
-    connectivity = ec_emc_li_pf6.info.pop("connectivity")
-    ec_emc_li_pf6.set_initial_charges()
-    graph = rdkit2ase.ase2networkx(ec_emc_li_pf6, suggestions=[])
-    for i, j, bond_order in connectivity:
-        assert graph.has_edge(i, j)
-        assert graph.edges[i, j]["bond_order"] == bond_order
-
-    li_nodes = [d for _, d in graph.nodes(data=True) if d["atomic_number"] == 3]
-    assert len(li_nodes) == 3
-    for d in li_nodes:
-        assert d["charge"] == 1
-
-
 @pytest.mark.parametrize("smiles", ["[CH3]", "[O]", "C[O]"])
 def test_radicals(smiles):
-    atoms = rdkit2ase.smiles2atoms(smiles)
-    graph = rdkit2ase.ase2networkx(atoms)
+    atoms = molify.smiles2atoms(smiles)
+    graph = molify.ase2networkx(atoms)
 
     mol = Chem.MolFromSmiles(smiles)
     for i, atom in enumerate(mol.GetAtoms()):
@@ -242,7 +194,7 @@ def test_radicals(smiles):
     [("[NH4+]", 1), ("[O-2]", -2), ("[Fe+3]", 3), ("C[N+](C)(C)C", 1)],
 )
 def test_formal_charges(smiles, expected_charge):
-    atoms = rdkit2ase.smiles2atoms(smiles)
+    atoms = molify.smiles2atoms(smiles)
     total_charge = sum(atoms.get_initial_charges())
     assert total_charge == pytest.approx(expected_charge)
 
@@ -262,10 +214,10 @@ def test_ase2networkx_pbc_flag():
         atoms.info.pop("connectivity")
 
     # Test with pbc=True (should find bond across periodic boundary)
-    graph_pbc_true = rdkit2ase.ase2networkx(atoms, pbc=True)
+    graph_pbc_true = molify.ase2networkx(atoms, pbc=True)
 
     # Test with pbc=False (should not find bond across periodic boundary)
-    graph_pbc_false = rdkit2ase.ase2networkx(atoms, pbc=False)
+    graph_pbc_false = molify.ase2networkx(atoms, pbc=False)
 
     # With pbc=True, atoms should be bonded (distance is 0.1 across PBC)
     # With pbc=False, atoms should not be bonded (distance is 2.9 > typical H-H cutoff)
@@ -277,16 +229,16 @@ def test_ase2networkx_pbc_flag():
     )
 
 
-@patch("rdkit2ase.ase2x.vesin", None)
+@patch("molify.ase2x.vesin", None)
 def test_ase2networkx_vesin_none():
     """Test that ase2networkx works correctly when vesin is not available."""
-    atoms = rdkit2ase.smiles2atoms("CC")  # Simple ethane molecule
+    atoms = molify.smiles2atoms("CC")  # Simple ethane molecule
     atoms.info.pop(
         "connectivity"
     )  # Remove connectivity to force neighbor list calculation
 
     # Should work without vesin and use ASE neighbor_list
-    graph = rdkit2ase.ase2networkx(atoms)
+    graph = molify.ase2networkx(atoms)
 
     # Should have the expected number of nodes and at least one edge (C-C bond)
     assert len(graph.nodes) == len(atoms)
@@ -302,14 +254,14 @@ def test_ase2networkx_vesin_available():
     except ImportError:
         vesin_available = False
 
-    atoms = rdkit2ase.smiles2atoms("CC")  # Simple ethane molecule
+    atoms = molify.smiles2atoms("CC")  # Simple ethane molecule
     atoms.info.pop(
         "connectivity"
     )  # Remove connectivity to force neighbor list calculation
 
     if vesin_available:
         # Should work with vesin installed
-        graph = rdkit2ase.ase2networkx(atoms, pbc=True)
+        graph = molify.ase2networkx(atoms, pbc=True)
         assert len(graph.nodes) == len(atoms)
         assert len(graph.edges) >= 1
     else:
@@ -332,7 +284,7 @@ def test_ase2networkx_mixed_pbc_fallback(ethanol_water):
     atoms.info.pop("connectivity", None)
 
     # This should work even if vesin fails, thanks to the fallback
-    graph = rdkit2ase.ase2networkx(atoms, pbc=True)
+    graph = molify.ase2networkx(atoms, pbc=True)
     assert len(graph.nodes) == len(atoms)
     # Should have some edges from the molecules
     assert len(graph.edges) > 0
@@ -340,3 +292,54 @@ def test_ase2networkx_mixed_pbc_fallback(ethanol_water):
     # Verify the graph properties
     assert graph.graph["pbc"] is not None
     assert graph.graph["cell"] is not None
+
+
+def test_ase2rdkit_with_none_bond_orders_in_connectivity():
+    """Test the full pipeline handles connectivity with None bond orders.
+
+    This is the specific issue addressed by the refactoring:
+    - User has atoms with connectivity information
+    - But bond orders are None in that connectivity
+    - The pipeline should determine bond orders automatically
+    """
+    # Create atoms with proper connectivity
+    atoms = molify.smiles2atoms("CCO")  # Ethanol
+    original_connectivity = atoms.info["connectivity"].copy()
+
+    # Simulate user-provided connectivity with None bond orders
+    # This mimics what happens when connectivity is known but bond orders aren't
+    connectivity_without_orders = [(i, j, None) for i, j, _ in original_connectivity]
+    atoms.info["connectivity"] = connectivity_without_orders
+
+    # This should work seamlessly - ase2networkx preserves connectivity,
+    # then networkx2rdkit determines bond orders
+    mol = molify.ase2rdkit(atoms, suggestions=[])
+
+    # Verify the molecule is correct
+    expected_smiles = Chem.MolToSmiles(
+        Chem.AddHs(Chem.MolFromSmiles("CCO")), canonical=True
+    )
+    assert Chem.MolToSmiles(mol, canonical=True) == expected_smiles
+
+    # Verify all bonds have determined orders
+    for bond in mol.GetBonds():
+        assert bond.GetBondTypeAsDouble() > 0
+
+
+def test_ase2networkx_preserves_none_bond_orders_in_connectivity():
+    """Test ase2networkx preserves connectivity even with None bond orders."""
+    # Create atoms with connectivity that has None bond orders
+    atoms = molify.smiles2atoms("CC")
+    original_connectivity = atoms.info["connectivity"].copy()
+
+    # Set bond orders to None
+    connectivity_without_orders = [(i, j, None) for i, j, _ in original_connectivity]
+    atoms.info["connectivity"] = connectivity_without_orders
+
+    # ase2networkx should preserve this connectivity (with None bond orders)
+    graph = molify.ase2networkx(atoms)
+
+    # Verify connectivity is preserved
+    for i, j, bond_order in connectivity_without_orders:
+        assert graph.has_edge(i, j)
+        assert graph.edges[i, j]["bond_order"] is None

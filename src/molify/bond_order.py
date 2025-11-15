@@ -1,7 +1,7 @@
 import networkx as nx
 from networkx.algorithms import isomorphism
 
-from rdkit2ase.utils import (
+from molify.utils import (
     rdkit_determine_bonds,
     suggestions2networkx,
     unwrap_structures,
@@ -86,8 +86,8 @@ def update_bond_order_determine(graph: nx.Graph) -> None:
     Update the bond order in the graph based on the suggestions.
     If the graph already has bond order, it will not be updated.
     """
-    from rdkit2ase.networkx2x import networkx2ase
-    from rdkit2ase.rdkit2x import rdkit2networkx
+    from molify.networkx2x import networkx2ase
+    from molify.rdkit2x import rdkit2networkx
 
     if has_bond_order(graph):
         return

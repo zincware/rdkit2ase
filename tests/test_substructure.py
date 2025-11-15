@@ -129,7 +129,7 @@ def test_bmim_bf4_no_info():
     )
     assert len(bmim_matches_smarts) == 10
     for match in bmim_matches_smarts:
-        # explicit only hydrogens are returned 
+        # explicit only hydrogens are returned
         assert len(match) == 25  # 10 heavy + 15 H
 
 

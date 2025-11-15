@@ -5,7 +5,7 @@
 [![Docs](https://github.com/zincware/rdkit2ase/actions/workflows/pages.yaml/badge.svg)](https://zincware.github.io/rdkit2ase/)
 [![status](https://joss.theoj.org/papers/4c1ec2a0b66ed6baaf3fe93066696d5f/status.svg)](https://joss.theoj.org/papers/4c1ec2a0b66ed6baaf3fe93066696d5f)
 
-# molify - Interface between the rdkit and ASE package.
+# molify - Molecular Structure Interface with RDKit, ASE, Packmol and NetworkX
 
 Installation via `pip install molify`. For more information please visit the
 [documentation](https://zincware.github.io/rdkit2ase/).

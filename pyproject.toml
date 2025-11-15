@@ -1,7 +1,7 @@
 [project]
 name = "molify"
-version = "0.0.1a2"
-description = "Interface between rdkit and ASE"
+version = "0.2.0"
+description = "Molecular Structure Interface with RDKit, ASE, Packmol and NetworkX"
 readme = "README.md"
 license = "Apache-2.0"
 requires-python = ">=3.10"
@@ -39,6 +39,13 @@ vesin = [
 
 [project.scripts]
 packmol = "molify.packmol:packmol_cli"
+
+[project.urls]
+Repository = "https://github.com/zincware/molify"
+Releases = "https://github.com/zincware/molify/releases"
+Discord = "https://discord.gg/7ncfwhsnm4"
+Documentation = "https://molify.readthedocs.io/"
+
 
 [tool.ruff.lint]
 select = ["E", "F", "N", "C", "I"]

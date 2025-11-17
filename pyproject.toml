@@ -38,9 +38,6 @@ vesin = [
     "vesin>=0.3.7",
 ]
 
-[project.scripts]
-packmol = "molify.packmol:packmol_cli"
-
 [project.urls]
 Repository = "https://github.com/zincware/molify"
 Releases = "https://github.com/zincware/molify/releases"

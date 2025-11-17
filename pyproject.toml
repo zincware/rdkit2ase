@@ -1,6 +1,6 @@
 [project]
 name = "molify"
-version = "0.2.0"
+version = "0.2.1"
 description = "Molecular Structure Interface with RDKit, ASE, Packmol and NetworkX"
 readme = "README.md"
 license = "Apache-2.0"
@@ -12,6 +12,7 @@ dependencies = [
     "ase>=3.25.0",
     "matplotlib>=3.10.1",
     "networkx>=3.4.2",
+    "packmol>=0.1.0",
     "rdkit>=2024",
 ]
 
@@ -56,12 +57,6 @@ extend-ignore = [
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
-
-[tool.hatch.build.hooks.custom]
-path = "hatch_build.py"
-
-[tool.hatch.build.targets.wheel]
-packages = ["src/molify"]
 
 [tool.codespell]
 skip = "*.ipynb"

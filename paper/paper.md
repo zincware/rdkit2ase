@@ -30,7 +30,7 @@ However, standard RDKit workflows are not designed for MLIP-driven simulation, w
 
 The `molify` package bridges this gap, providing an interface between RDKit's chemical structure generation and cheminformatics capabilities and ASE's handling of 3D atomic structures.
 Furthermore, `molify` integrates with PACKMOL[@martinezPACKMOLPackageBuilding2009] to facilitate the creation of complex, periodic simulation cells with diverse chemical compositions, all while preserving crucial chemical connectivity information.
-In addition, `molify` simplifies the representation of molecular structures as graphs using NetworkX[@hagbergExploringNetworkStructure2008], e.g., enabling traversing or comparing molecular graphs. 
+In addition, `molify` simplifies the representation of molecular structures as graphs using NetworkX[@hagbergExploringNetworkStructure2008], e.g., enabling traversing or comparing molecular graphs.
 Lastly, the combination of these packages enables selection and manipulation of atomistic structures based on chemical knowledge rather than manual index handling.
 While designed for MLIP data, the usage of `molify` is not limited and can be expanded, e.g., by utilizing the bond order information in other ASE-based workflows for classical MD simulations or integrating with machine-learning driven bond order predictions.
 
